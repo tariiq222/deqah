@@ -77,4 +77,9 @@ export const arDashboard: Record<string, string> = {
   "dashboard.currency": "ر.س",
   "dashboard.noRevenueData": "لا توجد بيانات إيرادات بعد",
   "dashboard.greeting.hello": "{greeting}، {name} 👋",
+  "actions.recordPayment": "تسجيل دفعة",
+  "dashboard.topPerformers.title": "أفضل المعالجين هذا الشهر",
+  "dashboard.topPerformers.empty": "لا توجد بيانات أداء لهذا الشهر بعد",
+  "dashboard.topPerformers.bookingsCount": "{count} حجز",
+  "dashboard.timeline.empty.employee": "لا توجد حجوزات لك اليوم",
 }

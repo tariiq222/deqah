@@ -252,6 +252,7 @@ export const queryKeys = {
   dashboard: {
     all: ["dashboard"] as const,
     stats: () => ["dashboard", "stats"] as const,
+    topPerformers: () => ["dashboard", "top-performers"] as const,
   },
 
   /* ─── Delivery Logs ─── */

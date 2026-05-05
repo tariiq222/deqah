@@ -77,4 +77,9 @@ export const enDashboard: Record<string, string> = {
   "dashboard.currency": "SAR",
   "dashboard.noRevenueData": "No revenue data yet",
   "dashboard.greeting.hello": "{greeting}, {name} 👋",
+  "actions.recordPayment": "Record Payment",
+  "dashboard.topPerformers.title": "Top performers this month",
+  "dashboard.topPerformers.empty": "No performance data yet for this month",
+  "dashboard.topPerformers.bookingsCount": "{count} bookings",
+  "dashboard.timeline.empty.employee": "You have no bookings today",
 }

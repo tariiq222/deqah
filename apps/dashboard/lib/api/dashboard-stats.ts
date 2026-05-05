@@ -17,3 +17,15 @@ export interface DashboardStats {
 export async function fetchDashboardStats(): Promise<DashboardStats> {
   return api.get<DashboardStats>("/dashboard/stats")
 }
+
+export interface TopPerformer {
+  employeeId: string
+  displayName: string
+  avatarUrl: string | null
+  bookingsCount: number
+  revenue: number
+}
+
+export async function fetchTopPerformers(): Promise<TopPerformer[]> {
+  return api.get<TopPerformer[]>("/dashboard/top-performers?period=month")
+}
