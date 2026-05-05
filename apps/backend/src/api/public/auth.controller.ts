@@ -625,7 +625,7 @@ export class AuthController {
     res.cookie('ck_refresh', token, {
       httpOnly: true,
       secure: this.config.get('NODE_ENV') === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       path: '/',
       maxAge: ttlMs,
     });
