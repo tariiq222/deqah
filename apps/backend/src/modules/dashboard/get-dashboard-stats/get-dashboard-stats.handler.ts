@@ -40,7 +40,16 @@ export class GetDashboardStatsHandler {
         where: { organizationId, userId: cmd.userId },
         select: { id: true },
       });
-      employeeFilter = emp ? { employeeId: emp.id } : { employeeId: '__no_match__' };
+      if (!emp) {
+        // EMPLOYEE membership without a linked Employee row → nothing to show.
+        return {
+          todayBookings: 0,
+          confirmedToday: 0,
+          pendingToday: 0,
+          cancelRequests: 0,
+        };
+      }
+      employeeFilter = { employeeId: emp.id };
     }
 
     const baseWhere = { organizationId, ...employeeFilter };

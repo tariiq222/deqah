@@ -174,6 +174,18 @@ describe("GetDashboardStatsHandler", () => {
       );
     });
 
+    it('returns zeroed stats when EMPLOYEE has no matching Employee row', async () => {
+      prisma.employee.findFirst.mockResolvedValueOnce(null as never);
+      const result = await handler.execute({ membershipRole: 'EMPLOYEE', userId: 'orphan-user' });
+      expect(result).toEqual({
+        todayBookings: 0,
+        confirmedToday: 0,
+        pendingToday: 0,
+        cancelRequests: 0,
+      });
+      expect(prisma.booking.count).not.toHaveBeenCalled();
+    });
+
     it('omits payment-related fields for roles without Payment:read', async () => {
       prisma.booking.count.mockResolvedValue(0);
       const result = await handler.execute({ membershipRole: 'RECEPTIONIST', userId: 'u' });

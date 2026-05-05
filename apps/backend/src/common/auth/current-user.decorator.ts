@@ -6,6 +6,7 @@ export interface JwtUser {
   employeeId?: string;
   roles: string[];
   permissions: Array<{ action: string; subject: string }>;
+  membershipRole?: string | null;
 }
 
 export const CurrentUser = createParamDecorator(
