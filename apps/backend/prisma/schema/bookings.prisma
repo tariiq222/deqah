@@ -89,12 +89,14 @@ model Booking {
   zoomMeetingStatus    ZoomMeetingStatus?
   zoomMeetingError     String?
   zoomMeetingCreatedAt DateTime?
+  bookingNumber        Int
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
 
   groupEnrollment GroupEnrollment?
 
   @@unique([id, organizationId], name: "booking_id_org") // DB-05: composite unique for future composite FK
+  @@unique([organizationId, bookingNumber], name: "booking_org_number")
   @@index([clientId])
   // DB-07: @@index([employeeId]) dropped — redundant prefix of [employeeId, scheduledAt] and [employeeId, endsAt]
   @@index([scheduledAt])

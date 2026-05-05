@@ -125,8 +125,8 @@ model Service {
 
   // ─── Participants (group sessions) ───────────────────────────────────────
   // minParticipants <= maxParticipants — enforced via CHECK constraint in migration SQL
-  minParticipants       Int     @default(1)
-  maxParticipants       Int     @default(1)
+  minParticipants Int @default(1)
+  maxParticipants Int @default(1)
 
   // ─── التكرار ─────────────────────────────────────────────────────────────
   allowRecurring           Boolean            @default(false)
@@ -389,15 +389,15 @@ model Rating {
 // ─── Organization Settings ────────────────────────────────────────────────────
 
 model OrganizationSettings {
-  id                     String   @id @default(uuid()) // SaaS-02c: was @default("default")
-  organizationId         String   @unique // SaaS-02c: one row per org
+  id                     String    @id @default(uuid()) // SaaS-02c: was @default("default")
+  organizationId         String    @unique // SaaS-02c: one row per org
   companyNameAr          String?
   companyNameEn          String?
   businessRegistration   String?
   vatRegistrationNumber  String?
-  vatRate                Decimal  @default(0.15) @db.Decimal(5, 4)
+  vatRate                Decimal   @default(0.15) @db.Decimal(5, 4)
   sellerAddress          String?
-  organizationCity       String   @default("Riyadh")
+  organizationCity       String    @default("Riyadh")
   postalCode             String?
   contactPhone           String?
   contactEmail           String?
@@ -411,13 +411,13 @@ model OrganizationSettings {
   termsEn                String?
   cancellationPolicyAr   String?
   cancellationPolicyEn   String?
-  defaultLanguage        String   @default("ar")
-  timezone               String   @default("Asia/Riyadh")
-  weekStartDay           String   @default("sunday")
-  dateFormat             String   @default("DD/MM/YYYY")
-  timeFormat             String   @default("12h")
-  emailHeaderShowLogo    Boolean  @default(true)
-  emailHeaderShowName    Boolean  @default(true)
+  defaultLanguage        String    @default("ar")
+  timezone               String    @default("Asia/Riyadh")
+  weekStartDay           String    @default("sunday")
+  dateFormat             String    @default("DD/MM/YYYY")
+  timeFormat             String    @default("12h")
+  emailHeaderShowLogo    Boolean   @default(true)
+  emailHeaderShowName    Boolean   @default(true)
   emailFooterPhone       String?
   emailFooterWebsite     String?
   emailFooterInstagram   String?
@@ -426,12 +426,12 @@ model OrganizationSettings {
   emailFooterTiktok      String?
   emailFooterLinkedin    String?
   emailFooterYoutube     String?
-  sessionDuration        Int      @default(60)
-  reminderBeforeMinutes  Int      @default(60)
-  bookingFlowOrder       String   @default("service_first")
-  paymentMoyasarEnabled  Boolean  @default(true)
-  paymentAtClinicEnabled Boolean  @default(false)
+  sessionDuration        Int       @default(60)
+  reminderBeforeMinutes  Int       @default(60)
+  bookingFlowOrder       String    @default("service_first")
+  paymentMoyasarEnabled  Boolean   @default(true)
+  paymentAtClinicEnabled Boolean   @default(false)
   customDomainGraceUntil DateTime? // set when CUSTOM_DOMAIN is revoked on downgrade; tenant keeps access until this date
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 }

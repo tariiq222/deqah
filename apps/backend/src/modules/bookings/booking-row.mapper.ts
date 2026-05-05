@@ -37,6 +37,7 @@ export function mapBookingRow(b: Booking, relations: BookingRelations) {
 
   return {
     id: b.id,
+    bookingNumber: b.bookingNumber,
     clientId: b.clientId,
     employeeId: b.employeeId,
     serviceId: b.serviceId,

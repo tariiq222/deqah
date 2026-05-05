@@ -69,6 +69,7 @@ describe('SaaS-02h — Moyasar webhook forgery', () => {
         durationMins: 60,
         price: 200,
         currency: 'SAR',
+        bookingNumber: 1,
       },
     });
     const invoice = await h.prisma.invoice.create({

@@ -103,6 +103,7 @@ describe('Confirm Booking Zoom (e2e)', () => {
         price: 100,
         bookingType: 'ONLINE',
         status: 'PENDING',
+        bookingNumber: 9001,
       },
     });
 
@@ -153,6 +154,7 @@ describe('Confirm Booking Zoom (e2e)', () => {
         price: 100,
         bookingType: 'ONLINE',
         status: 'PENDING',
+        bookingNumber: 9002,
       },
     });
 
@@ -197,6 +199,7 @@ describe('Confirm Booking Zoom (e2e)', () => {
         zoomMeetingStatus: ZoomMeetingStatus.CREATED,
         zoomJoinUrl: 'https://zoom.us/j/99999',
         zoomStartUrl: 'https://zoom.us/s/99999',
+        bookingNumber: 9003,
       },
     });
 

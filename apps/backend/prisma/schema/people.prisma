@@ -187,16 +187,16 @@ model EmployeeAvailability {
 // Single-day leave: startDate == endDate. Annual leave: multi-day range.
 // endTime + isStartTimeOnly support partial-day leave (e.g. 2:00 PM to 5:00 PM).
 model EmployeeAvailabilityException {
-  id             String    @id @default(uuid())
-  organizationId String
-  employeeId     String
-  employee       Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  startDate      DateTime  @db.Date
-  endDate        DateTime  @db.Date
-  endTime        DateTime? // nullable — null means end of day (23:59:59.999)
-  isStartTimeOnly Boolean  @default(false) // when true, only startTime matters (full-day leave)
-  reason         String?
-  createdAt      DateTime  @default(now())
+  id              String    @id @default(uuid())
+  organizationId  String
+  employeeId      String
+  employee        Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  startDate       DateTime  @db.Date
+  endDate         DateTime  @db.Date
+  endTime         DateTime? // nullable — null means end of day (23:59:59.999)
+  isStartTimeOnly Boolean   @default(false) // when true, only startTime matters (full-day leave)
+  reason          String?
+  createdAt       DateTime  @default(now())
 
   @@index([employeeId, startDate, endDate])
   @@index([organizationId])

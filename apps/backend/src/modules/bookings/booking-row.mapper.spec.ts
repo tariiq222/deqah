@@ -26,6 +26,7 @@ describe('mapBookingRow', () => {
     zoomMeetingError: null,
     tenantId: 'tenant-1',
     branchId: 'branch-1',
+    bookingNumber: 1,
     createdAt: new Date('2026-05-01T00:00:00Z'),
     updatedAt: new Date('2026-05-01T00:00:00Z'),
   } as unknown as Booking;
@@ -100,7 +101,7 @@ describe('mapBookingRow', () => {
   });
 
   it('maps other booking types to lowercase', () => {
-    const booking = { ...mockBooking, bookingType: 'GROUP' };
+    const booking = { ...mockBooking, bookingType: 'GROUP' } as Booking;
     const result = mapBookingRow(booking, relations);
 
     expect(result.type).toBe('group');
@@ -113,21 +114,21 @@ describe('mapBookingRow', () => {
   });
 
   it('maps awaiting_payment status to pending', () => {
-    const booking = { ...mockBooking, status: 'AWAITING_PAYMENT' };
+    const booking = { ...mockBooking, status: 'AWAITING_PAYMENT' } as Booking;
     const result = mapBookingRow(booking, relations);
 
     expect(result.status).toBe('pending');
   });
 
   it('maps pending_group_fill status to pending', () => {
-    const booking = { ...mockBooking, status: 'PENDING_GROUP_FILL' };
+    const booking = { ...mockBooking, status: 'PENDING_GROUP_FILL' } as Booking;
     const result = mapBookingRow(booking, relations);
 
     expect(result.status).toBe('pending');
   });
 
   it('maps completed status correctly', () => {
-    const booking = { ...mockBooking, status: 'COMPLETED' };
+    const booking = { ...mockBooking, status: 'COMPLETED' } as Booking;
     const result = mapBookingRow(booking, relations);
 
     expect(result.status).toBe('completed');
@@ -200,12 +201,12 @@ describe('mapBookingRow', () => {
   });
 
   it('handles client with null name and first/last', () => {
-    const clientWithAll: Client = {
+    const clientWithAll = {
       ...mockClient,
       name: null,
       firstName: 'First',
       lastName: 'Last',
-    };
+    } as unknown as Client;
     const clientRelations: BookingRelations = {
       clientsById: new Map([['client-1', clientWithAll]]),
       employeesById: new Map([['emp-1', mockEmployee]]),
@@ -294,7 +295,7 @@ describe('mapBookingRow', () => {
       ...mockBooking,
       cancelledAt: new Date('2026-05-04T12:00:00Z'),
       cancelReason: 'Client requested',
-    };
+    } as unknown as Booking;
 
     const result = mapBookingRow(cancelledBooking, relations);
 
@@ -332,7 +333,7 @@ describe('mapBookingRow', () => {
       zoomStartUrl: 'https://zoom.us/start/123',
       zoomMeetingStatus: 'started',
       zoomMeetingError: null,
-    };
+    } as unknown as Booking;
 
     const result = mapBookingRow(bookingWithZoom, relations);
 

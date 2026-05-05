@@ -66,6 +66,13 @@ export class CreateRecurringBookingHandler {
   ): Promise<Booking[]> {
     const created: Booking[] = [];
 
+    const lastBooking = await db.booking.findFirst({
+      where: { organizationId },
+      orderBy: { bookingNumber: 'desc' },
+      select: { bookingNumber: true },
+    });
+    let currentBookingNumber = lastBooking?.bookingNumber ?? 0;
+
     for (const scheduledAt of dates) {
       const endsAt = new Date(scheduledAt.getTime() + dto.durationMins * 60_000);
 
@@ -86,6 +93,8 @@ export class CreateRecurringBookingHandler {
         );
       }
 
+      currentBookingNumber += 1;
+
       const booking = await db.booking.create({
         data: {
           organizationId,
@@ -104,6 +113,7 @@ export class CreateRecurringBookingHandler {
           recurringGroupId,
           recurringPattern: dto.frequency,
           status: 'PENDING',
+          bookingNumber: currentBookingNumber,
         },
       });
 

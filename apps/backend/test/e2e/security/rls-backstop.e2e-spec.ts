@@ -56,6 +56,7 @@ describe('SaaS-02h — Postgres RLS backstop under deqah_rls_probe role', () => 
           durationMins: 60,
           price: 100,
           currency: 'SAR',
+          bookingNumber: 1,
         },
       }),
     );
@@ -72,6 +73,7 @@ describe('SaaS-02h — Postgres RLS backstop under deqah_rls_probe role', () => 
           durationMins: 60,
           price: 100,
           currency: 'SAR',
+          bookingNumber: 1,
         },
       }),
     );
@@ -106,6 +108,7 @@ describe('SaaS-02h — Postgres RLS backstop under deqah_rls_probe role', () => 
           durationMins: 60,
           price: 100,
           currency: 'SAR',
+          bookingNumber: 1,
         },
         select: { id: true },
       }),
@@ -123,6 +126,7 @@ describe('SaaS-02h — Postgres RLS backstop under deqah_rls_probe role', () => 
           durationMins: 60,
           price: 100,
           currency: 'SAR',
+          bookingNumber: 1,
         },
         select: { id: true },
       }),

@@ -68,6 +68,7 @@ describe('SaaS-02e — Moyasar webhook tenant resolution', () => {
         durationMins: 60,
         price: 200,
         currency: 'SAR',
+        bookingNumber: 1,
       },
     });
 

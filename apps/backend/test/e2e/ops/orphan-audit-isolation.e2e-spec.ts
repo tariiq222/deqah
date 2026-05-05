@@ -52,6 +52,7 @@ describe('DB-13 — orphan-audit isolation', () => {
           endsAt: new Date(Date.now() + 3_600_000),
           durationMins: 60,
           price: 100,
+          bookingNumber: 1,
         },
       });
     });

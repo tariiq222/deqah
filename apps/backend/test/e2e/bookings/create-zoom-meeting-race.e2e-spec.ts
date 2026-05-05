@@ -222,6 +222,7 @@ describe('CreateZoomMeetingHandler — advisory lock race prevention', () => {
           status: 'CONFIRMED',
           bookingType: 'ONLINE',
           zoomMeetingStatus: null,
+          bookingNumber: Date.now(),
         },
       }),
     );
@@ -278,6 +279,7 @@ describe('CreateZoomMeetingHandler — advisory lock race prevention', () => {
             status: 'CONFIRMED',
             bookingType: 'ONLINE',
             zoomMeetingStatus: null,
+            bookingNumber: Date.now() + 1,
           },
         }),
         h.prisma.$allTenants.booking.create({
@@ -295,6 +297,7 @@ describe('CreateZoomMeetingHandler — advisory lock race prevention', () => {
             status: 'CONFIRMED',
             bookingType: 'ONLINE',
             zoomMeetingStatus: null,
+            bookingNumber: Date.now() + 2,
           },
         }),
       ]),

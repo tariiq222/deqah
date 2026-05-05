@@ -77,6 +77,7 @@ export interface RescheduledFrom {
 
 export interface Booking {
   id: string
+  bookingNumber: number
   clientId: string | null
   employeeId: string
   serviceId: string

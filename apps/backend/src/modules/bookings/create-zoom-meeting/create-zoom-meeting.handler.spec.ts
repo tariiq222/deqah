@@ -277,6 +277,6 @@ describe('CreateZoomMeetingHandler', () => {
     const result = await handler.execute({ bookingId: 'book-1' });
 
     expect(zoomApi.createMeeting).not.toHaveBeenCalled();
-    expect((result as typeof onlineBooking & { zoomMeetingStatus: ZoomMeetingStatus }).zoomMeetingStatus).toBe(ZoomMeetingStatus.CREATED);
+    expect((result as unknown as { zoomMeetingStatus: ZoomMeetingStatus }).zoomMeetingStatus).toBe(ZoomMeetingStatus.CREATED);
   });
 });

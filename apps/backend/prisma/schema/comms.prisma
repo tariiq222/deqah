@@ -114,7 +114,7 @@ model EmailTemplate {
   name           String
   subject        String
   htmlBody       String
-  blocks         Json?       // SaaS — block-builder source of truth; htmlBody is rendered from this
+  blocks         Json? // SaaS — block-builder source of truth; htmlBody is rendered from this
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -236,7 +236,6 @@ enum NotificationPriority {
   STANDARD
 }
 
-
 enum NotificationSenderActor {
   PLATFORM
   TENANT
@@ -244,23 +243,23 @@ enum NotificationSenderActor {
 }
 
 model NotificationDeliveryLog {
-  id             String               @id @default(uuid())
+  id             String                  @id @default(uuid())
   organizationId String
   recipientId    String
   type           NotificationType
-  priority       NotificationPriority @default(STANDARD)
+  priority       NotificationPriority    @default(STANDARD)
   channel        DeliveryChannel
-  status         DeliveryStatus       @default(PENDING)
+  status         DeliveryStatus          @default(PENDING)
   toAddress      String?
   providerName   String?
   senderActor    NotificationSenderActor @default(TENANT)
-  attempts       Int                  @default(0)
+  attempts       Int                     @default(0)
   lastAttemptAt  DateTime?
   sentAt         DateTime?
   errorMessage   String?
   jobId          String?
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
 
   @@index([organizationId])
   @@index([organizationId, status])
@@ -306,7 +305,6 @@ model PlatformEmailLog {
   @@index([templateSlug])
   @@index([status, createdAt])
 }
-
 
 // Platform-level mail delivery audit. Intentionally NOT in SCOPED_MODELS — these are Deqah-side mails (welcome, trial, suspension), not tenant data.
 model PlatformMailDeliveryLog {

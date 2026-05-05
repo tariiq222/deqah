@@ -8,6 +8,7 @@ export const mockBooking = {
   scheduledAt: future, endsAt: new Date(future.getTime() + 3600_000),
   durationMins: 60, price: 200, currency: 'SAR',
   status: BookingStatus.PENDING, bookingType: 'INDIVIDUAL',
+  bookingNumber: 1,
   createdAt: new Date(), updatedAt: new Date(),
 };
 

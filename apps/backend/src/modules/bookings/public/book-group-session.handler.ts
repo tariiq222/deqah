@@ -88,6 +88,13 @@ export class BookGroupSessionHandler {
   ): Promise<BookGroupSessionResult> {
     const price = Number(session.price);
 
+    const lastBooking = await this.prisma.booking.findFirst({
+      where: { organizationId },
+      orderBy: { bookingNumber: 'desc' },
+      select: { bookingNumber: true },
+    });
+    const nextBookingNumber = (lastBooking?.bookingNumber ?? 0) + 1;
+
     const booking = await this.prisma.booking.create({
       data: {
         organizationId,
@@ -104,6 +111,7 @@ export class BookGroupSessionHandler {
         currency: session.currency,
         groupSessionId: session.id,
         expiresAt: price > 0 ? new Date(Date.now() + 30 * 60 * 1000) : null,
+        bookingNumber: nextBookingNumber,
       },
     });
 

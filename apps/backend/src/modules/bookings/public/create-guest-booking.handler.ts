@@ -158,6 +158,13 @@ export class CreateGuestBookingHandler {
         });
       }
 
+      const lastBooking = await tx.booking.findFirst({
+        where: { organizationId },
+        orderBy: { bookingNumber: 'desc' },
+        select: { bookingNumber: true },
+      });
+      const nextBookingNumber = (lastBooking?.bookingNumber ?? 0) + 1;
+
       const booking = await tx.booking.create({
         data: {
           organizationId,
@@ -174,6 +181,7 @@ export class CreateGuestBookingHandler {
           bookingType: 'INDIVIDUAL',
           notes: cmd.client.notes,
           status: 'AWAITING_PAYMENT',
+          bookingNumber: nextBookingNumber,
         },
       });
 

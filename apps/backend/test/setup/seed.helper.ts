@@ -142,6 +142,7 @@ export async function seedBooking(
       currency: 'SAR',
       status: (opts.status as never) ?? 'PENDING',
       bookingType: 'INDIVIDUAL',
+      bookingNumber: Date.now(),
     },
   });
 }

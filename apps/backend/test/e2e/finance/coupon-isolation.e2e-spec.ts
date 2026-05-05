@@ -125,6 +125,7 @@ describe('SaaS-02e — coupon isolation', () => {
           durationMins: 60,
           price: 200,
           currency: 'SAR',
+          bookingNumber: 1,
         },
         select: { id: true },
       }),

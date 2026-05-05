@@ -58,7 +58,7 @@ export function getBookingColumns(
       header: "#",
       cell: ({ row }) => (
         <span className="text-[13px] font-medium font-numeric text-muted-foreground">
-          #{row.original.id.slice(0, 8)}
+          #{row.original.bookingNumber.toString().padStart(4, "0")}
         </span>
       ),
     },
@@ -83,7 +83,7 @@ export function getBookingColumns(
             <div>
               <p className="text-sm font-semibold text-foreground">{name}</p>
               <p className="text-[11px] font-numeric text-muted-foreground">
-                #{row.original.id.slice(0, 8)}
+                #{row.original.bookingNumber.toString().padStart(4, "0")}
               </p>
             </div>
           </button>

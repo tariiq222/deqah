@@ -17,7 +17,7 @@ const mockBooking = {
   id: 'book-1', branchId: 'branch-1',
   clientId: 'client-1', employeeId: 'emp-1', serviceId: 'svc-1',
   scheduledAt: futureDate, durationMins: 60, price: 200,
-  currency: 'SAR', status: 'PENDING',
+  currency: 'SAR', status: 'PENDING', bookingNumber: 1,
 };
 
 const mockInvoice = {
@@ -230,6 +230,35 @@ describe('CreateBookingHandler', () => {
     const prisma = buildPrisma();
     prisma.employeeService.findUnique = jest.fn().mockResolvedValue(null);
     await expect(new CreateBookingHandler(prisma as never, mockTenant as never, buildPriceResolver() as never, buildSettingsHandler() as never, {} as never, mockEventBus as never, mockSubscriptionCache as never, { couponStrictEnabled: false } as never, {} as never).execute(dto)).rejects.toThrow(BadRequestException);
+  });
+
+  it('assigns sequential bookingNumber per org — uses last + 1', async () => {
+    const prisma = buildPrisma();
+    // First findFirst call (overlap check) returns null (no conflict);
+    // second findFirst call (bookingNumber lookup) returns booking with bookingNumber 7.
+    prisma.booking.findFirst = jest.fn()
+      .mockResolvedValueOnce(null)               // overlap check
+      .mockResolvedValueOnce({ bookingNumber: 7 }); // bookingNumber lookup
+    prisma.booking.create = jest.fn().mockResolvedValue({ ...mockBooking, bookingNumber: 8 });
+
+    await new CreateBookingHandler(prisma as never, mockTenant as never, buildPriceResolver() as never, buildSettingsHandler() as never, {} as never, mockEventBus as never, mockSubscriptionCache as never, { couponStrictEnabled: false } as never, {} as never).execute(dto);
+
+    expect(prisma.booking.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ bookingNumber: 8 }) }),
+    );
+  });
+
+  it('starts bookingNumber at 1 when no prior bookings exist for org', async () => {
+    const prisma = buildPrisma();
+    // Both findFirst calls return null: no overlap, no prior bookings.
+    prisma.booking.findFirst = jest.fn().mockResolvedValue(null);
+    prisma.booking.create = jest.fn().mockResolvedValue({ ...mockBooking, bookingNumber: 1 });
+
+    await new CreateBookingHandler(prisma as never, mockTenant as never, buildPriceResolver() as never, buildSettingsHandler() as never, {} as never, mockEventBus as never, mockSubscriptionCache as never, { couponStrictEnabled: false } as never, {} as never).execute(dto);
+
+    expect(prisma.booking.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ bookingNumber: 1 }) }),
+    );
   });
 });
 

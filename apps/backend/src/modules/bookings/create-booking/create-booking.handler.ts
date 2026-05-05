@@ -208,6 +208,13 @@ export class CreateBookingHandler {
           }
         }
 
+        const lastBooking = await tx.booking.findFirst({
+          where: { organizationId },
+          orderBy: { bookingNumber: 'desc' },
+          select: { bookingNumber: true },
+        });
+        const nextBookingNumber = (lastBooking?.bookingNumber ?? 0) + 1;
+
         const booking = await tx.booking.create({
           data: {
             organizationId,
@@ -229,6 +236,7 @@ export class CreateBookingHandler {
             couponCode: dto.couponCode ?? null,
             discountedPrice: discountedPrice,
             status: initialStatus,
+            bookingNumber: nextBookingNumber,
           },
         });
 

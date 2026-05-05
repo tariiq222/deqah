@@ -42,6 +42,7 @@ describe('SaaS-02e — refund isolation', () => {
           durationMins: 60,
           price: 250,
           currency: 'SAR',
+          bookingNumber: 1,
         },
         select: { id: true },
       }),
