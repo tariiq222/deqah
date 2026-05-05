@@ -8,32 +8,13 @@ import {
   CancelCircleIcon,
 } from "@hugeicons/core-free-icons"
 import { useLocale } from "@/components/locale-provider"
+import type { VisibleWidgets } from "@/lib/dashboard-widgets"
 
 interface AttentionAlertsProps {
   pendingPayments: number
   cancelRequests: number
+  visible: VisibleWidgets["attentionAlerts"]
 }
-
-const alerts = [
-  {
-    key: "payments",
-    titleKey: "alerts.pendingPayments",
-    descKey: "alerts.pendingPaymentsDesc",
-    icon: InvoiceIcon,
-    severity: "warning" as const,
-    href: "/payments",
-    countKey: "pendingPayments" as const,
-  },
-  {
-    key: "cancel",
-    titleKey: "alerts.cancelRequests",
-    descKey: "alerts.cancelRequestsDesc",
-    icon: CancelCircleIcon,
-    severity: "error" as const,
-    href: "/bookings",
-    countKey: "cancelRequests" as const,
-  },
-]
 
 const severityStyles = {
   warning: {
@@ -53,50 +34,105 @@ const severityStyles = {
   },
 } as const
 
-export function AttentionAlerts(props: AttentionAlertsProps) {
+export function AttentionAlerts({
+  pendingPayments,
+  cancelRequests,
+  visible,
+}: AttentionAlertsProps) {
   const { t } = useLocale()
 
-  return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {alerts.map((alert) => {
-        const styles = severityStyles[alert.severity]
-        const count = props[alert.countKey]
+  const showPayments = visible.pendingPayments && pendingPayments > 0
+  const showCancels = visible.cancelRequests && cancelRequests > 0
 
-        return (
-          <div key={alert.key}>
-            <Link href={alert.href}>
+  if (!showPayments && !showCancels) return null
+
+  return (
+    <div
+      data-testid="attention-alerts"
+      className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+    >
+      {showPayments && (
+        <div data-testid="alert-pending-payments">
+          <Link href="/payments">
+            <div
+              className={cn(
+                "glass relative flex items-center gap-3.5 overflow-hidden rounded-xl border-s-[3px] p-4",
+                severityStyles.warning.border
+              )}
+            >
               <div
                 className={cn(
-                  "glass relative flex items-center gap-3.5 overflow-hidden rounded-xl border-s-[3px] p-4",
-                  styles.border
+                  "flex size-10 shrink-0 items-center justify-center rounded-full",
+                  severityStyles.warning.iconBg
                 )}
               >
-                <div
-                  className={cn(
-                    "flex size-10 shrink-0 items-center justify-center rounded-full",
-                    styles.iconBg
-                  )}
-                >
-                  <HugeiconsIcon icon={alert.icon} size={20} className={styles.iconText} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-foreground">
-                    {count > 0 && (
-                      <span className="tabular-nums" style={{ display: "inline-block" }}>
-                        {count}{" "}
-                      </span>
-                    )}
-                    {t(alert.titleKey)}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {t(alert.descKey)}
-                  </p>
-                </div>
+                <HugeiconsIcon
+                  icon={InvoiceIcon}
+                  size={20}
+                  className={severityStyles.warning.iconText}
+                />
               </div>
-            </Link>
-          </div>
-        )
-      })}
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-foreground">
+                  {pendingPayments > 0 && (
+                    <span
+                      className="tabular-nums"
+                      style={{ display: "inline-block" }}
+                    >
+                      {pendingPayments}{" "}
+                    </span>
+                  )}
+                  {t("alerts.pendingPayments")}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {t("alerts.pendingPaymentsDesc")}
+                </p>
+              </div>
+            </div>
+          </Link>
+        </div>
+      )}
+      {showCancels && (
+        <div data-testid="alert-cancel-requests">
+          <Link href="/bookings">
+            <div
+              className={cn(
+                "glass relative flex items-center gap-3.5 overflow-hidden rounded-xl border-s-[3px] p-4",
+                severityStyles.error.border
+              )}
+            >
+              <div
+                className={cn(
+                  "flex size-10 shrink-0 items-center justify-center rounded-full",
+                  severityStyles.error.iconBg
+                )}
+              >
+                <HugeiconsIcon
+                  icon={CancelCircleIcon}
+                  size={20}
+                  className={severityStyles.error.iconText}
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-foreground">
+                  {cancelRequests > 0 && (
+                    <span
+                      className="tabular-nums"
+                      style={{ display: "inline-block" }}
+                    >
+                      {cancelRequests}{" "}
+                    </span>
+                  )}
+                  {t("alerts.cancelRequests")}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {t("alerts.cancelRequestsDesc")}
+                </p>
+              </div>
+            </div>
+          </Link>
+        </div>
+      )}
     </div>
   )
 }
