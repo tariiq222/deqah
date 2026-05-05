@@ -1,5 +1,6 @@
 import { DashboardStatsController } from './stats.controller';
 import type { JwtUser } from '../../common/auth/current-user.decorator';
+import type { GetTopPerformersDto } from '../../modules/dashboard/get-top-performers/get-top-performers.dto';
 
 const fn = <T = unknown>(val: T = {} as T) => ({ execute: jest.fn().mockResolvedValue(val) });
 
@@ -12,8 +13,9 @@ function buildController() {
     cancelRequests: 0,
     todayRevenue: 450.0,
   });
-  const controller = new DashboardStatsController(getStats as never);
-  return { controller, getStats };
+  const getTopPerformers = fn([] as unknown);
+  const controller = new DashboardStatsController(getStats as never, getTopPerformers as never);
+  return { controller, getStats, getTopPerformers };
 }
 
 const buildUser = (membershipRole: string | null = 'OWNER', sub = 'user-1'): JwtUser => ({
@@ -53,5 +55,22 @@ describe('DashboardStatsController', () => {
     await expect(
       controller.getStatsEndpoint(buildUser('OWNER')),
     ).rejects.toThrow('DB error');
+  });
+
+  it('rejects ACCOUNTANT from /top-performers', async () => {
+    const { controller } = buildController();
+    const user = buildUser('ACCOUNTANT');
+    await expect(
+      controller.topPerformers(user, {} as GetTopPerformersDto),
+    ).rejects.toThrow('Performance metrics');
+  });
+
+  it('calls handler for OWNER on /top-performers', async () => {
+    const { controller, getTopPerformers } = buildController();
+    const user = buildUser('OWNER');
+    getTopPerformers.execute.mockResolvedValue([] as never);
+    const result = await controller.topPerformers(user, { period: 'month' } as GetTopPerformersDto);
+    expect(getTopPerformers.execute).toHaveBeenCalledWith({ period: 'month' });
+    expect(result).toEqual([]);
   });
 });
