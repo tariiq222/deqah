@@ -17,6 +17,7 @@ const VISIBLE_LIMIT = 6
 
 interface TodayTimelineProps {
   bookings: Booking[]
+  membershipRole?: string | null
 }
 
 const statusColors: Record<string, string> = {
@@ -26,7 +27,7 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-error",
 }
 
-export function TodayTimeline({ bookings }: TodayTimelineProps) {
+export function TodayTimeline({ bookings, membershipRole }: TodayTimelineProps) {
   const { t } = useLocale()
   const { confirmMut, adminCancelMut } = useBookingMutations()
   const [loadingId, setLoadingId] = useState<string | null>(null)
@@ -69,7 +70,11 @@ export function TodayTimeline({ bookings }: TodayTimelineProps) {
 
       {bookings.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">
-          {t("dashboard.noAppointments")}
+          {t(
+            membershipRole === "EMPLOYEE"
+              ? "dashboard.timeline.empty.employee"
+              : "dashboard.noAppointments",
+          )}
         </p>
       ) : (
         <div className="flex flex-col gap-3">

@@ -103,7 +103,10 @@ export default function DashboardPage() {
                     onRetry={() => refetchBookings()}
                   />
                 ) : (
-                  <TodayTimeline bookings={todayBookings?.items ?? []} />
+                  <TodayTimeline
+                    bookings={todayBookings?.items ?? []}
+                    membershipRole={membershipRole}
+                  />
                 ))}
               {visible.activityFeed &&
                 (notifLoading ? (
