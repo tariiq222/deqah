@@ -1,8 +1,9 @@
 "use client"
 
-import { Suspense } from "react"
+import { Suspense, useMemo } from "react"
 import { format } from "date-fns"
 import { ar } from "date-fns/locale"
+import { FlashIcon, Analytics01Icon } from "@hugeicons/core-free-icons"
 
 import { GreetingHeader } from "@/components/features/dashboard/greeting-header"
 import { DashboardStats } from "@/components/features/dashboard/dashboard-stats"
@@ -12,25 +13,32 @@ import { TodayTimeline } from "@/components/features/dashboard/today-timeline"
 import { ActivityFeed } from "@/components/features/dashboard/activity-feed"
 import { RevenueChart } from "@/components/features/dashboard/revenue-chart"
 import { RecentPayments } from "@/components/features/dashboard/recent-payments"
+import { TopPerformersChart } from "@/components/features/dashboard/top-performers-chart"
 import { ErrorBanner } from "@/components/features/error-banner"
 import { SectionHeader } from "@/components/features/section-header"
 import { Skeleton } from "@deqah/ui"
-import { FlashIcon, Analytics01Icon } from "@hugeicons/core-free-icons"
 import { useTodayBookings } from "@/hooks/use-bookings"
 import { useDashboardNotifications } from "@/hooks/use-notifications"
 import { useDashboardStats } from "@/hooks/use-dashboard-stats"
 import { useAuth } from "@/components/providers/auth-provider"
 import { useLocale } from "@/components/locale-provider"
+import { getVisibleWidgets } from "@/lib/dashboard-widgets"
 
 export default function DashboardPage() {
   const today = format(new Date(), "yyyy-MM-dd")
-  const { user } = useAuth()
+  const { user, canDo } = useAuth()
   const { locale, t } = useLocale()
+
+  const membershipRole = user?.activeMembership?.role ?? null
+  const visible = useMemo(
+    () => getVisibleWidgets(membershipRole, canDo),
+    [membershipRole, canDo],
+  )
 
   const dateLabel = format(
     new Date(),
     locale === "ar" ? "EEEE، d MMMM yyyy" : "EEEE, MMMM d, yyyy",
-    locale === "ar" ? { locale: ar } : undefined
+    locale === "ar" ? { locale: ar } : undefined,
   )
 
   const {
@@ -47,80 +55,80 @@ export default function DashboardPage() {
     refetch: refetchNotifs,
   } = useDashboardNotifications()
 
-  const {
-    data: dashboardStats,
-    isLoading: statsLoading,
-    error: statsError,
-  } = useDashboardStats()
+  const { data: dashboardStats } = useDashboardStats()
 
-  const userName = user?.name || user?.email || "—"
+  const userName =
+    user?.activeMembership?.displayName || user?.name || user?.email || "—"
+
+  const operationalSectionVisible =
+    visible.todayTimeline ||
+    visible.activityFeed ||
+    visible.revenueChart ||
+    visible.recentPayments ||
+    visible.topPerformers
 
   return (
     <div className="flex flex-col gap-12">
-      {/* Group 1: Overview — greeting + stats + alerts */}
       <Suspense fallback={<div className="h-48 animate-pulse rounded-xl bg-muted" />}>
         <section className="flex flex-col gap-6">
-          <GreetingHeader
-            userName={userName}
-            dateLabel={dateLabel}
-            bookingsCount={0}
-          />
-
-          <DashboardStats stats={dashboardStats} />
+          <GreetingHeader userName={userName} dateLabel={dateLabel} bookingsCount={0} />
+          <DashboardStats stats={dashboardStats} visibleStats={visible.stats} />
           <AttentionAlerts
             pendingPayments={dashboardStats?.pendingPayments ?? 0}
             cancelRequests={dashboardStats?.cancelRequests ?? 0}
+            visible={visible.attentionAlerts}
           />
         </section>
       </Suspense>
 
-      {/* Group 2: Quick Actions */}
-      <Suspense fallback={<div className="h-24 animate-pulse rounded-xl bg-muted" />}>
+      {visible.quickActions.length > 0 && (
         <section className="flex flex-col gap-4">
           <SectionHeader icon={FlashIcon} title={t("dashboard.quickActions")} />
-          <QuickActions />
+          <QuickActions actions={visible.quickActions} />
         </section>
-      </Suspense>
+      )}
 
-      {/* Group 3: Operational — schedule + activity + charts */}
-      <Suspense fallback={<div className="h-[400px] animate-pulse rounded-xl bg-muted" />}>
+      {operationalSectionVisible && (
         <section className="flex flex-col gap-5">
-        <SectionHeader
-          icon={Analytics01Icon}
-          title={t("dashboard.operations")}
-          variant="accent"
-        />
+          <SectionHeader icon={Analytics01Icon} title={t("dashboard.operations")} variant="accent" />
 
-        <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
-          {bookingsLoading ? (
-            <Skeleton className="h-[400px] rounded-xl" />
-          ) : bookingsError ? (
-            <ErrorBanner
-              message={t("dashboard.error.schedule")}
-              onRetry={() => refetchBookings()}
-            />
-          ) : (
-            <TodayTimeline bookings={todayBookings?.items ?? []} />
+          {(visible.todayTimeline || visible.activityFeed) && (
+            <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
+              {visible.todayTimeline &&
+                (bookingsLoading ? (
+                  <Skeleton className="h-[400px] rounded-xl" />
+                ) : bookingsError ? (
+                  <ErrorBanner
+                    message={t("dashboard.error.schedule")}
+                    onRetry={() => refetchBookings()}
+                  />
+                ) : (
+                  <TodayTimeline bookings={todayBookings?.items ?? []} />
+                ))}
+              {visible.activityFeed &&
+                (notifLoading ? (
+                  <Skeleton className="h-[400px] rounded-xl" />
+                ) : notifError ? (
+                  <ErrorBanner
+                    message={t("dashboard.error.activity")}
+                    onRetry={() => refetchNotifs()}
+                  />
+                ) : (
+                  <ActivityFeed notifications={notifData?.items ?? []} />
+                ))}
+            </div>
           )}
 
-          {notifLoading ? (
-            <Skeleton className="h-[400px] rounded-xl" />
-          ) : notifError ? (
-            <ErrorBanner
-              message={t("dashboard.error.activity")}
-              onRetry={() => refetchNotifs()}
-            />
-          ) : (
-            <ActivityFeed notifications={notifData?.items ?? []} />
+          {(visible.revenueChart || visible.recentPayments) && (
+            <div className="grid gap-5 lg:grid-cols-2">
+              {visible.revenueChart && <RevenueChart />}
+              {visible.recentPayments && <RecentPayments />}
+            </div>
           )}
-        </div>
 
-        <div className="grid gap-5 lg:grid-cols-2">
-          <RevenueChart />
-          <RecentPayments />
-        </div>
+          {visible.topPerformers && <TopPerformersChart />}
         </section>
-      </Suspense>
+      )}
     </div>
   )
 }
