@@ -109,19 +109,22 @@ RUN mkdir -p /app/node_modules/@deqah \
  && test -f /app/node_modules/@deqah/shared/dist/constants/feature-keys.d.ts \
   || (echo "❌ symlink fix failed — d.ts not reachable" && exit 1)
 
-# Ensure @types/uuid is present where TS expects it (pnpm hoist may skip it
-# when uuid is only a transitive type dep). Force-link from .pnpm if needed.
-RUN if [ ! -d /app/node_modules/@types/uuid ]; then \
-      UUID_TYPES_DIR=$(find /app/node_modules/.pnpm -maxdepth 3 -type d -name uuid -path "*@types+uuid*/node_modules/@types/uuid" | head -1); \
-      if [ -n "$UUID_TYPES_DIR" ]; then \
-        ln -sf "$UUID_TYPES_DIR" /app/node_modules/@types/uuid; \
-        echo "✅ Linked @types/uuid from .pnpm: $UUID_TYPES_DIR"; \
-      else \
-        echo "❌ @types/uuid not found anywhere"; exit 1; \
-      fi; \
-    fi \
+# Re-run pnpm install in app-build to ensure all types are properly hoisted
+# now that source is present. Uses --frozen-lockfile + --prefer-offline to be
+# fast (cache hit on the deps from earlier stages).
+RUN pnpm install --frozen-lockfile --prefer-offline
+
+# Verify shared dist still survives + symlink it back if pnpm wiped it
+RUN test -f /app/packages/shared/dist/constants/feature-keys.js \
+  || (echo "❌ packages/shared/dist/ wiped by pnpm install" && exit 1) \
+ && mkdir -p /app/node_modules/@deqah \
+ && rm -rf /app/node_modules/@deqah/shared /app/node_modules/@deqah/api-client \
+ && ln -sf /app/packages/shared     /app/node_modules/@deqah/shared \
+ && ln -sf /app/packages/api-client /app/node_modules/@deqah/api-client \
+ && test -f /app/node_modules/@deqah/shared/dist/constants/feature-keys.d.ts \
+  || (echo "❌ symlink fix failed" && exit 1) \
  && test -f /app/node_modules/@types/uuid/index.d.ts \
-  || (echo "❌ @types/uuid/index.d.ts still missing" && exit 1)
+  || (echo "❌ @types/uuid still missing after pnpm install" && exit 1)
 
 RUN cd /app/apps/backend && /app/node_modules/.bin/nest build
 
