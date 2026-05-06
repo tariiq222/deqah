@@ -82,50 +82,28 @@ COPY --from=shared-build /app/packages     ./packages
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
 COPY apps/backend/ ./apps/backend/
 
-# Verify shared dist survived the COPY (catch issues early with clear message)
+# Verify shared dist survived the COPY from shared-build
 RUN test -f /app/packages/shared/dist/constants/feature-keys.js \
-  || (echo "❌ packages/shared/dist/ missing in app-build — COPY from shared-build failed" && exit 1)
+  || (echo "❌ packages/shared/dist/ missing — COPY from shared-build failed" && exit 1)
 
-# Run prisma generate via direct binary path (avoids pnpm's lifecycle re-install)
-RUN cd /app/apps/backend && /app/node_modules/.bin/prisma generate --schema=prisma/schema
+# pnpm install in app-build re-hoists all types (incl. backend's nested deps
+# like @types/uuid) and rebuilds workspace links now that full source is present.
+# --frozen-lockfile --prefer-offline → fast (cache hits from deps stage).
+RUN pnpm install --frozen-lockfile --prefer-offline
 
-# Verify shared dist STILL there after prisma generate
-RUN test -f /app/packages/shared/dist/constants/feature-keys.js \
-  || (echo "❌ packages/shared/dist/ wiped by prisma generate" && exit 1)
-
-# Diagnose @deqah/shared resolution from backend's perspective
-RUN echo "=== node_modules/@deqah/shared ===" \
- && ls -la /app/node_modules/@deqah/ 2>&1 || true \
- && echo "=== resolved path ===" \
- && readlink -f /app/node_modules/@deqah/shared 2>&1 || true \
- && echo "=== exists check ===" \
- && ls /app/node_modules/@deqah/shared/dist/constants/feature-keys.d.ts 2>&1 || true
-
-# Force-recreate symlink to packages/shared to ensure dist is reachable
+# Force @deqah/* symlinks to point at /app/packages (pnpm install may reset them
+# to point through .pnpm/ store). Direct symlinks let TS resolve via the package's
+# package.json#exports map directly to dist/.
 RUN mkdir -p /app/node_modules/@deqah \
  && rm -rf /app/node_modules/@deqah/shared /app/node_modules/@deqah/api-client \
  && ln -sf /app/packages/shared     /app/node_modules/@deqah/shared \
  && ln -sf /app/packages/api-client /app/node_modules/@deqah/api-client \
  && test -f /app/node_modules/@deqah/shared/dist/constants/feature-keys.d.ts \
-  || (echo "❌ symlink fix failed — d.ts not reachable" && exit 1)
+  || (echo "❌ @deqah/shared/dist not reachable through symlink" && exit 1) \
+ && test -f /app/node_modules/@types/uuid/package.json \
+  || (echo "❌ @types/uuid not hoisted by pnpm install" && exit 1)
 
-# Re-run pnpm install in app-build to ensure all types are properly hoisted
-# now that source is present. Uses --frozen-lockfile + --prefer-offline to be
-# fast (cache hit on the deps from earlier stages).
-RUN pnpm install --frozen-lockfile --prefer-offline
-
-# Verify shared dist still survives + symlink it back if pnpm wiped it
-RUN test -f /app/packages/shared/dist/constants/feature-keys.js \
-  || (echo "❌ packages/shared/dist/ wiped by pnpm install" && exit 1) \
- && mkdir -p /app/node_modules/@deqah \
- && rm -rf /app/node_modules/@deqah/shared /app/node_modules/@deqah/api-client \
- && ln -sf /app/packages/shared     /app/node_modules/@deqah/shared \
- && ln -sf /app/packages/api-client /app/node_modules/@deqah/api-client \
- && test -f /app/node_modules/@deqah/shared/dist/constants/feature-keys.d.ts \
-  || (echo "❌ symlink fix failed" && exit 1) \
- && test -f /app/node_modules/@types/uuid/index.d.ts \
-  || (echo "❌ @types/uuid still missing after pnpm install" && exit 1)
-
+RUN cd /app/apps/backend && /app/node_modules/.bin/prisma generate --schema=prisma/schema
 RUN cd /app/apps/backend && /app/node_modules/.bin/nest build
 
 # ── Stage 4: runner ──────────────────────────────────────────────────────────
