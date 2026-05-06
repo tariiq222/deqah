@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   sync-staging:
@@ -57,3 +58,15 @@ jobs:
             -m "Production promote from develop @ ${SOURCE_SHORT}" \
             -m "Source: ${SOURCE_SHA}"
           git push --force origin main
+
+      - name: Trigger build-images workflow on main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # GitHub does not auto-trigger workflows from pushes made by GITHUB_TOKEN
+          # (loop-prevention safety). We chain the build-images workflow manually here
+          # so a single click on "Promote" produces both a clean main AND fresh images.
+          gh workflow run build-images.yml --ref main --repo ${{ github.repository }}
+          echo "✅ build-images workflow dispatched on main"
+          echo "Watch: https://github.com/${{ github.repository }}/actions/workflows/build-images.yml"
