@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Badge,
   Button,
@@ -21,6 +21,7 @@ import {
   useSendZohoInvoice,
   useZohoPaymentMirrors,
 } from "@/hooks/use-zoho-invoice"
+import { ClientFilterPicker } from "./client-filter-picker"
 
 const STATUS_TONE: Record<string, string> = {
   paid: "border-success/40 bg-success/10 text-success",
@@ -31,10 +32,37 @@ const STATUS_TONE: Record<string, string> = {
   partially_paid: "border-warning/40 bg-warning/10 text-warning",
 }
 
-export function ZohoPaymentMirrorTable() {
+interface ZohoPaymentMirrorTableProps {
+  /**
+   * When provided, locks the table to a single client (used by the client
+   * detail page's "Zoho receipts" section). The in-table picker is hidden.
+   */
+  lockedClientId?: string
+}
+
+export function ZohoPaymentMirrorTable({ lockedClientId }: ZohoPaymentMirrorTableProps = {}) {
   const { t, locale } = useLocale()
   const [page, setPage] = useState(1)
-  const { data, isLoading } = useZohoPaymentMirrors({ page, perPage: 25 })
+  const [filterClientId, setFilterClientId] = useState<string | null>(lockedClientId ?? null)
+  const [filterClientLabel, setFilterClientLabel] = useState<string | null>(null)
+
+  // External lock wins — prop changes (rare) reset internal filter state.
+  useEffect(() => {
+    if (lockedClientId !== undefined) {
+      setFilterClientId(lockedClientId ?? null)
+    }
+  }, [lockedClientId])
+
+  // Reset to page 1 whenever the filter changes so we don't land on a missing page.
+  useEffect(() => {
+    setPage(1)
+  }, [filterClientId])
+
+  const { data, isLoading } = useZohoPaymentMirrors({
+    page,
+    perPage: 25,
+    clientId: filterClientId ?? undefined,
+  })
   const send = useSendZohoInvoice()
   const [resentId, setResentId] = useState<string | null>(null)
 
@@ -47,8 +75,22 @@ export function ZohoPaymentMirrorTable() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("zoho.payments.title")}</CardTitle>
-        <p className="text-sm text-muted-foreground">{t("zoho.payments.description")}</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle>{t("zoho.payments.title")}</CardTitle>
+            <p className="text-sm text-muted-foreground">{t("zoho.payments.description")}</p>
+          </div>
+          {!lockedClientId ? (
+            <ClientFilterPicker
+              value={filterClientId}
+              onChange={(id, label) => {
+                setFilterClientId(id)
+                setFilterClientLabel(label)
+              }}
+              selectedLabel={filterClientLabel}
+            />
+          ) : null}
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (

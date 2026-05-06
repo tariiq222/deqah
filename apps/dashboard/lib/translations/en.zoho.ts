@@ -58,6 +58,11 @@ export const enZoho: Record<string, string> = {
   "zoho.payments.resending": "Sending…",
   "zoho.payments.resent": "Sent",
   "zoho.payments.empty": "No payments yet.",
+  "zoho.payments.filterClient": "Client:",
+  "zoho.payments.filterClear": "Clear filter",
+  "zoho.payments.filterPlaceholder": "Search by client name or phone…",
+  "zoho.payments.filterSearching": "Searching…",
+  "zoho.payments.filterNoResults": "No matching clients",
 
   "zoho.selectOrg.title": "Select Zoho organization",
   "zoho.selectOrg.description":

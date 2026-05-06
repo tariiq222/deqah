@@ -56,6 +56,11 @@ export const arZoho: Record<string, string> = {
   "zoho.payments.resending": "جارٍ الإرسال...",
   "zoho.payments.resent": "أُرسلت",
   "zoho.payments.empty": "لا توجد دفعات بعد.",
+  "zoho.payments.filterClient": "العميل:",
+  "zoho.payments.filterClear": "إزالة الفلتر",
+  "zoho.payments.filterPlaceholder": "ابحث باسم العميل أو رقم الجوال...",
+  "zoho.payments.filterSearching": "جارٍ البحث...",
+  "zoho.payments.filterNoResults": "لا توجد نتائج مطابقة",
 
   "zoho.selectOrg.title": "اختر منظمة زوهو",
   "zoho.selectOrg.description":
