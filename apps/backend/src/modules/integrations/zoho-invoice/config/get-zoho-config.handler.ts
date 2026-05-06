@@ -42,12 +42,14 @@ export class GetZohoConfigHandler {
   }
 
   private buildWebhookUrl(organizationId: string): string {
-    // Use the API host (DASHBOARD_PUBLIC_URL is the dashboard origin; webhooks
-    // hit the backend directly). We expose the org id verbatim — the secret
-    // is what protects the endpoint, not URL obscurity.
+    // Webhook URL must point at the BACKEND's public origin — Zoho's servers
+    // POST here from the internet. DASHBOARD_PUBLIC_URL is the dashboard host
+    // (e.g. app.deqah.app) and won't route to the API in production. Prefer
+    // API_PUBLIC_URL; fall back to legacy SMS_WEBHOOK_URL_BASE for backwards
+    // compatibility, then dev localhost as a last resort.
     const base =
-      this.cfg.get<string>('SMS_WEBHOOK_URL_BASE') ??
-      this.cfg.get<string>('DASHBOARD_PUBLIC_URL') ??
+      this.cfg.get<string>('API_PUBLIC_URL') ||
+      this.cfg.get<string>('SMS_WEBHOOK_URL_BASE') ||
       'http://localhost:5100';
     return `${base.replace(/\/$/, '')}/public/webhooks/zoho/${organizationId}`;
   }

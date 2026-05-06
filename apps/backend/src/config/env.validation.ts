@@ -175,6 +175,16 @@ export const envValidationSchema = Joi.object({
     then: Joi.string().uri({ scheme: ['https'] }).required(),
     otherwise: Joi.string().uri().allow('').optional(),
   }),
+  // Public origin of the backend itself (where third-party webhooks like Zoho
+  // will POST to). Distinct from DASHBOARD_PUBLIC_URL: the dashboard and the
+  // API typically live on different subdomains (app.deqah.app vs api.deqah.app)
+  // and only the API origin is reachable by external services.
+  // In production this MUST be HTTPS — Zoho refuses non-TLS webhook URLs.
+  API_PUBLIC_URL: Joi.when('NODE_ENV', {
+    is: 'production',
+    then: Joi.string().uri({ scheme: ['https'] }).required(),
+    otherwise: Joi.string().uri().allow('').optional(),
+  }),
   PUBLIC_WEBSITE_URL: Joi.when('NODE_ENV', {
     is: 'production',
     then: Joi.string().uri({ scheme: ['https'] }).required(),
