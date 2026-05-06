@@ -50,8 +50,12 @@ RUN pnpm --filter=backend run prisma:generate
 # not in the .pnpm store that pnpm's script runner expects.
 RUN cd /app/packages/shared && node /app/node_modules/typescript/bin/tsc -p tsconfig.json && test -f dist/constants/feature-keys.js
 
-# Sync freshly-built dist into hoisted node_modules copy (see backend Dockerfile note)
-RUN cp -r /app/packages/shared/dist /app/node_modules/@deqah/shared/dist \
+# Establish node_modules/@deqah/* symlinks pointing to packages/* (see backend note)
+RUN mkdir -p /app/node_modules/@deqah \
+ && rm -rf /app/node_modules/@deqah/shared /app/node_modules/@deqah/api-client /app/node_modules/@deqah/ui \
+ && ln -sf /app/packages/shared     /app/node_modules/@deqah/shared \
+ && ln -sf /app/packages/api-client /app/node_modules/@deqah/api-client \
+ && ln -sf /app/packages/ui         /app/node_modules/@deqah/ui \
  && test -f /app/node_modules/@deqah/shared/dist/constants/feature-keys.js
 
 # ── Stage 3: app-build ───────────────────────────────────────────────────────

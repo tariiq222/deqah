@@ -58,11 +58,15 @@ RUN pnpm --filter=backend run prisma:generate
 # lands at node_modules/typescript/ (not .pnpm/). Invoke tsc directly.
 RUN cd /app/packages/shared && node /app/node_modules/typescript/bin/tsc -p tsconfig.json && ls -la dist/ && test -f dist/constants/feature-keys.js
 
-# CRITICAL: pnpm with node-linker=hoisted COPIES workspace packages into
-# node_modules at install time (not symlink). Since pnpm install ran BEFORE
-# we built dist/, the copy in node_modules/@deqah/shared/ is missing dist/.
-# Sync the freshly-built dist back into node_modules so consumers can resolve it.
-RUN cp -r /app/packages/shared/dist /app/node_modules/@deqah/shared/dist \
+# Manually establish node_modules/@deqah/* → packages/* symlinks so consumers
+# resolve via the package.json#exports map. pnpm's hoisted linker doesn't
+# always create these reliably for workspace packages with empty stubs at
+# install time. Force them to exist now that dist/ is built.
+RUN mkdir -p /app/node_modules/@deqah \
+ && rm -rf /app/node_modules/@deqah/shared /app/node_modules/@deqah/api-client /app/node_modules/@deqah/ui \
+ && ln -sf /app/packages/shared     /app/node_modules/@deqah/shared \
+ && ln -sf /app/packages/api-client /app/node_modules/@deqah/api-client \
+ && ln -sf /app/packages/ui         /app/node_modules/@deqah/ui \
  && test -f /app/node_modules/@deqah/shared/dist/constants/feature-keys.js \
  && test -f /app/node_modules/@deqah/shared/dist/constants/feature-keys.d.ts
 
