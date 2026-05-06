@@ -4,14 +4,16 @@ import { getVisibleWidgets } from '@/lib/dashboard-widgets'
 const allow = (perms: string[]) => (m: string, a: string) =>
   perms.includes(`${m}:${a}`) || perms.includes(`${m}:*`) || perms.includes('*')
 
+// Subjects mirror what the BE emits via `flattenPermissions` (singular,
+// lowercased). See apps/backend/src/modules/identity/casl/flatten-permissions.ts.
 const OWNER = allow(['*'])
 const ADMIN = allow([
-  'bookings:*', 'clients:*', 'employees:*', 'invoices:*',
-  'payments:*', 'reports:*', 'settings:*', 'branding:*',
+  'booking:*', 'client:*', 'employee:*', 'invoice:*',
+  'payment:*', 'report:*', 'setting:*', 'branding:*',
 ])
-const RECEPTIONIST = allow(['bookings:*', 'clients:*', 'employees:read', 'invoices:read'])
-const ACCOUNTANT = allow(['invoices:*', 'payments:*', 'bookings:read', 'reports:read'])
-const EMPLOYEE = allow(['bookings:read', 'bookings:update', 'clients:read'])
+const RECEPTIONIST = allow(['booking:*', 'client:*', 'employee:read', 'invoice:read'])
+const ACCOUNTANT = allow(['invoice:*', 'payment:*', 'booking:read', 'report:read'])
+const EMPLOYEE = allow(['booking:read', 'booking:update', 'client:read'])
 
 describe('getVisibleWidgets', () => {
   it('OWNER sees everything including topPerformers', () => {

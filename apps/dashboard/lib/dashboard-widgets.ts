@@ -26,14 +26,17 @@ export function getVisibleWidgets(
   canDo: CanDo,
 ): VisibleWidgets {
   const role = membershipRole ?? ''
-  const canBookingRead = canDo('bookings', 'read')
-  const canBookingCreate = canDo('bookings', 'create')
-  const canBookingUpdate = canDo('bookings', 'update')
-  const canClientRead = canDo('clients', 'read')
-  const canClientCreate = canDo('clients', 'create')
-  const canPaymentRead = canDo('payments', 'read')
-  const canPaymentCreate = canDo('payments', 'create')
-  const canReportRead = canDo('reports', 'read')
+  // Subjects on the BE are singular PascalCase (Booking/Client/Payment/Report)
+  // and are lowercased by `flattenPermissions` before serialization to the
+  // `permissions` array. The dashboard's `canDo()` matches that flat string.
+  const canBookingRead = canDo('booking', 'read')
+  const canBookingCreate = canDo('booking', 'create')
+  const canBookingUpdate = canDo('booking', 'update')
+  const canClientRead = canDo('client', 'read')
+  const canClientCreate = canDo('client', 'create')
+  const canPaymentRead = canDo('payment', 'read')
+  const canPaymentCreate = canDo('payment', 'create')
+  const canReportRead = canDo('report', 'read')
 
   const quickActions: QuickActionKey[] = []
   if (role !== 'EMPLOYEE') {
