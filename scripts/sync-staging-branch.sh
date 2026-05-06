@@ -43,6 +43,14 @@ log "Output: ${OUT_DIR}"
 #
 # We use rsync with --exclude to strip out everything unwanted at the root level,
 # then do a second pass to strip nested sensitive files.
+#
+# NOTE on .github/: The entire .github/ directory is excluded by rsync.
+# After stripping, we re-inject ONLY .github/workflows/build-images.yml so
+# that the GitHub Actions build pipeline survives the sanitizer.
+# GitHub requires the workflow definition to exist in the pushed branch (main),
+# not develop — so this file must be present in the staging/main output.
+# Everything else under .github/ (CI tests, e2e, sync-staging.yml, templates)
+# stays stripped.
 
 log "Running rsync (allowlist pass)..."
 
@@ -126,6 +134,21 @@ find "${OUT_DIR}" -name ".DS_Store" -delete
 
 log "Nested-file stripping complete."
 
+# ─── Step 2b: Re-inject .github/workflows/build-images.yml ──────────────────
+# All of .github/ was excluded from rsync above (to prevent CI/test workflows,
+# PR templates, and internal tooling from reaching staging/main).
+# We copy ONLY build-images.yml back in so GitHub Actions can run the Docker
+# image build on push to main.
+BUILD_IMAGES_SRC="${REPO_ROOT}/.github/workflows/build-images.yml"
+BUILD_IMAGES_DST="${OUT_DIR}/.github/workflows/build-images.yml"
+if [[ -f "${BUILD_IMAGES_SRC}" ]]; then
+  mkdir -p "$(dirname "${BUILD_IMAGES_DST}")"
+  cp "${BUILD_IMAGES_SRC}" "${BUILD_IMAGES_DST}"
+  log "Re-injected .github/workflows/build-images.yml into staging tree."
+else
+  log "WARNING: .github/workflows/build-images.yml not found in source — skipping re-injection."
+fi
+
 # ─── Step 3: Regenerate minimal .gitignore in staging tree ───────────────────
 log "Writing minimal .gitignore for staging tree..."
 
@@ -175,6 +198,22 @@ if [[ -n "${LEAKED_AGENTS}" ]]; then
   FAIL=1
 fi
 
+# Verify build-images.yml was re-injected (must be present in staging/main
+# or the Docker image build workflow won't run on push to main)
+if [[ ! -f "${OUT_DIR}/.github/workflows/build-images.yml" ]]; then
+  echo "[sync-staging] FAIL: .github/workflows/build-images.yml missing from staging tree!" >&2
+  FAIL=1
+fi
+
+# Verify no other .github/ content leaked in (other than build-images.yml)
+OTHER_GITHUB=$(find "${OUT_DIR}/.github" -type f \
+  ! -path "${OUT_DIR}/.github/workflows/build-images.yml" 2>/dev/null)
+if [[ -n "${OTHER_GITHUB}" ]]; then
+  echo "[sync-staging] FAIL: unexpected .github/ files in staging tree:" >&2
+  echo "${OTHER_GITHUB}" >&2
+  FAIL=1
+fi
+
 if [[ ${FAIL} -ne 0 ]]; then
   error "Sanity checks failed — aborting. Staging tree is NOT safe to deploy."
 fi
@@ -204,10 +243,13 @@ if [[ -z "${IS_CI}" ]]; then
   echo "    [PASS] package.json exists"
   echo "    [PASS] No CLAUDE.md in tree"
   echo "    [PASS] No AGENTS.md in tree"
+  echo "    [PASS] .github/workflows/build-images.yml present"
+  echo "    [PASS] No other .github/ files leaked"
 
   echo ""
   echo "  CLAUDE.md search: $(find "${OUT_DIR}" -name "CLAUDE.md" | wc -l | tr -d ' ') found (expect 0)"
   echo "  AGENTS.md search: $(find "${OUT_DIR}" -name "AGENTS.md" | wc -l | tr -d ' ') found (expect 0)"
+  echo "  build-images.yml: $(test -f "${OUT_DIR}/.github/workflows/build-images.yml" && echo present || echo MISSING) (expect present)"
   echo "═══════════════════════════════════════════════════════"
   echo ""
 fi
