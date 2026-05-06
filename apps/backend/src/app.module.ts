@@ -1,6 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
+import { ThrottlerModule } from "@nestjs/throttler";
+import { TenantAwareThrottlerGuard } from "./common/throttler/tenant-aware-throttler.guard";
 import { ThrottlerStorageRedisService } from "@nest-lab/throttler-storage-redis";
 import { APP_GUARD } from "@nestjs/core";
 import { ClsModule } from "nestjs-cls";
@@ -89,7 +90,7 @@ import { PublicModule } from "./api/public/public.module";
     PublicModule,
   ],
   providers: [
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: TenantAwareThrottlerGuard },
     TenantResolverMiddleware,
   ],
 })

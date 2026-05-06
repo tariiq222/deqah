@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database';
+import { RlsHelper } from '../../../common/tenant/rls.helper';
 import { PasswordService } from '../shared/password.service';
 import type {
   AcceptInvitationCommand,
@@ -25,6 +26,7 @@ export class AcceptInvitationHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly password: PasswordService,
+    private readonly rls: RlsHelper,
   ) {}
 
   async execute(cmd: AcceptInvitationCommand): Promise<AcceptInvitationResult> {
@@ -57,6 +59,7 @@ export class AcceptInvitationHandler {
     }
 
     return this.prisma.$transaction(async (tx) => {
+      await this.rls.applyInTransaction(tx);
       let userId: string;
       let userPreExisting: boolean;
 

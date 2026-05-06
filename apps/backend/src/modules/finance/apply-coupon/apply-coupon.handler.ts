@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant/tenant-context.service';
+import { RlsHelper } from '../../../common/tenant/rls.helper';
 import { FeatureCheckService } from '../../platform/billing/feature-check.service';
 import { FeatureKey } from '@deqah/shared/constants/feature-keys';
 import { ApplyCouponDto } from './apply-coupon.dto';
@@ -15,6 +16,7 @@ export class ApplyCouponHandler {
     private readonly prisma: PrismaService,
     private readonly tenant: TenantContextService,
     private readonly featureCheck: FeatureCheckService,
+    private readonly rls: RlsHelper,
   ) {}
 
   async execute(cmd: ApplyCouponCommand) {
@@ -71,6 +73,7 @@ export class ApplyCouponHandler {
     const newTotal = parseFloat((newVatBase + newVatAmt).toFixed(2));
 
     return this.prisma.$transaction(async (tx) => {
+      await this.rls.applyInTransaction(tx);
       // Atomic guard: increment usedCount only if still below maxUses.
       // updateMany returns { count: 0 } if the WHERE predicate fails — prevents race condition.
       // organizationId included in all tx.* calls because tx bypasses the tenant Proxy.

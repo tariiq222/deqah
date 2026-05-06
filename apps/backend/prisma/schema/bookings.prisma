@@ -109,6 +109,8 @@ model Booking {
 
 // ─── Waitlist ─────────────────────────────────────────────────────────────────
 
+// Partial unique index on (organizationId, clientId, employeeId, serviceId) WHERE status = 'WAITING'
+// is enforced via migration 20260506110000_waitlist_unique_waiting (Prisma can't express partial uniques).
 model WaitlistEntry {
   id             String         @id @default(uuid())
   organizationId String // SaaS-02d

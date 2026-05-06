@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InvoiceStatus, PaymentStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
 import { EventBusService } from '../../../infrastructure/events';
+import { RlsHelper } from '../../../common/tenant/rls.helper';
 import { PaymentCompletedEvent } from '../events/payment-completed.event';
 
 interface VerifyPaymentCommand {
@@ -15,6 +16,7 @@ export class VerifyPaymentHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventBus: EventBusService,
+    private readonly rls: RlsHelper,
   ) {}
 
   async execute(cmd: VerifyPaymentCommand) {
@@ -45,6 +47,7 @@ export class VerifyPaymentHandler {
     // ISSUED invoice even though the money has been received.
     const { updatedPayment, newInvoiceStatus } = await this.prisma.$transaction(
       async (tx) => {
+        await this.rls.applyInTransaction(tx);
         const updated = await tx.payment.update({
           where: { id: cmd.paymentId },
           data: {

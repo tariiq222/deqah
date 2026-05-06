@@ -5,6 +5,7 @@ import { OtpSessionService } from '../../otp/otp-session.service';
 import { PasswordService } from '../../shared/password.service';
 import { ResetPasswordDto } from './reset-password.dto';
 import { TenantContextService } from '../../../../common/tenant';
+import { RlsHelper } from '../../../../common/tenant/rls.helper';
 import { PasswordHistoryService } from '../shared/password-history.service';
 
 @Injectable()
@@ -17,6 +18,7 @@ export class ResetPasswordHandler {
     private readonly passwords: PasswordService,
     private readonly tenant: TenantContextService,
     private readonly passwordHistory: PasswordHistoryService,
+    private readonly rls: RlsHelper,
   ) {}
 
   async execute(dto: ResetPasswordDto): Promise<void> {
@@ -57,6 +59,7 @@ export class ResetPasswordHandler {
     const passwordHash = await this.passwords.hash(dto.newPassword);
 
     await this.prisma.$transaction(async (tx) => {
+      await this.rls.applyInTransaction(tx);
       // Burn OTP session — unique constraint on jti prevents replay
       try {
         await tx.usedOtpSession.create({

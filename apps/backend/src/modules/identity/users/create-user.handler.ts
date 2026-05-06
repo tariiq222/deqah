@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable } from '@nestjs/comm
 import { MembershipRole, UserRole } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant/tenant-context.service';
+import { RlsHelper } from '../../../common/tenant/rls.helper';
 import { PasswordService } from '../shared/password.service';
 import { CreateUserDto } from './create-user.dto';
 
@@ -27,6 +28,7 @@ export class CreateUserHandler {
     private readonly prisma: PrismaService,
     private readonly password: PasswordService,
     private readonly tenantCtx: TenantContextService,
+    private readonly rls: RlsHelper,
   ) {}
 
   async execute(cmd: CreateUserCommand) {
@@ -39,6 +41,7 @@ export class CreateUserHandler {
     const membershipRole = toMembershipRole(cmd.role);
     const passwordHash = await this.password.hash(cmd.password);
     return this.prisma.$transaction(async (tx) => {
+      await this.rls.applyInTransaction(tx);
       const user = await tx.user.create({
         data: {
           email: cmd.email,

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PaymentStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
 import { EventBusService } from '../../../infrastructure/events';
+import { RlsHelper } from '../../../common/tenant/rls.helper';
 import { RefundCompletedEvent } from '../events/refund-completed.event';
 
 interface RefundPaymentCommand {
@@ -27,6 +28,7 @@ export class RefundPaymentHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventBus: EventBusService,
+    private readonly rls: RlsHelper,
   ) {}
 
   async execute(cmd: RefundPaymentCommand) {
@@ -44,6 +46,7 @@ export class RefundPaymentHandler {
     const refundAmount = cmd.amount ?? Number(payment.amount);
 
     const { updatedPayment, refundRequestId } = await this.prisma.$transaction(async (tx) => {
+      await this.rls.applyInTransaction(tx);
       const refundRow = await tx.refundRequest.create({
         data: {
           organizationId: payment.invoice.organizationId,

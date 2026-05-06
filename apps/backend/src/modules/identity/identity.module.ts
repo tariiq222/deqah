@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { DatabaseModule } from '../../infrastructure/database';
+import { TenantModule } from '../../common/tenant';
 import { RedisService } from '../../infrastructure/cache/redis.service';
 import { JwtStrategy } from './jwt.strategy';
 import { ClientJwtStrategy } from './client-jwt.strategy';
@@ -100,6 +101,7 @@ const handlers = [
 @Module({
   imports: [
     DatabaseModule,
+    TenantModule,
     MailModule,
     StorageModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),

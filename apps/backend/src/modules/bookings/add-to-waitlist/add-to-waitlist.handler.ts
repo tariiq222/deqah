@@ -1,4 +1,5 @@
 import { Injectable, ConflictException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { AddToWaitlistDto } from './add-to-waitlist.dto';
@@ -26,17 +27,24 @@ export class AddToWaitlistHandler {
     });
     if (existing) throw new ConflictException('Client is already on the waitlist for this employee and service');
 
-    return this.prisma.waitlistEntry.create({
-      data: {
-        organizationId,
-        clientId: cmd.clientId,
-        employeeId: cmd.employeeId,
-        serviceId: cmd.serviceId,
-        branchId: cmd.branchId,
-        preferredDate: cmd.preferredDate,
-        notes: cmd.notes,
-        status: 'WAITING',
-      },
-    });
+    try {
+      return await this.prisma.waitlistEntry.create({
+        data: {
+          organizationId,
+          clientId: cmd.clientId,
+          employeeId: cmd.employeeId,
+          serviceId: cmd.serviceId,
+          branchId: cmd.branchId,
+          preferredDate: cmd.preferredDate,
+          notes: cmd.notes,
+          status: 'WAITING',
+        },
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        throw new ConflictException('Client is already on the waitlist for this employee and service');
+      }
+      throw err;
+    }
   }
 }

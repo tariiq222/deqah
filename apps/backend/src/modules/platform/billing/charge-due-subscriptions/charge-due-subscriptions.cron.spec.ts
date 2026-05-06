@@ -41,12 +41,20 @@ const buildDeps = () => ({
 
 const buildFlags = (planVersioningEnabled = false) => ({ planVersioningEnabled });
 
+const buildOverage = (
+  lines: Array<{ metric: string; included: number; used: number; overage: number; rate: number; amount: number }> = [],
+  totalOverage = 0,
+) => ({
+  computeForSubscription: jest.fn().mockResolvedValue({ lines, totalOverage }),
+});
+
 const buildCron = (
   prisma: ReturnType<typeof buildPrisma>,
   config: ReturnType<typeof buildConfig>,
   deps = buildDeps(),
   cls = buildCls(),
   flags = buildFlags(),
+  overage = buildOverage(),
 ) =>
   new ChargeDueSubscriptionsCron(
     prisma as never,
@@ -56,6 +64,7 @@ const buildCron = (
     deps.recordPayment as never,
     deps.recordFailure as never,
     flags as never,
+    overage as never,
   );
 
 const PAST_DATE = new Date(Date.now() - 1000);
@@ -417,6 +426,65 @@ describe('ChargeDueSubscriptionsCron', () => {
       );
       expect(deps.moyasar.chargeWithToken).toHaveBeenCalledWith(
         expect.objectContaining({ amount: 23_000 }), // 230 * 100
+      );
+    });
+  });
+
+  describe('overage wiring', () => {
+    it('includes overage in invoice when computeForSubscription returns totalOverage > 0', async () => {
+      const overageLine = {
+        metric: 'BOOKINGS_PER_MONTH',
+        included: 500,
+        used: 550,
+        overage: 50,
+        rate: 0.5,
+        amount: 25,
+      };
+      const sub = {
+        id: 'sub-overage',
+        organizationId: 'org-overage',
+        billingCycle: 'MONTHLY',
+        currentPeriodStart: new Date('2026-04-01'),
+        currentPeriodEnd: PAST_DATE,
+        moyasarCardTokenRef: null,
+        plan: { priceMonthly: 199, priceAnnual: 1990, limits: { maxBookingsPerMonth: 500, overageRateBookings: 0.5 } },
+        planVersion: null,
+      };
+      const prisma = buildPrisma([sub]);
+      const deps = buildDeps();
+      const overage = buildOverage([overageLine], 25);
+      const cron = buildCron(prisma, buildConfig(true), deps, buildCls(), buildFlags(), overage);
+
+      await cron.execute();
+
+      // computeForSubscription must be called with the subscription's period + limits
+      expect(overage.computeForSubscription).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subscriptionId: 'sub-overage',
+          organizationId: 'org-overage',
+          periodStart: sub.currentPeriodStart,
+        }),
+      );
+
+      // flatAmount=199, overage=25, subtotal=224, vat=33.6, total=257.6
+      const createCall = prisma.$allTenants.subscriptionInvoice.create.mock.calls[0][0] as {
+        data: {
+          flatAmount: number;
+          overageAmount: number;
+          amount: number;
+          lineItems: Array<{ kind: string }>;
+        };
+      };
+      expect(createCall.data.flatAmount).toBe(199);
+      expect(createCall.data.overageAmount).toBe(25);
+      // subtotal = 199 + 25 = 224; vat = 224 * 0.15 = 33.6; total = 257.6
+      expect(createCall.data.amount).toBe(257.6);
+      expect(createCall.data.lineItems).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ kind: 'FLAT_FEE' }),
+          expect.objectContaining({ kind: 'OVERAGE', metric: 'BOOKINGS_PER_MONTH', amount: 25 }),
+          expect.objectContaining({ kind: 'VAT' }),
+        ]),
       );
     });
   });

@@ -7,12 +7,17 @@ import { MoyasarSubscriptionClient } from '../../../finance/moyasar-api/moyasar-
 import { RecordSubscriptionPaymentHandler } from '../record-subscription-payment/record-subscription-payment.handler';
 import { RecordSubscriptionPaymentFailureHandler } from '../record-subscription-payment-failure/record-subscription-payment-failure.handler';
 import { LaunchFlags } from '../feature-flags/launch-flags';
+import { ComputeOverageCron } from '../compute-overage/compute-overage.cron';
 
 const PLATFORM_VAT_RATE = 0.15;
 
 interface PriceSource {
   priceMonthly: unknown;
   priceAnnual: unknown;
+}
+
+interface PlanLimitsSource {
+  limits: unknown; // JSON column from Prisma — Record<string, number | boolean> at runtime
 }
 
 interface SubWithPlan {
@@ -22,8 +27,8 @@ interface SubWithPlan {
   currentPeriodStart: Date;
   currentPeriodEnd: Date;
   moyasarCardTokenRef: string | null;
-  plan: PriceSource;
-  planVersion: PriceSource | null;
+  plan: PriceSource & PlanLimitsSource;
+  planVersion: (PriceSource & PlanLimitsSource) | null;
 }
 
 @Injectable()
@@ -38,6 +43,7 @@ export class ChargeDueSubscriptionsCron {
     private readonly recordPayment: RecordSubscriptionPaymentHandler,
     private readonly recordFailure: RecordSubscriptionPaymentFailureHandler,
     private readonly flags: LaunchFlags,
+    private readonly overage: ComputeOverageCron,
   ) {}
 
   async execute(): Promise<void> {
@@ -88,13 +94,31 @@ export class ChargeDueSubscriptionsCron {
         ? Number(priceSource.priceAnnual)
         : Number(priceSource.priceMonthly);
 
-    const overageAmount = 0;
+    const { lines: overageDetail, totalOverage } = await this.overage.computeForSubscription({
+      subscriptionId: sub.id,
+      organizationId: sub.organizationId,
+      periodStart: sub.currentPeriodStart,
+      limits: (sub.plan.limits as Record<string, number | boolean>) ?? {},
+      planVersionLimits: sub.planVersion
+        ? (sub.planVersion.limits as Record<string, number | boolean>)
+        : undefined,
+    });
+    const overageAmount = totalOverage;
     const flatLine = {
       kind: 'FLAT_FEE' as const,
       description: `Subscription ${sub.billingCycle.toLowerCase()}`,
       amount: flatAmount,
     };
-    const overageLines: Array<{ kind: 'OVERAGE'; amount: number }> = [];
+    const overageLines = overageDetail.map((l) => ({
+      kind: 'OVERAGE' as const,
+      metric: l.metric,
+      included: l.included,
+      used: l.used,
+      overage: l.overage,
+      rate: l.rate,
+      amount: l.amount,
+      description: `Overage: ${l.metric} (${l.overage} × ${l.rate} SAR)`,
+    }));
     const subtotal = flatAmount + overageAmount;
     const vatAmt = Number((subtotal * PLATFORM_VAT_RATE).toFixed(2));
     const total = Number((subtotal + vatAmt).toFixed(2));

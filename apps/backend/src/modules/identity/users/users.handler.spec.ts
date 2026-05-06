@@ -4,6 +4,7 @@ import { DeactivateUserHandler } from './deactivate-user.handler';
 import { GetUserHandler } from './get-user.handler';
 import { ListUsersHandler } from './list-users.handler';
 import { UpdateUserHandler } from './update-user.handler';
+import { RlsHelper } from '../../../common/tenant/rls.helper';
 
 const buildUsersPrisma = () => {
   const prisma = {
@@ -34,6 +35,7 @@ const buildUsersPrisma = () => {
 const buildTenantCtx = (organizationId = 'org-1') => ({
   requireOrganizationId: jest.fn().mockReturnValue(organizationId),
 });
+const buildRls = () => ({ applyInTransaction: jest.fn().mockResolvedValue(undefined) } as unknown as RlsHelper);
 
 describe('CreateUserHandler', () => {
   it('creates user with hashed password and active tenant membership', async () => {
@@ -41,7 +43,7 @@ describe('CreateUserHandler', () => {
     prisma.user.findUnique = jest.fn().mockResolvedValue(null);
     const passwordService = { hash: jest.fn().mockResolvedValue('hashed') };
     const tenantCtx = buildTenantCtx('org-1');
-    const handler = new CreateUserHandler(prisma as never, passwordService as never, tenantCtx as never);
+    const handler = new CreateUserHandler(prisma as never, passwordService as never, tenantCtx as never, buildRls());
     const result = await handler.execute({
       email: 'a@b.com', password: 'pass123', name: 'Ali', role: 'RECEPTIONIST' as never,
     });
@@ -68,7 +70,7 @@ describe('CreateUserHandler', () => {
     const prisma = buildUsersPrisma();
     prisma.user.findUnique = jest.fn().mockResolvedValue({ id: 'existing' });
     const passwordService = { hash: jest.fn().mockResolvedValue('hashed') };
-    const handler = new CreateUserHandler(prisma as never, passwordService as never, buildTenantCtx() as never);
+    const handler = new CreateUserHandler(prisma as never, passwordService as never, buildTenantCtx() as never, buildRls());
     await expect(
       handler.execute({ email: 'a@b.com', password: 'pass', name: 'Ali', role: 'RECEPTIONIST' as never }),
     ).rejects.toThrow(ConflictException);
@@ -164,7 +166,7 @@ describe('GetUserHandler', () => {
 describe('UpdateUserHandler', () => {
   it('updates user fields', async () => {
     const prisma = buildUsersPrisma();
-    const handler = new UpdateUserHandler(prisma as never, buildTenantCtx('org-1') as never);
+    const handler = new UpdateUserHandler(prisma as never, buildTenantCtx('org-1') as never, buildRls());
     await handler.execute({
       userId: 'u-1',
       email: 'new@clinic.sa',
@@ -202,7 +204,7 @@ describe('UpdateUserHandler', () => {
   it('throws NotFoundException when user not found', async () => {
     const prisma = buildUsersPrisma();
     prisma.user.findFirst = jest.fn().mockResolvedValue(null);
-    const handler = new UpdateUserHandler(prisma as never, buildTenantCtx() as never);
+    const handler = new UpdateUserHandler(prisma as never, buildTenantCtx() as never, buildRls());
     await expect(handler.execute({ userId: 'bad' })).rejects.toThrow('not found');
   });
 });

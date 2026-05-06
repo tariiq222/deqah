@@ -6,6 +6,7 @@ import { PrismaService } from '../../../../infrastructure/database';
 import { OtpSessionService } from '../../otp/otp-session.service';
 import { PasswordService } from '../../shared/password.service';
 import { TenantContextService } from '../../../../common/tenant';
+import { RlsHelper } from '../../../../common/tenant/rls.helper';
 import { PasswordHistoryService } from '../shared/password-history.service';
 
 describe('ResetPasswordHandler', () => {
@@ -18,6 +19,7 @@ describe('ResetPasswordHandler', () => {
     usedOtpSession: { create: jest.fn() },
     clientRefreshToken: { updateMany: jest.fn() },
     passwordHistory: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
+    $executeRawUnsafe: jest.fn().mockResolvedValue(undefined),
   };
 
   const mockPrisma: {
@@ -56,6 +58,7 @@ describe('ResetPasswordHandler', () => {
         { provide: PasswordService, useValue: mockPasswords },
         { provide: TenantContextService, useValue: { requireOrganizationIdOrDefault: () => 'org-test' } },
         { provide: PasswordHistoryService, useValue: mockPasswordHistory },
+        { provide: RlsHelper, useValue: { applyInTransaction: jest.fn().mockResolvedValue(undefined) } },
       ],
     }).compile();
 
