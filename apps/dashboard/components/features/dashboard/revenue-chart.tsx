@@ -35,7 +35,7 @@ export function RevenueChart() {
   const maxAmount = days.reduce((m, d) => Math.max(m, d.amount), 0)
 
   return (
-    <Card className="p-6">
+    <Card className="p-6" data-testid="revenue-chart">
       <div className="mb-5 flex items-center justify-between">
         <h2 className="text-base font-bold text-foreground">
           {t("dashboard.weeklyRevenue")}
