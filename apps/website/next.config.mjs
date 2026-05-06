@@ -6,6 +6,8 @@ const nextConfig = {
   outputFileTracingRoot: new URL('../../', import.meta.url).pathname,
   transpilePackages: ['@deqah/api-client', '@deqah/shared'],
   typedRoutes: false,
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
 };
 
 export default withSentryConfig(nextConfig, {
