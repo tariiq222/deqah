@@ -29,7 +29,9 @@ export default function DashboardPage() {
   const { user, canDo } = useAuth()
   const { locale, t } = useLocale()
 
-  const membershipRole = user?.activeMembership?.role ?? null
+  // Login response doesn't include activeMembership (only /auth/me does); fall
+  // back to the legacy User.role string until the membership hydrates.
+  const membershipRole = user?.activeMembership?.role ?? user?.role ?? null
   const visible = useMemo(
     () => getVisibleWidgets(membershipRole, canDo),
     [membershipRole, canDo],
