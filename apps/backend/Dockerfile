@@ -109,6 +109,14 @@ RUN mkdir -p /app/node_modules/@deqah \
  && test -f /app/node_modules/@deqah/shared/dist/constants/feature-keys.d.ts \
   || (echo "❌ symlink fix failed — d.ts not reachable" && exit 1)
 
+# Diagnose uuid resolution before nest build
+RUN echo "=== uuid in node_modules ===" \
+ && ls -la /app/node_modules/uuid 2>&1 | head -5 || true \
+ && echo "=== @types/uuid ===" \
+ && ls -la /app/node_modules/@types/ 2>&1 | head -10 || true \
+ && echo "=== uuid via .pnpm ===" \
+ && ls /app/node_modules/.pnpm/ 2>&1 | grep -i uuid | head -3 || true
+
 RUN cd /app/apps/backend && /app/node_modules/.bin/nest build
 
 # ── Stage 4: runner ──────────────────────────────────────────────────────────
