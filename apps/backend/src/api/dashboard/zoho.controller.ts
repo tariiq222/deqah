@@ -52,6 +52,7 @@ const FEATURE = FeatureKey.ZOHO_INVOICE_INTEGRATION;
 @ApiBearerAuth()
 @ApiStandardResponses()
 @Controller('dashboard/integrations/zoho')
+@UseGuards(JwtGuard, CaslGuard)
 export class DashboardZohoController {
   constructor(
     private readonly startConnect: StartConnectHandler,
@@ -71,7 +72,6 @@ export class DashboardZohoController {
   // ───────── Status ─────────
 
   @Get()
-  @UseGuards(JwtGuard, CaslGuard)
   @RequireFeature(FEATURE)
   @ApiOperation({ summary: 'Get Zoho Invoice integration status (no secrets)' })
   @ApiOkResponse({
@@ -84,7 +84,6 @@ export class DashboardZohoController {
   // ───────── Connect ─────────
 
   @Get('connect')
-  @UseGuards(JwtGuard, CaslGuard)
   @RequireFeature(FEATURE)
   @ApiOperation({ summary: 'Build the Zoho OAuth consent URL' })
   @ApiQuery({
@@ -125,7 +124,6 @@ export class DashboardZohoController {
   }
 
   @Post('select-organization')
-  @UseGuards(JwtGuard, CaslGuard)
   @RequireFeature(FEATURE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -137,7 +135,6 @@ export class DashboardZohoController {
   }
 
   @Delete()
-  @UseGuards(JwtGuard, CaslGuard)
   @RequireFeature(FEATURE)
   @ApiOperation({
     summary: 'Disconnect Zoho — revokes the refresh token and deletes the integration row',
@@ -149,7 +146,6 @@ export class DashboardZohoController {
   // ───────── Config ─────────
 
   @Put('config')
-  @UseGuards(JwtGuard, CaslGuard)
   @RequireFeature(FEATURE)
   @ApiOperation({ summary: 'Update tenant defaults (sendOnCreate, item id, payment terms, ...)' })
   update(@Body() dto: UpdateConfigDto) {
@@ -157,7 +153,6 @@ export class DashboardZohoController {
   }
 
   @Post('test')
-  @UseGuards(JwtGuard, CaslGuard)
   @RequireFeature(FEATURE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Validate the stored Zoho credentials' })
@@ -168,7 +163,6 @@ export class DashboardZohoController {
   // ───────── Invoices proxy ─────────
 
   @Get('invoices')
-  @UseGuards(JwtGuard, CaslGuard)
   @RequireFeature(FEATURE)
   @ApiOperation({ summary: 'List invoices in the connected Zoho organization' })
   list(@Query() query: ListInvoicesQueryDto) {
@@ -176,7 +170,6 @@ export class DashboardZohoController {
   }
 
   @Get('invoices/:id')
-  @UseGuards(JwtGuard, CaslGuard)
   @RequireFeature(FEATURE)
   @ApiOperation({ summary: 'Fetch a Zoho invoice by id' })
   get(@Param('id') id: string) {
@@ -184,7 +177,6 @@ export class DashboardZohoController {
   }
 
   @Post('invoices/:id/send')
-  @UseGuards(JwtGuard, CaslGuard)
   @RequireFeature(FEATURE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Re-send a Zoho invoice via email' })
@@ -193,7 +185,6 @@ export class DashboardZohoController {
   }
 
   @Post('invoices/:id/void')
-  @UseGuards(JwtGuard, CaslGuard)
   @RequireFeature(FEATURE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Void a Zoho invoice' })
@@ -204,7 +195,6 @@ export class DashboardZohoController {
   // ───────── Payments ↔ Zoho mirror ─────────
 
   @Get('payments-mirror')
-  @UseGuards(JwtGuard, CaslGuard)
   @RequireFeature(FEATURE)
   @ApiOperation({
     summary:
