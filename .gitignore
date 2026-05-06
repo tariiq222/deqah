@@ -101,7 +101,9 @@ __pycache__/
 *.pyo
 
 # ─── Local-only folders (not tracked) ─────────────────────────
-docs/
+docs/*
+!docs/operations/
+!docs/operations/**
 .superpowers/
 _archived_dashboard/
 

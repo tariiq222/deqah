@@ -1,36 +1,75 @@
 # syntax=docker/dockerfile:1.6
 # Deqah Dashboard — Next.js 15 production build (App Router).
 # Build context MUST be the monorepo root.
+#
+# Stage 1 (deps):         install all workspace deps — cached layer
+# Stage 2 (shared-build): compile packages/shared into dist/ — fixes TS2307
+# Stage 3 (app-build):    compile the Next.js app (adds arch-native CSS binaries here)
+# Stage 4 (runner):       minimal runtime image
+#
+# Note: Dashboard does NOT have output:'standalone' in next.config.mjs,
+# so the runner copies the full .next + node_modules.
 
+# ── Stage 1: deps ────────────────────────────────────────────────────────────
 FROM node:20-bookworm-slim AS deps
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
-COPY package.json pnpm-workspace.yaml .npmrc ./
-COPY apps/dashboard/package.json ./apps/dashboard/
-COPY packages/api-client/package.json ./packages/api-client/
-COPY packages/shared/package.json ./packages/shared/
-COPY packages/ui/package.json ./packages/ui/
 
-ARG TARGETARCH
-RUN pnpm install --frozen-lockfile \
- && if [ "$TARGETARCH" = "arm64" ]; then \
-      pnpm add --no-save --ignore-scripts=false \
-        lightningcss-linux-arm64-gnu \
-        @tailwindcss/oxide-linux-arm64-gnu; \
-    else \
-      pnpm add --no-save --ignore-scripts=false \
-        lightningcss-linux-x64-gnu \
-        @tailwindcss/oxide-linux-x64-gnu; \
-    fi
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
+COPY apps/dashboard/package.json       ./apps/dashboard/
+COPY packages/shared/package.json      ./packages/shared/
+COPY packages/api-client/package.json  ./packages/api-client/
+COPY packages/ui/package.json          ./packages/ui/
 
-FROM node:20-bookworm-slim AS builder
+RUN pnpm install --frozen-lockfile
+
+# ── Stage 2: shared-build ────────────────────────────────────────────────────
+# Compiles packages/shared → dist/ so consuming apps can resolve its exports.
+# Does NOT install arch-native CSS binaries — those are only needed by next build.
+FROM node:20-bookworm-slim AS shared-build
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
+COPY packages/shared/package.json      ./packages/shared/
+COPY packages/api-client/package.json  ./packages/api-client/
+COPY packages/ui/package.json          ./packages/ui/
+COPY apps/dashboard/package.json       ./apps/dashboard/
+COPY apps/backend/package.json         ./apps/backend/
+
+# Full install so devDeps (typescript) and prisma CLI are available
+RUN pnpm install --frozen-lockfile
+
+COPY packages/ ./packages/
+# packages/shared imports SubscriptionStatus from @prisma/client (generated types).
+# Run prisma generate so the generated client exists before tsc compiles shared.
+COPY apps/backend/prisma           ./apps/backend/prisma
+COPY apps/backend/prisma.config.ts ./apps/backend/prisma.config.ts
+RUN pnpm --filter=backend run prisma:generate
+# Invoke tsc directly — hoisted linker puts typescript at node_modules/typescript/,
+# not in the .pnpm store that pnpm's script runner expects.
+RUN node /app/node_modules/typescript/bin/tsc -p /app/packages/shared/tsconfig.json
+
+# ── Stage 3: app-build ───────────────────────────────────────────────────────
+FROM node:20-bookworm-slim AS app-build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+
+COPY --from=shared-build /app/node_modules ./node_modules
+COPY --from=shared-build /app/packages     ./packages
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
+COPY apps/dashboard/ ./apps/dashboard/
+
+# Add arch-native Tailwind/lightningcss binaries needed by next build
+RUN ARCH=$(uname -m | sed 's/aarch64/arm64/;s/x86_64/x64/') \
+ && pnpm add -w --ignore-scripts=false \
+      lightningcss-linux-${ARCH}-gnu \
+      @tailwindcss/oxide-linux-${ARCH}-gnu
+
 RUN pnpm --filter=dashboard run build
 
+# ── Stage 4: runner ──────────────────────────────────────────────────────────
 FROM node:20-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
@@ -38,15 +77,18 @@ ENV PORT=5103
 ENV HOSTNAME=0.0.0.0
 ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/packages ./packages
-COPY --from=builder /app/apps/dashboard/package.json ./apps/dashboard/package.json
-COPY --from=builder /app/apps/dashboard/next.config.mjs ./apps/dashboard/next.config.mjs
-COPY --from=builder /app/apps/dashboard/.next ./apps/dashboard/.next
-COPY --from=builder /app/apps/dashboard/public ./apps/dashboard/public
+COPY --from=app-build /app/node_modules                       ./node_modules
+COPY --from=app-build /app/package.json                       ./package.json
+COPY --from=app-build /app/packages                           ./packages
+COPY --from=app-build /app/apps/dashboard/package.json        ./apps/dashboard/package.json
+COPY --from=app-build /app/apps/dashboard/next.config.mjs     ./apps/dashboard/next.config.mjs
+COPY --from=app-build /app/apps/dashboard/.next               ./apps/dashboard/.next
+COPY --from=app-build /app/apps/dashboard/public              ./apps/dashboard/public
 
 WORKDIR /app/apps/dashboard
 EXPOSE 5103
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD wget -q --spider http://localhost:5103 || exit 1
 
 CMD ["npx", "next", "start", "-p", "5103", "-H", "0.0.0.0"]
