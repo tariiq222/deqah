@@ -2,9 +2,11 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ZohoOAuthService } from './zoho-oauth.service';
+import { ZohoAuditService } from './zoho-audit.service';
 import { zohoApiBaseUrl, type ZohoDataCenter } from './zoho-dc';
 import type {
   ZohoContact,
@@ -42,7 +44,10 @@ interface FetchOpts extends Omit<RequestInit, 'body'> {
 export class ZohoApiClient {
   private readonly logger = new Logger(ZohoApiClient.name);
 
-  constructor(private readonly oauth: ZohoOAuthService) {}
+  constructor(
+    private readonly oauth: ZohoOAuthService,
+    @Optional() private readonly audit?: ZohoAuditService,
+  ) {}
 
   // ───────── Organizations ─────────
 
@@ -244,11 +249,19 @@ export class ZohoApiClient {
       body = JSON.stringify(opts.jsonBody);
     }
 
+    const isMutating = method !== 'GET';
+    const startMs = Date.now();
     const res = await this.fetchWithRetry(url.toString(), { method, headers, body });
+    const durationMs = Date.now() - startMs;
+
     if (res.status === 401) {
-      // Access token rejected — Zoho's caching layer can lag; clear the cache
-      // and bubble up so the caller can decide to surface a reconnect banner.
       this.oauth.invalidateToken(ctx.organizationId);
+      if (isMutating) {
+        this.audit?.record({
+          organizationId: ctx.organizationId, method: method as 'POST' | 'PUT' | 'DELETE',
+          path, statusCode: 401, requestBody: opts.jsonBody, durationMs, error: 'access token rejected',
+        });
+      }
       throw new UnauthorizedException('Zoho rejected the access token — reconnect required');
     }
     const text = await res.text();
@@ -266,13 +279,27 @@ export class ZohoApiClient {
       );
       const apiCode = (json as { code?: number } | undefined)?.code;
       const apiMsg = (json as { message?: string } | undefined)?.message ?? res.statusText;
-      // Zoho code 57 = INVALID_TOKEN.
+      if (isMutating) {
+        this.audit?.record({
+          organizationId: ctx.organizationId, method: method as 'POST' | 'PUT' | 'DELETE',
+          path, statusCode: res.status, requestBody: opts.jsonBody, responseBody: json,
+          durationMs, error: apiMsg,
+        });
+      }
       if (apiCode === 57) {
         throw new UnauthorizedException('Zoho refresh token revoked — reconnect required');
       }
       throw new InternalServerErrorException(
         `Zoho API error: ${apiMsg}${apiCode ? ` (code ${apiCode})` : ''}`,
       );
+    }
+    // Audit successful mutations.
+    if (isMutating) {
+      this.audit?.record({
+        organizationId: ctx.organizationId, method: method as 'POST' | 'PUT' | 'DELETE',
+        path, statusCode: res.status, requestBody: opts.jsonBody, responseBody: json,
+        durationMs,
+      });
     }
     return (json ?? {}) as T;
   }

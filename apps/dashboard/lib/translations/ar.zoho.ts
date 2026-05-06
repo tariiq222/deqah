@@ -67,4 +67,7 @@ export const arZoho: Record<string, string> = {
     "حسابك مرتبط بأكثر من منظمة في زوهو. اختر التي تريد إصدار فواتيرك منها.",
   "zoho.selectOrg.confirm": "تأكيد",
   "zoho.selectOrg.placeholder": "أدخل معرف منظمة زوهو (organization_id)",
+
+  "zoho.banner.reconnect": "ربط Zoho Invoice متوقف — الفواتير الجديدة لن تُصدر حتى تعيد الربط.",
+  "zoho.banner.reconnectLink": "أعد الربط من الإعدادات",
 }

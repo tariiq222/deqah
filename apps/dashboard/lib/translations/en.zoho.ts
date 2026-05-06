@@ -69,4 +69,7 @@ export const enZoho: Record<string, string> = {
     "Your Zoho account has multiple organizations. Pick the one to issue invoices from.",
   "zoho.selectOrg.confirm": "Confirm",
   "zoho.selectOrg.placeholder": "Enter Zoho organization_id",
+
+  "zoho.banner.reconnect": "Zoho Invoice connection is down — new invoices will not be issued until you reconnect.",
+  "zoho.banner.reconnectLink": "Reconnect in settings",
 }

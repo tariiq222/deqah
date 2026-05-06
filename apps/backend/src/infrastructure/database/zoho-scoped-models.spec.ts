@@ -17,7 +17,7 @@ describe('Zoho models are registered as SCOPED_MODELS', () => {
     'utf8',
   );
 
-  it.each(['ZohoContactLink', 'ZohoInvoiceLink', 'ZohoCreditNoteLink', 'ZohoWebhookEvent'])(
+  it.each(['ZohoContactLink', 'ZohoInvoiceLink', 'ZohoCreditNoteLink', 'ZohoWebhookEvent', 'IntegrationAuditLog'])(
     'has %s in the SCOPED_MODELS registry',
     (model) => {
       // Match a line of the form:  'ZohoContactLink',  inside the SCOPED_MODELS Set.
@@ -33,7 +33,7 @@ describe('Zoho models are registered as SCOPED_MODELS', () => {
     expect(startIdx).toBeGreaterThan(0);
     expect(endIdx).toBeGreaterThan(startIdx);
     const slice = SOURCE.slice(startIdx, endIdx);
-    for (const m of ['ZohoContactLink', 'ZohoInvoiceLink', 'ZohoCreditNoteLink', 'ZohoWebhookEvent']) {
+    for (const m of ['ZohoContactLink', 'ZohoInvoiceLink', 'ZohoCreditNoteLink', 'ZohoWebhookEvent', 'IntegrationAuditLog']) {
       expect(slice).toContain(m);
     }
   });

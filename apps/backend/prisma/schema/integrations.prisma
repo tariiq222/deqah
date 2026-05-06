@@ -93,6 +93,32 @@ model ZohoCreditNoteLink {
   @@index([zohoInvoiceLinkId])
 }
 
+// ─── Integration audit log ─────────────────────────────────────────────────
+//
+// Records every mutating Zoho API call (POST, PUT, DELETE) with a redacted
+// snapshot of the request and response. Used for compliance auditing and
+// debugging — never for business logic. Bodies are JSON-redacted: any key
+// whose name contains "token", "secret", "password", or "key" has its
+// value replaced with "***" before persistence.
+
+model IntegrationAuditLog {
+  id             String   @id @default(uuid())
+  organizationId String
+  provider       String // 'zoho-invoice'
+  method         String // 'POST' | 'PUT' | 'DELETE'
+  path           String // e.g. '/invoice/v3/invoices'
+  statusCode     Int // HTTP status from Zoho
+  requestBody    Json? // redacted request payload
+  responseBody   Json? // redacted response (first 4 KB)
+  durationMs     Int // wall-clock time of the fetch
+  error          String? // error message if the call failed
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, provider])
+  @@index([organizationId, createdAt])
+  @@index([provider, method])
+}
+
 // ─── Zoho webhook event ────────────────────────────────────────────────────
 //
 // Stores every signature-verified Zoho webhook delivery for dedup + audit.

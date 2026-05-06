@@ -10,6 +10,7 @@ import { CommandPalette } from "@/components/features/command-palette"
 import { BillingShell } from "@/components/billing-shell"
 import { ImpersonationBanner } from "@/components/impersonation-banner"
 import { TrialBanner } from "@/components/trial-banner"
+import { ZohoReconnectBanner } from "@/components/zoho-reconnect-banner"
 
 export default function DashboardLayout({
   children,
@@ -26,6 +27,7 @@ export default function DashboardLayout({
               <Header />
               <ImpersonationBanner />
               <TrialBanner />
+              <ZohoReconnectBanner />
               <div className="flex-1 overflow-y-auto p-4 md:px-8 md:py-7">
                 {children}
               </div>

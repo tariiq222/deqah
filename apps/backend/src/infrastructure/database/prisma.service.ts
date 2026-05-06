@@ -128,6 +128,7 @@ const SCOPED_MODELS: TenantScopedModelRegistry = new Set<string>([
   'ZohoInvoiceLink',
   'ZohoCreditNoteLink',
   'ZohoWebhookEvent',
+  'IntegrationAuditLog',
 ]);
 
 /**

@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { ZohoCredentialsService } from './zoho-credentials.service';
 import { ZohoOAuthService } from './zoho-oauth.service';
 import { ZohoApiClient } from './zoho-api.client';
+import { ZohoAuditService } from './zoho-audit.service';
 import { ZohoWebhookVerifier } from './zoho-webhook.verifier';
 
 /**
@@ -16,12 +17,14 @@ import { ZohoWebhookVerifier } from './zoho-webhook.verifier';
     ZohoCredentialsService,
     ZohoOAuthService,
     ZohoApiClient,
+    ZohoAuditService,
     ZohoWebhookVerifier,
   ],
   exports: [
     ZohoCredentialsService,
     ZohoOAuthService,
     ZohoApiClient,
+    ZohoAuditService,
     ZohoWebhookVerifier,
   ],
 })
