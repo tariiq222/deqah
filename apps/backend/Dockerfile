@@ -81,6 +81,22 @@ RUN cd /app/apps/backend && /app/node_modules/.bin/prisma generate --schema=pris
 RUN test -f /app/packages/shared/dist/constants/feature-keys.js \
   || (echo "❌ packages/shared/dist/ wiped by prisma generate" && exit 1)
 
+# Diagnose @deqah/shared resolution from backend's perspective
+RUN echo "=== node_modules/@deqah/shared ===" \
+ && ls -la /app/node_modules/@deqah/ 2>&1 || true \
+ && echo "=== resolved path ===" \
+ && readlink -f /app/node_modules/@deqah/shared 2>&1 || true \
+ && echo "=== exists check ===" \
+ && ls /app/node_modules/@deqah/shared/dist/constants/feature-keys.d.ts 2>&1 || true
+
+# Force-recreate symlink to packages/shared to ensure dist is reachable
+RUN mkdir -p /app/node_modules/@deqah \
+ && rm -rf /app/node_modules/@deqah/shared /app/node_modules/@deqah/api-client \
+ && ln -sf /app/packages/shared     /app/node_modules/@deqah/shared \
+ && ln -sf /app/packages/api-client /app/node_modules/@deqah/api-client \
+ && test -f /app/node_modules/@deqah/shared/dist/constants/feature-keys.d.ts \
+  || (echo "❌ symlink fix failed — d.ts not reachable" && exit 1)
+
 RUN cd /app/apps/backend && /app/node_modules/.bin/nest build
 
 # ── Stage 4: runner ──────────────────────────────────────────────────────────
