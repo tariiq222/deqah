@@ -6,10 +6,11 @@
 #   - manual workflow_dispatch
 #
 # Outputs (per app):
-#   ghcr.io/tariiq222/deqah-{backend,dashboard,admin,website}:latest
-#                                                              :<sha>
-#                                                              :v1.2.3   (on tag push)
-#                                                              :2026-05-06 (scheduled)
+#   ghcr.io/tariiq222/deqah-{backend,dashboard,admin,website}:v<semver>          ← primary, from apps/<app>/package.json
+#                                                              :v<semver>-<sha>  ← versioned + sha (main only)
+#                                                              :latest           ← supplementary (main only)
+#                                                              :<sha>            ← supplementary
+#                                                              :<date>-<run>     ← supplementary
 #
 # IMPORTANT — Manual step after the FIRST successful run:
 # 1. Go to https://github.com/users/tariiq222/packages
@@ -130,6 +131,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Read app version
+        if: steps.filter.outputs.should_build == 'true'
+        id: app_version
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./apps/${{ matrix.app.name }}/package.json').version")
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not read version from apps/${{ matrix.app.name }}/package.json"
+            exit 1
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building ${{ matrix.app.name }} v$VERSION"
+
       - name: Extract metadata
         if: steps.filter.outputs.should_build == 'true'
         id: meta
@@ -137,13 +152,17 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/deqah-${{ matrix.app.name }}
           tags: |
+            # Primary: per-app semver from package.json (e.g. v2.0.1)
+            type=raw,value=v${{ steps.app_version.outputs.version }}
+            # Versioned + sha for unambiguous pinning (e.g. v2.0.1-abc1234)
+            type=raw,value=v${{ steps.app_version.outputs.version }}-{{sha}},enable=${{ github.ref == 'refs/heads/main' }}
             # latest — only on main branch pushes (not tags)
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             # short SHA — always (e.g. abc1234)
             type=sha,prefix=,format=short
-            # semver tag — when a v* tag is pushed (e.g. v1.0.0)
+            # semver tag — when a v* tag is pushed (legacy support for scripts/release.sh)
             type=ref,event=tag
-            # date tag — useful for identifying daily deploys (includes run number to disambiguate)
+            # date tag — useful for identifying daily deploys
             type=raw,value={{date 'YYYY-MM-DD'}}-{{run_number}},enable={{is_default_branch}}
 
       # Resolve Moyasar key with a shell fallback (secrets context is not
@@ -175,3 +194,17 @@ jobs:
             ${{ matrix.app.name == 'dashboard' && format('NEXT_PUBLIC_MOYASAR_PLATFORM_PUBLISHABLE_KEY={0}', steps.build_args.outputs.moyasar_key) || '' }}
           cache-from: type=gha,scope=${{ matrix.app.name }}
           cache-to: type=gha,scope=${{ matrix.app.name }},mode=max
+
+      - name: Verify version tag was pushed
+        if: steps.filter.outputs.should_build == 'true' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/deqah-${{ matrix.app.name }}"
+          VERSION="v${{ steps.app_version.outputs.version }}"
+          echo "Verifying $IMAGE:$VERSION exists in registry..."
+          if ! docker manifest inspect "$IMAGE:$VERSION" >/dev/null 2>&1; then
+            echo "::error::Image $IMAGE:$VERSION was not pushed successfully."
+            exit 1
+          fi
+          echo "✅ $IMAGE:$VERSION confirmed in registry."
