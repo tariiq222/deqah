@@ -59,19 +59,11 @@ jobs:
         id: consume
         run: |
           set -euo pipefail
-          CHANGESET_COUNT=$(ls .changeset/*.md 2>/dev/null | grep -v README.md | wc -l | tr -d ' ')
+          CHANGESET_COUNT=$(find .changeset -maxdepth 1 -name '*.md' ! -name 'README.md' 2>/dev/null | wc -l | tr -d ' ')
           if [ "$CHANGESET_COUNT" -gt 0 ]; then
             echo "Found $CHANGESET_COUNT pending changeset(s) — running version..."
             pnpm changeset version
-            git add -A
-            if ! git diff --staged --quiet; then
-              git commit -m "chore(release): version packages [skip ci]"
-              git push origin develop
-              echo "consumed=true" >> $GITHUB_OUTPUT
-            else
-              echo "changeset version produced no diff — strange but continuing."
-              echo "consumed=false" >> $GITHUB_OUTPUT
-            fi
+            echo "consumed=true" >> $GITHUB_OUTPUT
           else
             echo "No pending changesets — proceeding with current versions."
             echo "consumed=false" >> $GITHUB_OUTPUT
@@ -92,23 +84,13 @@ jobs:
           echo "Captured versions: backend=$BACKEND_V, dashboard=$DASHBOARD_V, admin=$ADMIN_V, website=$WEBSITE_V"
 
       - name: Append version-history.md row
+        # version-history.md is pre-seeded with the 6-column header on develop
+        # (see commit that introduced Changesets). This step appends ONLY a row.
         run: |
           set -euo pipefail
           HISTORY="docs/operations/version-history.md"
           PROMOTED_AT=$(date -u +"%Y-%m-%d %H:%M UTC")
           SOURCE_SHORT=$(git rev-parse --short HEAD)
-          if [ ! -f "$HISTORY" ]; then
-            mkdir -p "$(dirname "$HISTORY")"
-            cat > "$HISTORY" <<'EOF'
-          # Version History
-
-          Per-deploy ledger appended automatically by `promote-to-main.yml`.
-          See `apps/<app>/CHANGELOG.md` for the change details behind each version.
-
-          | Promoted at (UTC) | backend | dashboard | admin | website | Source SHA |
-          |---|---|---|---|---|---|
-          EOF
-          fi
           printf "| %s | v%s | v%s | v%s | v%s | %s |\n" \
             "$PROMOTED_AT" \
             "${{ steps.versions.outputs.backend }}" \
@@ -116,11 +98,27 @@ jobs:
             "${{ steps.versions.outputs.admin }}" \
             "${{ steps.versions.outputs.website }}" \
             "$SOURCE_SHORT" >> "$HISTORY"
-          git add "$HISTORY"
-          if ! git diff --staged --quiet; then
-            git commit -m "chore(release): record promote in version-history.md [skip ci]"
-            git push origin develop
+
+      - name: Commit version bump + history row, push to develop
+        # Single rebase + commit + push window. Combines what used to be two
+        # separate pushes into one to shrink the race against concurrent
+        # commits to develop. [skip ci] is harmless today (no workflow triggers
+        # on develop pushes) but kept defensively.
+        run: |
+          set -euo pipefail
+          git add -A
+          if git diff --staged --quiet; then
+            echo "Nothing to commit — no version bump and no history change."
+            exit 0
           fi
+          git commit -m "chore(release): version packages + record promote [skip ci]"
+          # Rebase against latest develop in case a human pushed during the run.
+          # Conflict here = manual recovery; bail loudly rather than corrupt state.
+          if ! git pull --rebase origin develop; then
+            echo "::error::rebase against origin/develop failed — manual fix required"
+            exit 1
+          fi
+          git push origin develop
 
       - name: Build clean main branch
         env:
