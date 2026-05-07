@@ -74,49 +74,50 @@ jobs:
         with:
           fetch-depth: 2
 
-      # Path-based filter: skip building this app if no relevant files changed.
+      # Version-based filter: build only if apps/<this-app>/package.json version
+      # is NOT already in GHCR. The Changesets pipeline guarantees that any
+      # meaningful change bumps the version (or fails the promote gate), so
+      # "version exists in registry" == "nothing new to ship for this app."
+      #
       # Triggers a build when:
-      #   - apps/<this-app>/** changed
-      #   - packages/** changed (shared code can affect any app)
-      #   - root config changed (lockfile, workspace, ci, dockerfile defaults)
-      #   - manual workflow_dispatch (always builds — author override)
-      #   - tag push (always builds — explicit release)
+      #   - tag push (always — explicit release)
+      #   - the v<semver> tag for this app does NOT yet exist in ghcr.io
+      #   - cannot reach GHCR (defensive: build to be safe)
       - name: Decide if this app needs to build
         id: filter
         shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
-          # Always build on workflow_dispatch or tag pushes
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "push" -a "${{ github.ref_type }}" = "tag" ]; then
-            echo "should_build=true" >> "$GITHUB_OUTPUT"
-            echo "Reason: ${{ github.event_name }} (${{ github.ref_type }})"
-            exit 0
-          fi
-
-          # Determine changed files vs the previous commit
-          BEFORE="${{ github.event.before }}"
-          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-            # First push to branch — build everything
-            echo "should_build=true" >> "$GITHUB_OUTPUT"
-            echo "Reason: first push (no before SHA)"
-            exit 0
-          fi
-
-          CHANGED=$(git diff --name-only "$BEFORE" HEAD || echo "")
-          echo "Changed files:"
-          echo "$CHANGED" | sed 's/^/  /'
-
+          set -uo pipefail
           APP="${{ matrix.app.name }}"
-          # Match patterns that should trigger this app's build:
-          #   - apps/<app>/**
-          #   - packages/** (shared deps)
-          #   - root config files that affect all builds
-          if echo "$CHANGED" | grep -qE "^(apps/${APP}/|packages/|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|package\.json$|\.npmrc$|\.github/workflows/build-images\.yml$)"; then
+
+          # Tag pushes always build (explicit release intent).
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref_type }}" = "tag" ]; then
             echo "should_build=true" >> "$GITHUB_OUTPUT"
-            echo "Reason: paths matched for app=$APP"
-          else
+            echo "Reason: tag push — always build"
+            exit 0
+          fi
+
+          # Read version from package.json.
+          VERSION=$(node -p "require('./apps/${APP}/package.json').version" 2>/dev/null || echo "")
+          if [ -z "$VERSION" ]; then
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+            echo "Reason: could not read version for ${APP} — building defensively"
+            exit 0
+          fi
+          echo "Resolved ${APP} target version: v${VERSION}"
+
+          # Login to GHCR for the manifest check.
+          echo "${GH_TOKEN}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin >/dev/null 2>&1 || true
+
+          IMAGE="ghcr.io/${{ github.repository_owner }}/deqah-${APP}"
+          if docker manifest inspect "${IMAGE}:v${VERSION}" >/dev/null 2>&1; then
             echo "should_build=false" >> "$GITHUB_OUTPUT"
-            echo "Reason: no relevant paths changed for app=$APP — skipping"
+            echo "Reason: ${IMAGE}:v${VERSION} already exists in GHCR — skipping"
+          else
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+            echo "Reason: ${IMAGE}:v${VERSION} not in GHCR — building"
           fi
 
       - name: Set up Docker Buildx
