@@ -12,7 +12,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' http://localhost:5100 https://*.deqah.app",
+      "connect-src 'self' http://localhost:5100 https://*.deqah.net https://api.deqah.net",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
