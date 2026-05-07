@@ -97,6 +97,6 @@ WORKDIR /app/apps/dashboard
 EXPOSE 5103
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD wget -q --spider http://localhost:5103 || exit 1
+  CMD node -e "require('http').get('http://localhost:5103',r=>process.exit(r.statusCode<400?0:1)).on('error',()=>process.exit(1))"
 
 CMD ["npx", "next", "start", "-p", "5103", "-H", "0.0.0.0"]
