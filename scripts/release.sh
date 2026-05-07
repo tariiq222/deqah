@@ -15,6 +15,29 @@
 
 set -euo pipefail
 
+# ─── DEPRECATED ──────────────────────────────────────────────────────────────
+# This script is superseded by @changesets/cli. Use:
+#   pnpm changeset                              # author a changelog entry
+#   gh workflow run promote-to-main.yml -f confirm=promote  # ship it
+#
+# This script remains for emergency single-tag manual releases only.
+# To run it anyway, set FORCE_LEGACY=1 in the environment.
+if [[ "${FORCE_LEGACY:-}" != "1" ]]; then
+  echo "❌ scripts/release.sh is DEPRECATED."
+  echo ""
+  echo "Use the Changesets flow instead:"
+  echo "  pnpm changeset"
+  echo "  git add .changeset/ && git commit -m 'chore(changeset): describe change'"
+  echo "  git push origin develop"
+  echo "  gh workflow run promote-to-main.yml -f confirm=promote"
+  echo ""
+  echo "If you really need the old single-tag flow (emergency only):"
+  echo "  FORCE_LEGACY=1 ./scripts/release.sh <version>"
+  exit 1
+fi
+echo "⚠️  Running DEPRECATED scripts/release.sh with FORCE_LEGACY=1"
+# ─────────────────────────────────────────────────────────────────────────────
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSION="${1:-}"
 
