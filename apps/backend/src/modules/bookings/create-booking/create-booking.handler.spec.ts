@@ -60,6 +60,7 @@ const buildPrisma = () => {
       findFirst: jest.fn().mockResolvedValue({ vatRate: '0.15' }),
     },
     $transaction: jest.fn(),
+    $executeRaw: jest.fn().mockResolvedValue(undefined),
   };
   prisma.$transaction = jest.fn((cb: (tx: unknown) => Promise<unknown>) => cb(prisma));
   return prisma;
@@ -157,6 +158,57 @@ describe('CreateBookingHandler', () => {
     );
     expect(prisma.invoice.create).not.toHaveBeenCalled();
     expect(result.invoiceId).toBeNull();
+  });
+
+  it('takes a pg_advisory_xact_lock before checking group capacity', async () => {
+    const prisma = buildPrisma();
+
+    // Make the service a group service (maxParticipants > 1, reserveWithoutPayment = true)
+    prisma.service.findFirst = jest.fn()
+      .mockResolvedValueOnce(mockService)           // first call: employeeService price resolution base
+      .mockResolvedValueOnce({
+        id: 'svc-1',
+        minParticipants: 2,
+        maxParticipants: 5,
+        reserveWithoutPayment: true,
+      });
+
+    prisma.booking.count = jest.fn().mockResolvedValue(0);  // capacity check passes
+    prisma.booking.create = jest.fn().mockResolvedValue({
+      ...mockBooking,
+      bookingType: 'GROUP',
+      status: 'PENDING_GROUP_FILL',
+    });
+
+    // Track call order between $executeRaw and booking.count
+    const callOrder: string[] = [];
+    (prisma.$executeRaw as jest.Mock).mockImplementation(async () => {
+      callOrder.push('$executeRaw');
+    });
+    (prisma.booking.count as jest.Mock).mockImplementation(async () => {
+      callOrder.push('booking.count');
+      return 0;
+    });
+
+    await new CreateBookingHandler(
+      prisma as never,
+      mockTenant as never,
+      buildPriceResolver() as never,
+      buildSettingsHandler() as never,
+      { execute: jest.fn().mockResolvedValue(undefined) } as never,
+      mockEventBus as never,
+      mockSubscriptionCache as never,
+      { couponStrictEnabled: false } as never,
+      {} as never,
+    ).execute(dto);
+
+    // The advisory lock must be acquired BEFORE the capacity count
+    expect(callOrder.indexOf('$executeRaw')).toBeLessThan(callOrder.indexOf('booking.count'));
+
+    // The SQL template must reference pg_advisory_xact_lock
+    const rawCall = (prisma.$executeRaw as jest.Mock).mock.calls[0];
+    const templateStrings: string[] = rawCall[0];
+    expect(templateStrings.join('')).toMatch(/pg_advisory_xact_lock/);
   });
 
   it('throws ConflictException when employee has overlapping booking', async () => {

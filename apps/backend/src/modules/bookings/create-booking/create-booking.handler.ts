@@ -18,6 +18,16 @@ import { LaunchFlags } from '../../platform/billing/feature-flags/launch-flags';
 import { ValidateCouponService } from '../coupons/validate-coupon.service';
 import { CreateBookingDto } from './create-booking.dto';
 
+/** FNV-1a 32-bit hash → signed int32 (Postgres int4 range). Same algorithm as create-zoom-meeting. */
+function hashToInt32(s: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+  }
+  return h | 0;
+}
+
 /** Re-map a Postgres exclusion violation (23P01) to a domain 409 conflict. */
 function mapDbConflict(err: unknown): never {
   if (
@@ -160,7 +170,15 @@ export class CreateBookingHandler {
             throw new ConflictException('Employee already has a booking in this time slot');
           }
         } else {
-          // Group bookings: check capacity
+          // Group bookings: serialize concurrent attempts on the same slot.
+          // Same pattern as create-zoom-meeting — pg_advisory_xact_lock is held
+          // until the transaction commits, preventing two clients from both
+          // reading slotCount < maxParticipants and both succeeding.
+          const lockKey1 = hashToInt32(`${dto.serviceId}:${dto.employeeId ?? 'noemp'}`);
+          const lockKey2 = hashToInt32(scheduledAt.toISOString());
+          await tx.$executeRaw`SELECT pg_advisory_xact_lock(${lockKey1}::int, ${lockKey2}::int)`;
+
+          // Check capacity now that the lock is held
           const slotCount = await tx.booking.count({
             where: {
               organizationId,
