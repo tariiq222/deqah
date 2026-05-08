@@ -5,6 +5,11 @@ import { PrismaService } from '../../../../infrastructure/database/prisma.servic
 
 const ORG_ID = 'org-test-123';
 
+/**
+ * In-memory simulator for the atomic INSERT … ON CONFLICT DO UPDATE used
+ * by `increment()`. Matches production semantics (GREATEST(0, value + by)
+ * on conflict, GREATEST(0, by) on insert) without hitting Postgres.
+ */
 function makePrisma() {
   const store = new Map<string, number>();
 
@@ -42,13 +47,28 @@ function makePrisma() {
     }),
   };
 
-  const mockTransaction = jest.fn(async (fn: (tx: typeof mockCounter extends never ? never : { usageCounter: typeof mockCounter }) => Promise<void>) => {
-    return fn({ usageCounter: mockCounter } as never);
+  // Simulates INSERT … ON CONFLICT DO UPDATE SET value = GREATEST(0, value + by).
+  // Prisma.sql tags the statement with `values` (positional bindings); we
+  // extract orgId, featureKey, periodStart, by from there in the order they
+  // appear in usage-counter.service.ts.
+  const mockExecuteRaw = jest.fn(async (template: { strings?: readonly string[]; values?: unknown[] }) => {
+    const values = (template?.values ?? []) as unknown[];
+    // Order from the template: [orgId, featureKey, periodStart, by, by]
+    // (the `by` placeholder appears twice — once in VALUES, once in DO UPDATE).
+    const [orgId, fk, ps, byInsert] = values;
+    const k = key(orgId as string, fk as string, ps as Date);
+    const existing = store.get(k);
+    if (existing !== undefined) {
+      store.set(k, Math.max(0, existing + (byInsert as number)));
+    } else {
+      store.set(k, Math.max(0, byInsert as number));
+    }
+    return 1;
   });
 
   return {
     usageCounter: mockCounter,
-    $transaction: mockTransaction,
+    $executeRaw: mockExecuteRaw,
     _store: store,
     _key: key,
   } as unknown as PrismaService & { _store: Map<string, number>; _key: typeof key };

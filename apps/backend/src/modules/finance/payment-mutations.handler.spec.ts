@@ -17,6 +17,7 @@ const buildPrisma = () => {
     };
     refundRequest: {
       create: jest.Mock;
+      update: jest.Mock;
     };
     $transaction: jest.Mock;
   } = {
@@ -31,6 +32,7 @@ const buildPrisma = () => {
     },
     refundRequest: {
       create: jest.fn().mockResolvedValue({ id: 'rr-1' }),
+      update: jest.fn().mockResolvedValue({ id: 'rr-1' }),
     },
     $transaction: jest.fn(async (fn) => fn(prisma)),
   };
@@ -76,12 +78,19 @@ describe('RefundPaymentHandler', () => {
     const result = await handler.execute({ paymentId: PAY_ID, reason: 'client request' });
 
     expect(result.status).toBe(PaymentStatus.REFUNDED);
+    // The pre-Moyasar breadcrumb row is created in PROCESSING.
     expect(prisma.refundRequest.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           paymentId: PAY_ID,
-          status: 'COMPLETED',
+          status: 'PROCESSING',
         }),
+      }),
+    );
+    // The finalize step flips it to COMPLETED with the gateway reference.
+    expect(prisma.refundRequest.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: 'COMPLETED', gatewayRef: 'refund-gw-1' }),
       }),
     );
     expect(prisma.payment.update).toHaveBeenCalledWith(

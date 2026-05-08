@@ -13,6 +13,7 @@ import {
 import { ApiOkResponse } from "@nestjs/swagger";
 import { ApiOperation, ApiTags, ApiBearerAuth } from "@nestjs/swagger";
 import { JwtGuard } from "../../common/guards/jwt.guard";
+import { CaslGuard, CheckPermissions } from "../../common/guards/casl.guard";
 import { AllowDuringSuspension } from "../../common/guards/allow-during-suspension.decorator";
 import { ApiStandardResponses } from "../../common/swagger";
 import { ListPlansHandler } from "../../modules/platform/billing/list-plans/list-plans.handler";
@@ -51,7 +52,7 @@ import { ChangePlanHandler } from "../../modules/platform/billing/change-plan/ch
 @ApiBearerAuth()
 @ApiStandardResponses()
 @Controller("dashboard/billing")
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, CaslGuard)
 export class BillingController {
   constructor(
     private readonly listPlans: ListPlansHandler,
@@ -80,6 +81,7 @@ export class BillingController {
   ) {}
 
   @Get("plans")
+  @CheckPermissions({ action: 'read', subject: 'Billing' })
   @ApiOperation({ summary: "List available subscription plans" })
   plans() {
     return this.listPlans.execute();
@@ -87,18 +89,21 @@ export class BillingController {
 
   @Get("subscription")
   @AllowDuringSuspension()
+  @CheckPermissions({ action: 'read', subject: 'Subscription' })
   @ApiOperation({ summary: "Get current subscription" })
   subscription() {
     return this.getCurrentSub.execute();
   }
 
   @Get("my-features")
+  @CheckPermissions({ action: 'read', subject: 'Billing' })
   @ApiOperation({ summary: "Get my billing features with current usage" })
   myFeatures() {
     return this.getMyFeatures.execute();
   }
 
   @Get("usage")
+  @CheckPermissions({ action: 'read', subject: 'Billing' })
   @ApiOperation({ summary: "List quota usage for the current tenant" })
   @ApiOkResponse({ type: [UsageRowDto] })
   usage(): Promise<UsageRowDto[]> {
@@ -107,42 +112,49 @@ export class BillingController {
   }
 
   @Post("subscription/start")
+  @CheckPermissions({ action: 'manage', subject: 'Subscription' })
   @ApiOperation({ summary: "Start a new subscription (TRIALING)" })
   start(@Body() dto: StartSubscriptionDto) {
     return this.startSub.execute(dto);
   }
 
   @Post("subscription/upgrade")
+  @CheckPermissions({ action: 'manage', subject: 'Subscription' })
   @ApiOperation({ summary: "Upgrade subscription plan" })
   upgradePlan(@Body() dto: ChangePlanDto) {
     return this.upgrade.execute(dto);
   }
 
   @Post("subscription/change-plan")
+  @CheckPermissions({ action: 'manage', subject: 'Subscription' })
   @ApiOperation({ summary: "Change subscription plan (upgrade or downgrade)" })
   changePlanRoute(@Body() dto: ChangePlanDto) {
     return this.changePlan.execute(dto);
   }
 
   @Get("subscription/proration-preview")
+  @CheckPermissions({ action: 'read', subject: 'Subscription' })
   @ApiOperation({ summary: "Preview prorated plan change" })
   prorationPreview(@Query() query: ProrationPreviewDto) {
     return this.proration.execute(query);
   }
 
   @Post("subscription/downgrade")
+  @CheckPermissions({ action: 'manage', subject: 'Subscription' })
   @ApiOperation({ summary: "Downgrade subscription plan" })
   downgradePlan(@Body() dto: ChangePlanDto) {
     return this.scheduleDowngrade.execute(dto);
   }
 
   @Post("subscription/schedule-downgrade")
+  @CheckPermissions({ action: 'manage', subject: 'Subscription' })
   @ApiOperation({ summary: "Schedule subscription downgrade at period end" })
   scheduleDowngradePlan(@Body() dto: ChangePlanDto) {
     return this.scheduleDowngrade.execute(dto);
   }
 
   @Post("subscription/cancel-scheduled-downgrade")
+  @CheckPermissions({ action: 'manage', subject: 'Subscription' })
   @HttpCode(200)
   @ApiOperation({ summary: "Cancel a scheduled subscription downgrade" })
   cancelScheduledDowngradePlan() {
@@ -150,18 +162,21 @@ export class BillingController {
   }
 
   @Post("subscription/cancel")
+  @CheckPermissions({ action: 'manage', subject: 'Subscription' })
   @ApiOperation({ summary: "Cancel subscription" })
   cancelSub(@Body() body: { reason?: string }) {
     return this.cancel.execute(body);
   }
 
   @Post("subscription/schedule-cancel")
+  @CheckPermissions({ action: 'manage', subject: 'Subscription' })
   @ApiOperation({ summary: "Schedule subscription cancellation at period end" })
   scheduleCancelSub(@Body() body: { reason?: string }) {
     return this.cancel.execute(body);
   }
 
   @Post("subscription/resume")
+  @CheckPermissions({ action: 'manage', subject: 'Subscription' })
   @HttpCode(200)
   @ApiOperation({ summary: "Resume a suspended subscription" })
   resumeSub() {
@@ -169,6 +184,7 @@ export class BillingController {
   }
 
   @Post("subscription/reactivate")
+  @CheckPermissions({ action: 'manage', subject: 'Subscription' })
   @HttpCode(200)
   @ApiOperation({ summary: "Reactivate a scheduled cancellation" })
   reactivateSub() {
@@ -177,6 +193,7 @@ export class BillingController {
 
   @Post("subscription/retry-payment")
   @AllowDuringSuspension()
+  @CheckPermissions({ action: 'manage', subject: 'Subscription' })
   @HttpCode(200)
   @ApiOperation({ summary: "Retry failed subscription payment" })
   retryPayment() {
@@ -185,6 +202,7 @@ export class BillingController {
 
   @Get("saved-cards")
   @AllowDuringSuspension()
+  @CheckPermissions({ action: 'read', subject: 'Billing' })
   @ApiOperation({ summary: "List saved billing cards" })
   savedCards() {
     return this.listSavedCards.execute();
@@ -192,6 +210,7 @@ export class BillingController {
 
   @Post("saved-cards")
   @AllowDuringSuspension()
+  @CheckPermissions({ action: 'manage', subject: 'Billing' })
   @ApiOperation({ summary: "Add a saved billing card" })
   addCard(@Body() dto: AddSavedCardDto) {
     return this.addSavedCard.execute(dto);
@@ -199,6 +218,7 @@ export class BillingController {
 
   @Patch("saved-cards/:id/set-default")
   @AllowDuringSuspension()
+  @CheckPermissions({ action: 'manage', subject: 'Billing' })
   @HttpCode(200)
   @ApiOperation({ summary: "Set saved billing card as default" })
   setDefaultCard(@Param("id") id: string) {
@@ -206,6 +226,7 @@ export class BillingController {
   }
 
   @Delete("saved-cards/:id")
+  @CheckPermissions({ action: 'manage', subject: 'Billing' })
   @HttpCode(200)
   @ApiOperation({ summary: "Remove a saved billing card" })
   removeCard(@Param("id") id: string) {
@@ -213,18 +234,21 @@ export class BillingController {
   }
 
   @Get("invoices")
+  @CheckPermissions({ action: 'read', subject: 'Invoice' })
   @ApiOperation({ summary: "List billing invoices for current organization" })
   listInvoices(@Query() query: ListInvoicesQueryDto) {
     return this.listInvoicesHandler.execute(query);
   }
 
   @Get("invoices/:id")
+  @CheckPermissions({ action: 'read', subject: 'Invoice' })
   @ApiOperation({ summary: "Get a single billing invoice" })
   getInvoice(@Param("id") id: string) {
     return this.getInvoiceHandler.execute(id);
   }
 
   @Get("invoices/:id/download")
+  @CheckPermissions({ action: 'read', subject: 'Invoice' })
   @ApiOperation({ summary: "Get a presigned URL to download the invoice PDF" })
   downloadInvoice(@Param("id") id: string) {
     return this.downloadInvoiceHandler.execute(id);

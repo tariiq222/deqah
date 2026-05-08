@@ -5,6 +5,11 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 /**
  * Body fields for multipart upload. The actual file bytes come via
  * @UploadedFile(); these are metadata sent alongside the file.
+ *
+ * `uploadedBy` is intentionally absent — it is set server-side from the
+ * authenticated JWT (`req.user.sub`) by the controller. Accepting a
+ * caller-supplied identity here would let any tenant member forge audit
+ * trails by impersonating another user.
  */
 export class UploadFileDto {
   @ApiPropertyOptional({
@@ -25,10 +30,4 @@ export class UploadFileDto {
     example: 'b3d2e1f0-9a8b-7c6d-5e4f-3a2b1c0d9e8f',
   })
   @IsOptional() @IsUUID() ownerId?: string;
-
-  @ApiPropertyOptional({
-    description: 'UUID of the user who uploaded the file',
-    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-  })
-  @IsOptional() @IsUUID() uploadedBy?: string;
 }

@@ -12,6 +12,9 @@ const buildCls = () => ({
 
 const buildPrisma = () => ({
   $allTenants: {
+    organization: {
+      findMany: jest.fn().mockResolvedValue([{ id: 'org-1' }, { id: 'org-2' }]),
+    },
     booking: {
       findMany: jest.fn().mockResolvedValue([{}]),
       updateMany: jest.fn().mockResolvedValue({ count: 0 }),
@@ -41,16 +44,36 @@ describe('BookingAutocompleteCron', () => {
     await expect(cron.execute()).resolves.not.toThrow();
   });
 
-  it('calls updateMany with CONFIRMED status and cutoff', async () => {
+  it('calls updateMany with CONFIRMED status and cutoff, scoped per tenant', async () => {
     const prisma = buildPrisma();
     const cron = new BookingAutocompleteCron(prisma as never, buildCls() as never);
     await cron.execute();
     expect(prisma.$allTenants.booking.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ status: BookingStatus.CONFIRMED }),
+        where: expect.objectContaining({
+          organizationId: expect.any(String),
+          status: BookingStatus.CONFIRMED,
+        }),
         data: expect.objectContaining({ status: BookingStatus.COMPLETED }),
       }),
     );
+  });
+
+  it('iterates each active tenant and reads its own bookingSettings', async () => {
+    const prisma = buildPrisma();
+    const cron = new BookingAutocompleteCron(prisma as never, buildCls() as never);
+    await cron.execute();
+
+    // Two active orgs in the mock → two updateMany calls, each scoped to its org
+    expect(prisma.$allTenants.organization.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.$allTenants.bookingSettings.findFirst).toHaveBeenCalledTimes(2);
+    expect(prisma.$allTenants.bookingSettings.findFirst).toHaveBeenNthCalledWith(1,
+      expect.objectContaining({ where: expect.objectContaining({ organizationId: 'org-1', branchId: null }) }),
+    );
+    expect(prisma.$allTenants.bookingSettings.findFirst).toHaveBeenNthCalledWith(2,
+      expect.objectContaining({ where: expect.objectContaining({ organizationId: 'org-2', branchId: null }) }),
+    );
+    expect(prisma.$allTenants.booking.updateMany).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -96,7 +119,7 @@ describe('BookingNoShowCron', () => {
     await expect(cron.execute()).resolves.not.toThrow();
   });
 
-  it('marks confirmed bookings past cutoff as NO_SHOW', async () => {
+  it('marks confirmed bookings past cutoff as NO_SHOW, scoped per tenant', async () => {
     const prisma = buildPrisma();
     prisma.$allTenants.booking.updateMany = jest.fn().mockResolvedValue({ count: 2 });
     const cron = new BookingNoShowCron(prisma as never, buildCls() as never);
@@ -104,6 +127,7 @@ describe('BookingNoShowCron', () => {
     expect(prisma.$allTenants.booking.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
+          organizationId: expect.any(String),
           status: BookingStatus.CONFIRMED,
         }),
         data: expect.objectContaining({
@@ -111,6 +135,19 @@ describe('BookingNoShowCron', () => {
         }),
       }),
     );
+  });
+
+  it('iterates each active tenant and reads its own bookingSettings', async () => {
+    const prisma = buildPrisma();
+    const cron = new BookingNoShowCron(prisma as never, buildCls() as never);
+    await cron.execute();
+
+    expect(prisma.$allTenants.organization.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.$allTenants.bookingSettings.findFirst).toHaveBeenCalledTimes(2);
+    expect(prisma.$allTenants.bookingSettings.findFirst).toHaveBeenNthCalledWith(1,
+      expect.objectContaining({ where: expect.objectContaining({ organizationId: 'org-1', branchId: null }) }),
+    );
+    expect(prisma.$allTenants.booking.updateMany).toHaveBeenCalledTimes(2);
   });
 });
 

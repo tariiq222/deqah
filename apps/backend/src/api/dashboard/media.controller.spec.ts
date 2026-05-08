@@ -15,10 +15,12 @@ function buildController() {
   return { controller, uploadFile, getFile, deleteFile, generatePresignedUrl };
 }
 
+const TEST_USER = { sub: 'user-uuid-123', roles: [], permissions: [] } as never;
+
 describe('DashboardMediaController', () => {
   it('uploadFileEndpoint — throws BadRequestException when no file', () => {
     const { controller } = buildController();
-    expect(() => controller.uploadFileEndpoint(undefined, {} as never)).toThrow(BadRequestException);
+    expect(() => controller.uploadFileEndpoint(undefined, {} as never, TEST_USER)).toThrow(BadRequestException);
   });
 
   it('uploadFileEndpoint — passes file metadata to handler', async () => {
@@ -29,9 +31,31 @@ describe('DashboardMediaController', () => {
       size: 1024,
       buffer: Buffer.from('fake'),
     } as Express.Multer.File;
-    await controller.uploadFileEndpoint(mockFile, { folder: 'profile-photos' } as never);
+    await controller.uploadFileEndpoint(mockFile, { folder: 'profile-photos' } as never, TEST_USER);
     expect(uploadFile.execute).toHaveBeenCalledWith(
-      expect.objectContaining({ filename: 'photo.jpg', mimetype: 'image/jpeg', size: 1024 }),
+      expect.objectContaining({ filename: 'photo.jpg', mimetype: 'image/jpeg', size: 1024, uploadedBy: 'user-uuid-123' }),
+      mockFile.buffer,
+    );
+  });
+
+  it('uploadFileEndpoint — caller-supplied uploadedBy in body is overridden by JWT', async () => {
+    const { controller, uploadFile } = buildController();
+    const mockFile = {
+      originalname: 'photo.jpg',
+      mimetype: 'image/jpeg',
+      size: 1024,
+      buffer: Buffer.from('fake'),
+    } as Express.Multer.File;
+    // Even if a caller crafts a body containing uploadedBy, the controller must
+    // ignore it and use the JWT identity. UploadFileDto no longer declares
+    // uploadedBy — spread order ensures the JWT-derived value wins.
+    await controller.uploadFileEndpoint(
+      mockFile,
+      { uploadedBy: 'attacker-uuid' } as never,
+      TEST_USER,
+    );
+    expect(uploadFile.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ uploadedBy: 'user-uuid-123' }),
       mockFile.buffer,
     );
   });

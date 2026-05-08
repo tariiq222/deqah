@@ -28,6 +28,12 @@ export type UploadFileCommand = UploadFileDto & {
   filename: string;
   mimetype: string;
   size: number;
+  /**
+   * Identity of the uploader. MUST be set by the controller from
+   * `req.user.sub` (the authenticated JWT) — never accept this from a
+   * request body or query parameter.
+   */
+  uploadedBy?: string;
 };
 
 @Injectable()
