@@ -6,10 +6,10 @@ describe('GetPlatformMetricsHandler', () => {
   it('aggregates platform-wide metrics from $allTenants', async () => {
     const orgCount = jest.fn();
     orgCount
-      .mockResolvedValueOnce(100) // totalOrgs
-      .mockResolvedValueOnce(95) // activeOrgs
-      .mockResolvedValueOnce(5) // suspendedOrgs
-      .mockResolvedValueOnce(7); // newOrgs
+      .mockResolvedValueOnce(95) // totalOrgs (excluding ARCHIVED)
+      .mockResolvedValueOnce(90) // activeOrgs (ACTIVE + suspendedAt=null)
+      .mockResolvedValueOnce(5)  // suspendedOrgs
+      .mockResolvedValueOnce(7); // newOrgs (excluding ARCHIVED)
     const userCount = jest.fn().mockResolvedValue(800);
     const bookingCount = jest.fn().mockResolvedValue(2400);
     const invoiceAggregate = jest.fn().mockResolvedValue({ _sum: { amount: 125000 } });
@@ -48,8 +48,8 @@ describe('GetPlatformMetricsHandler', () => {
     const result = await handler.execute();
 
     expect(result.organizations).toEqual({
-      total: 100,
-      active: 95,
+      total: 95,
+      active: 90,
       suspended: 5,
       newThisMonth: 7,
     });
@@ -84,5 +84,61 @@ describe('GetPlatformMetricsHandler', () => {
 
     expect(result.revenue.lifetimePaidSar).toBe(0);
     expect(result.subscriptions.byPlan).toEqual({});
+  });
+
+  describe('soft-delete + status filtering', () => {
+    let handler: GetPlatformMetricsHandler;
+    let prisma: { $allTenants: { organization: { count: jest.Mock }; user: { count: jest.Mock }; booking: { count: jest.Mock }; subscriptionInvoice: { aggregate: jest.Mock }; subscription: { groupBy: jest.Mock } } };
+
+    beforeEach(async () => {
+      const orgCount = jest.fn().mockResolvedValue(0);
+      const prismaMock = {
+        $allTenants: {
+          organization: { count: orgCount },
+          user: { count: jest.fn().mockResolvedValue(0) },
+          booking: { count: jest.fn().mockResolvedValue(0) },
+          subscriptionInvoice: { aggregate: jest.fn().mockResolvedValue({ _sum: { amount: null } }) },
+          subscription: { groupBy: jest.fn().mockResolvedValue([]) },
+        },
+      } as unknown as PrismaService;
+
+      prisma = prismaMock as unknown as typeof prisma;
+
+      const moduleRef = await Test.createTestingModule({
+        providers: [
+          GetPlatformMetricsHandler,
+          { provide: PrismaService, useValue: prismaMock },
+        ],
+      }).compile();
+      handler = moduleRef.get(GetPlatformMetricsHandler);
+    });
+
+    it('excludes ARCHIVED orgs from total count', async () => {
+      await handler.execute();
+      expect(prisma.$allTenants.organization.count).toHaveBeenCalledWith({
+        where: { status: { not: 'ARCHIVED' } },
+      });
+    });
+
+    it('counts only ACTIVE non-suspended orgs as active', async () => {
+      await handler.execute();
+      expect(prisma.$allTenants.organization.count).toHaveBeenCalledWith({
+        where: { status: 'ACTIVE', suspendedAt: null },
+      });
+    });
+
+    it('excludes ARCHIVED orgs from "newThisMonth" count', async () => {
+      await handler.execute();
+      expect(prisma.$allTenants.organization.count).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ status: { not: 'ARCHIVED' } }),
+        }),
+      );
+    });
+
+    it('counts only isActive=true users', async () => {
+      await handler.execute();
+      expect(prisma.$allTenants.user.count).toHaveBeenCalledWith({ where: { isActive: true } });
+    });
   });
 });

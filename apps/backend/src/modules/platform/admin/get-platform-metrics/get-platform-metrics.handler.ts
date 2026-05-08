@@ -38,11 +38,15 @@ export class GetPlatformMetricsHandler {
       subscriptionsByPlan,
       subscriptionsByStatus,
     ] = await Promise.all([
-      all.organization.count(),
-      all.organization.count({ where: { suspendedAt: null } }),
+      // total = active + suspended only; exclude ARCHIVED
+      all.organization.count({ where: { status: { not: 'ARCHIVED' } } }),
+      all.organization.count({ where: { status: 'ACTIVE', suspendedAt: null } }),
       all.organization.count({ where: { suspendedAt: { not: null } } }),
-      all.organization.count({ where: { createdAt: { gte: startOfMonth } } }),
-      all.user.count(),
+      all.organization.count({
+        where: { createdAt: { gte: startOfMonth }, status: { not: 'ARCHIVED' } },
+      }),
+      // users: exclude soft-deleted
+      all.user.count({ where: { isActive: true } }),
       all.booking.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
       all.subscriptionInvoice.aggregate({
         where: { status: 'PAID' },
