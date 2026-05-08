@@ -173,6 +173,11 @@ export const envValidationSchema = Joi.object({
   // and dev use 300000000000003; production must register the real number.
   PLATFORM_VAT_NUMBER: Joi.string().pattern(/^3\d{12}03$/).required(),
 
+  // Company names rendered on platform-issued tax invoices. Both locales are
+  // required because invoice PDFs are bilingual.
+  PLATFORM_COMPANY_NAME_AR: Joi.string().min(1).required(),
+  PLATFORM_COMPANY_NAME_EN: Joi.string().min(1).required(),
+
   // Dedicated OTP-token secret. Falls back to JWT_ACCESS_SECRET in dev with a
   // warning; production REQUIRES a distinct secret so a leaked OTP token
   // cannot forge an access token.
