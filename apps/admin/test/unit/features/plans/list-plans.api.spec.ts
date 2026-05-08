@@ -38,7 +38,7 @@ describe('list-plans.api', () => {
   it('returns typed PlanRow array', async () => {
     const { listPlans } = await import('@/features/plans/list-plans/list-plans.api');
     const mockPlans = [{ id: '1', slug: 'basic', nameEn: 'Basic' }];
-    mockApiRequest.mockResolvedValue(mockPlans);
+    mockApiRequest.mockResolvedValue({ items: mockPlans, meta: { page: 1, perPage: 20, total: 1, totalPages: 1 } });
 
     const result = await listPlans();
 
