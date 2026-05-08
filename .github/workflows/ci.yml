@@ -150,6 +150,19 @@ jobs:
           DEFAULT_ORGANIZATION_ID: "00000000-0000-0000-0000-000000000001"
           BILLING_CRON_ENABLED: "false"
 
+  env-drift:
+    name: Env-var drift check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check env drift (Joi schema vs .env.prod.example)
+        run: node scripts/ci/check-env-drift.mjs
+
   api-docs:
     runs-on: ubuntu-latest
 

@@ -150,6 +150,21 @@ else
   log "WARNING: .github/workflows/build-images.yml not found in source — skipping re-injection."
 fi
 
+# ─── Step 2c: Re-inject .deploy-manifest.json ────────────────────────────────
+# promote-to-main.yml writes .deploy-manifest.json (changeset analysis) BEFORE
+# the sanitizer runs, then passes the cleaned tree to main. build-images.yml
+# reads this file to determine which apps to build.
+# The manifest contains only: { apps: [...], sha: "...", reason: "..." }
+# — no secrets, no internal docs — so it is safe to expose in the main branch.
+MANIFEST_SRC="${REPO_ROOT}/.deploy-manifest.json"
+MANIFEST_DST="${OUT_DIR}/.deploy-manifest.json"
+if [[ -f "${MANIFEST_SRC}" ]]; then
+  cp "${MANIFEST_SRC}" "${MANIFEST_DST}"
+  log "Re-injected .deploy-manifest.json into main tree."
+else
+  log "No .deploy-manifest.json found — build-images.yml will build all apps as fallback."
+fi
+
 # ─── Step 3: Regenerate minimal .gitignore in main tree ───────────────────
 log "Writing minimal .gitignore for main tree..."
 

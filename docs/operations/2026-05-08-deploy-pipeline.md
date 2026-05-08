@@ -1,32 +1,42 @@
-# Deploy pipeline — pre-deploy migration hook (2026-05-08)
+# Deploy pipeline — automated pre-deploy gates (2026-05-08)
 
 **Owner:** @tariq
-**Trigger:** P1-9 of pre-launch fixes — `prisma migrate deploy` removed from container CMD.
+**PR:** feat/deploy-pipeline-pr1-pre-deploy-gates
 
 ## What changed
 
 - Backend Dockerfile runner now runs as non-root `app` (uid 1001).
 - CMD only starts `node` — migrations no longer race across replicas or rerun on every Swarm rollback.
+- **Migrations are now automated via CI** — see `migrate-prod` job in `.github/workflows/build-images.yml`.
 
-## Required Dokploy configuration
+## Automated migration (replaces manual Dokploy config)
 
-After this image rolls out, the Dokploy service for `apps/backend` must run migrations as a **separate one-shot step** before the new replicas start:
+Migrations run automatically as part of the build-images pipeline:
 
-1. Dokploy → backend service → Pre-Deploy Command:
+```
+compute-matrix → backup-prod-db (if BACKUP_ENABLED) → migrate-prod → build (matrix) → Dokploy webhooks
+```
 
-   ```
-   docker run --rm \
-     --env-file /etc/dokploy/secrets/backend.env \
-     ghcr.io/<org>/deqah-backend:<tag> \
-     sh /app/apps/backend/scripts/migrate.sh
-   ```
+The `migrate-prod` job:
+1. Pulls `ghcr.io/tariiq222/deqah-backend:latest` (just pushed by the build job — or current latest for the migration pre-check).
+2. Runs `docker run --rm -e DATABASE_URL="..." <image> npx prisma migrate deploy --schema=prisma/schema`.
+3. Times out at 5 minutes.
+4. **If it fails, Dokploy webhooks for ALL services are blocked** — no partial deploys.
 
-2. **Failure here MUST abort the rollout** — do not let new replicas boot against an out-of-sync schema.
+**No manual Dokploy pre-deploy command is needed.** The previous instruction to configure
+a Pre-Deploy Command in Dokploy is superseded by this CI job.
 
-3. The new replicas no longer attempt `prisma migrate deploy` themselves. If you skip the pre-deploy step, the app starts but the schema may lag.
+## Required secret
+
+Add `PROD_DATABASE_URL` to GitHub → Settings → Secrets → Actions:
+
+```
+postgresql://deqah:<password>@deqah-database-jeprin:5432/deqah
+```
 
 ## Verification
 
-- `docker run --rm --entrypoint sh ghcr.io/<org>/deqah-backend:<tag> -c 'id'` → `uid=1001(app) gid=1001(app)`
-- `docker run --rm --entrypoint sh ghcr.io/<org>/deqah-backend:<tag> -c 'ls /app/apps/backend/scripts/migrate.sh'` → file exists, executable.
-- After a successful deploy with the hook configured: backend `/api/v1/health` returns 200 and `_prisma_migrations` table reflects all migrations.
+- After a successful deploy: backend `/api/v1/health` returns 200 and `_prisma_migrations`
+  reflects all applied migrations.
+- If the `migrate-prod` job fails, check the job logs in GitHub Actions — the error includes
+  the Prisma migration name that failed.

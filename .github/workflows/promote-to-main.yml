@@ -126,6 +126,94 @@ jobs:
           fi
           git push origin develop
 
+      - name: Compute deploy manifest from changesets
+        # This step runs BEFORE the sanitizer strips .changeset/.
+        # It writes .deploy-manifest.json so build-images.yml can read which
+        # apps to build. The manifest survives sanitization because
+        # sync-main-branch.sh copies it into the main tree.
+        #
+        # Logic:
+        #   1. Parse .changeset/*.md frontmatter for bumped package names.
+        #   2. Map workspace names → app names: backend→backend, dashboard→dashboard,
+        #      admin→admin, marketing→marketing.
+        #   3. If any shared package (@deqah/shared, @deqah/api-client, @deqah/ui)
+        #      is bumped, include ALL apps that depend on it
+        #      (dashboard + admin + marketing consume @deqah/* per package.json).
+        #   4. If no changesets, default to all apps (conservative fallback).
+        run: |
+          set -euo pipefail
+
+          MANIFEST_FILE=".deploy-manifest.json"
+          SHA=$(git rev-parse --short HEAD)
+
+          # Collect changeset files (exclude README.md)
+          CHANGESET_FILES=$(find .changeset -maxdepth 1 -name '*.md' ! -name 'README.md' 2>/dev/null || true)
+
+          if [[ -z "$CHANGESET_FILES" ]]; then
+            echo "No changesets found — deploying all apps."
+            node -e "
+              const manifest = { apps: ['backend','dashboard','admin','marketing'], sha: '${SHA}', reason: 'no-changesets-fallback' };
+              require('fs').writeFileSync('${MANIFEST_FILE}', JSON.stringify(manifest, null, 2));
+            "
+            exit 0
+          fi
+
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+
+            // Packages that, when bumped, trigger ALL consumers
+            const sharedPkgs = new Set(['@deqah/shared', '@deqah/api-client', '@deqah/ui']);
+
+            // Which apps consume shared packages (from their package.json deps)
+            const sharedConsumers = ['dashboard', 'admin', 'marketing'];
+
+            // Workspace name → app name mapping
+            const pkgToApp = {
+              'backend': 'backend',
+              'dashboard': 'dashboard',
+              'admin': 'admin',
+              'marketing': 'marketing',
+            };
+
+            const affectedApps = new Set();
+            let sharedBumped = false;
+
+            const files = \`${CHANGESET_FILES}\`.trim().split('\n').filter(Boolean);
+            for (const f of files) {
+              const content = fs.readFileSync(f, 'utf8');
+              // Parse YAML frontmatter between --- delimiters
+              const match = content.match(/^---\n([\s\S]*?)\n---/);
+              if (!match) continue;
+              const frontmatter = match[1];
+              for (const line of frontmatter.split('\n')) {
+                const m = line.match(/^[\"']?([^\"':]+)[\"']?\s*:\s*/);
+                if (!m) continue;
+                const pkg = m[1].trim();
+                if (sharedPkgs.has(pkg)) {
+                  sharedBumped = true;
+                } else if (pkgToApp[pkg]) {
+                  affectedApps.add(pkgToApp[pkg]);
+                }
+              }
+            }
+
+            if (sharedBumped) {
+              for (const app of sharedConsumers) affectedApps.add(app);
+            }
+
+            const apps = affectedApps.size > 0
+              ? [...affectedApps].sort()
+              : ['backend','dashboard','admin','marketing'];
+
+            const manifest = { apps, sha: '${SHA}', reason: affectedApps.size > 0 ? 'changeset-analysis' : 'empty-changeset-fallback' };
+            fs.writeFileSync('${MANIFEST_FILE}', JSON.stringify(manifest, null, 2));
+            console.log('Deploy manifest:', JSON.stringify(manifest));
+          "
+
+          echo "Manifest written to ${MANIFEST_FILE}"
+          cat "${MANIFEST_FILE}"
+
       - name: Build clean main branch
         env:
           CI: "true"
