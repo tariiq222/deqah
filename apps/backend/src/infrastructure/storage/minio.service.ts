@@ -70,4 +70,8 @@ export class MinioService implements IStorageService, OnModuleInit {
       return false;
     }
   }
+
+  async bucketExists(bucket: string): Promise<boolean> {
+    return this.client.bucketExists(bucket);
+  }
 }
