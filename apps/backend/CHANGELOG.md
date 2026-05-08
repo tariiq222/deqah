@@ -1,5 +1,11 @@
 # backend
 
+## 2.1.7
+
+### Patch Changes
+
+- [`a3be071`](https://github.com/tariiq222/deqah/commit/a3be071115e5e6d38cbbf41154981d1ebf2e16a4) - Fix the `20260508000000_fix_broken_plan_uuids` migration so it no longer fails on fresh databases. The original SQL updated child rows (Subscription, PlanVersion) before the parent Plan row, which triggered `current transaction is aborted` on any DB without the legacy seed bug — wedging both CI Smoke Suite and the production build pipeline. Simplified to three `UPDATE Plan` statements; the FK columns carry `ON UPDATE CASCADE` so children follow automatically.
+
 ## 2.1.6
 
 ### Patch Changes
