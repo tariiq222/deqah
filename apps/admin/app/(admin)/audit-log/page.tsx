@@ -1,17 +1,21 @@
 'use client';
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Button } from '@deqah/ui/primitives/button';
 import { useListAuditLog } from '@/features/audit-log/list-audit-log/use-list-audit-log';
 import { AuditLogFilterBar } from '@/features/audit-log/list-audit-log/audit-log-filter-bar';
 import { AuditLogTable } from '@/features/audit-log/list-audit-log/audit-log-table';
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { ErrorBanner } from '@/components/error-banner';
 
 export default function AuditLogPage() {
+  const pathname = usePathname();
   const [page, setPage] = useState(1);
   const [actionType, setActionType] = useState<string>('all');
   const [organizationId, setOrganizationId] = useState('');
 
-  const { data, isLoading, error } = useListAuditLog({
+  const { data, isLoading, error, refetch } = useListAuditLog({
     page,
     perPage: 50,
     actionType,
@@ -20,6 +24,8 @@ export default function AuditLogPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs pathname={pathname} />
+      {/* TODO Phase 6.4 follow-up: wire stats once BE list endpoint exposes counts */}
       <div>
         <h2 className="text-2xl font-semibold">Audit log</h2>
         <p className="text-sm text-muted-foreground">
@@ -46,9 +52,7 @@ export default function AuditLogPage() {
       />
 
       {error ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          Failed to load: {(error as Error).message}
-        </div>
+        <ErrorBanner error={error} onRetry={() => void refetch()} context="page:audit-log" />
       ) : null}
 
       <AuditLogTable items={data?.items} isLoading={isLoading} />

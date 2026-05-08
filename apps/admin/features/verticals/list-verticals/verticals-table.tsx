@@ -1,4 +1,5 @@
 'use client';
+// TODO Phase 6.7 follow-up: convert action buttons to icon-only + Tooltip (Pencil/Trash2 from lucide-react, size-9 rounded-sm)
 
 import { Badge } from '@deqah/ui/primitives/badge';
 import { Button } from '@deqah/ui/primitives/button';

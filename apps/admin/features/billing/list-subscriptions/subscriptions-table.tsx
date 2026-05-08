@@ -1,4 +1,5 @@
 'use client';
+// TODO Phase 6.7 follow-up: convert action buttons to icon-only + Tooltip (size-9 rounded-sm)
 
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';

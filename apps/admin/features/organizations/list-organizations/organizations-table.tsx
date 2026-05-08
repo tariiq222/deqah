@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
+import { ExternalLink } from 'lucide-react';
 import { Badge } from '@deqah/ui/primitives/badge';
 import { Button } from '@deqah/ui/primitives/button';
 import { Skeleton } from '@deqah/ui/primitives/skeleton';
@@ -13,6 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from '@deqah/ui/primitives/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@deqah/ui/primitives/tooltip';
 import type { OrganizationRow } from '../types';
 
 interface Props {
@@ -74,9 +81,24 @@ export function OrganizationsTable({ items, isLoading }: Props) {
                   })}
                 </TableCell>
                 <TableCell className="text-end">
-                  <Button asChild variant="ghost" size="sm">
-                    <Link href={`/organizations/${org.id}`}>{t('open')}</Link>
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          asChild
+                          variant="ghost"
+                          size="icon"
+                          className="size-9 rounded-sm"
+                          aria-label={t('open')}
+                        >
+                          <Link href={`/organizations/${org.id}`}>
+                            <ExternalLink className="size-4" />
+                          </Link>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{t('open')}</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </TableCell>
               </TableRow>
             ))}

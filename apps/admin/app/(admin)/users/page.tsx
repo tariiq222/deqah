@@ -1,31 +1,44 @@
 'use client';
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Button } from '@deqah/ui/primitives/button';
 import { useSearchUsers } from '@/features/users/search-users/use-search-users';
 import { UsersFilterBar } from '@/features/users/search-users/users-filter-bar';
 import { UsersTable } from '@/features/users/search-users/users-table';
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { ErrorBanner } from '@/components/error-banner';
+import { StatsGrid, type StatsGridStat } from '@/components/stats-grid';
 
 export default function UsersPage() {
+  const pathname = usePathname();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [organizationId, setOrganizationId] = useState('');
 
-  const { data, isLoading, error } = useSearchUsers({
+  const { data, isLoading, error, refetch } = useSearchUsers({
     page,
     perPage: 20,
     search,
     organizationId,
   });
 
+  const stats: StatsGridStat[] = [
+    { label: 'Total', value: data?.meta.total ?? 0, variant: 'primary' },
+  ];
+
   return (
     <div className="space-y-6">
+      <Breadcrumbs pathname={pathname} />
       <div>
         <h2 className="text-2xl font-semibold">Users</h2>
         <p className="text-sm text-muted-foreground">
           Cross-tenant user search. Issue temporary passwords when support requires it.
         </p>
       </div>
+
+      <StatsGrid stats={stats} isLoading={isLoading} />
+      {/* TODO Phase 6.4 follow-up: extend BE search-users endpoint to return role/status breakdown for richer StatsGrid */}
 
       <UsersFilterBar
         search={search}
@@ -46,9 +59,7 @@ export default function UsersPage() {
       />
 
       {error ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          Failed to load: {(error as Error).message}
-        </div>
+        <ErrorBanner error={error} onRetry={() => void refetch()} context="page:users" />
       ) : null}
 
       <UsersTable items={data?.items} isLoading={isLoading} />

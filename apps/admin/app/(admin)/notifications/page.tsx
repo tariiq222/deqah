@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Button } from '@deqah/ui/primitives/button';
 import { Input } from '@deqah/ui/primitives/input';
 import {
@@ -13,6 +14,8 @@ import {
 import { useListDeliveryLog } from '@/features/notifications/list-delivery-log/use-list-delivery-log';
 import { DeliveryLogTable } from '@/features/notifications/list-delivery-log/delivery-log-table';
 import type { DeliveryLogFilters } from '@/features/notifications/list-delivery-log/list-delivery-log.api';
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { ErrorBanner } from '@/components/error-banner';
 
 const PER_PAGE = 20;
 
@@ -31,6 +34,7 @@ function StatCard({ label, value }: StatCardProps) {
 }
 
 export default function NotificationsPage() {
+  const pathname = usePathname();
   const [page, setPage] = useState(1);
   const [organizationId, setOrganizationId] = useState('');
   const [status, setStatus] = useState('all');
@@ -57,6 +61,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs pathname={pathname} />
       <div>
         <h2 className="text-2xl font-semibold">Notification Delivery Log</h2>
         <p className="text-sm text-muted-foreground">
@@ -148,9 +153,7 @@ export default function NotificationsPage() {
       </div>
 
       {error ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          Failed to load: {error.message}
-        </div>
+        <ErrorBanner error={error} context="page:notifications" />
       ) : null}
 
       <DeliveryLogTable items={items} isLoading={isLoading} />

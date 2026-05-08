@@ -45,6 +45,7 @@ vi.mock('next/navigation', () => ({
     push: vi.fn(),
   }),
   useParams: () => ({ id: 'plan-1' }),
+  usePathname: () => '/plans/plan-1/edit',
 }));
 
 const mockPlansData = [

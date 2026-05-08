@@ -1,4 +1,5 @@
 'use client';
+// TODO Phase 6.7 follow-up: convert action buttons to icon-only + Tooltip (size-9 rounded-sm)
 
 import { useSyncExternalStore } from 'react';
 import { Badge } from '@deqah/ui/primitives/badge';

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Button } from '@deqah/ui/primitives/button';
 import { useListSubscriptions } from '@/features/billing/list-subscriptions/use-list-subscriptions';
 import {
@@ -10,12 +11,15 @@ import {
 } from '@/features/billing/list-subscriptions/subscriptions-filter-bar';
 import { SubscriptionsTable } from '@/features/billing/list-subscriptions/subscriptions-table';
 import { BillingMetricsGrid } from '@/features/billing/get-billing-metrics/billing-metrics-grid';
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { ErrorBanner } from '@/components/error-banner';
 
 export default function BillingSubscriptionsPage() {
+  const pathname = usePathname();
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<StatusFilter>('all');
 
-  const { data, isLoading, error } = useListSubscriptions({
+  const { data, isLoading, error, refetch } = useListSubscriptions({
     page,
     perPage: 20,
     status: status === 'all' ? undefined : status,
@@ -23,6 +27,7 @@ export default function BillingSubscriptionsPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs pathname={pathname} />
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-2xl font-semibold">Billing — Subscriptions</h2>
@@ -41,9 +46,7 @@ export default function BillingSubscriptionsPage() {
       </div>
 
       {error ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          Failed to load: {(error as Error).message}
-        </div>
+        <ErrorBanner error={error} onRetry={() => void refetch()} context="page:billing" />
       ) : null}
 
       <BillingMetricsGrid />

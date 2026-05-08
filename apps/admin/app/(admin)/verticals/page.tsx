@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Button } from '@deqah/ui/primitives/button';
 import { useListVerticals } from '@/features/verticals/list-verticals/use-list-verticals';
 import { VerticalsTable } from '@/features/verticals/list-verticals/verticals-table';
@@ -8,9 +9,12 @@ import { CreateVerticalDialog } from '@/features/verticals/create-vertical/creat
 import { UpdateVerticalDialog } from '@/features/verticals/update-vertical/update-vertical-dialog';
 import { DeleteVerticalDialog } from '@/features/verticals/delete-vertical/delete-vertical-dialog';
 import type { VerticalRow } from '@/features/verticals/types';
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { ErrorBanner } from '@/components/error-banner';
 
 export default function VerticalsPage() {
-  const { data, isLoading, error } = useListVerticals();
+  const pathname = usePathname();
+  const { data, isLoading, error, refetch } = useListVerticals();
   const items = data?.items;
   const [createOpen, setCreateOpen] = useState(false);
   const [editVertical, setEditVertical] = useState<VerticalRow | null>(null);
@@ -18,6 +22,8 @@ export default function VerticalsPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs pathname={pathname} />
+      {/* TODO Phase 6.4 follow-up: wire stats once BE list endpoint exposes counts */}
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-2xl font-semibold">Verticals</h2>
@@ -29,9 +35,7 @@ export default function VerticalsPage() {
       </div>
 
       {error ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          Failed to load: {(error as Error).message}
-        </div>
+        <ErrorBanner error={error} onRetry={() => void refetch()} context="page:verticals" />
       ) : null}
 
       <VerticalsTable

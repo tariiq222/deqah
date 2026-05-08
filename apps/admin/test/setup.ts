@@ -1,5 +1,17 @@
 import '@testing-library/jest-dom';
-import { beforeEach } from 'vitest';
+import { beforeEach, vi } from 'vitest';
+
+// Global mock for next/navigation — pages use usePathname for Breadcrumbs
+vi.mock('next/navigation', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next/navigation')>();
+  return {
+    ...actual,
+    usePathname: vi.fn(() => '/'),
+    useRouter: vi.fn(() => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() })),
+    useParams: vi.fn(() => ({})),
+    useSearchParams: vi.fn(() => new URLSearchParams()),
+  };
+});
 
 const localStorageMock = (() => {
   let store: Record<string, string> = {};

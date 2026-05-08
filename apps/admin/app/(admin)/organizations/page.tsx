@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { usePathname } from 'next/navigation';
 import { Button } from '@deqah/ui/primitives/button';
 import { CreateTenantDialog } from '@/features/organizations/create-tenant/create-tenant-dialog';
 import { useListOrganizations } from '@/features/organizations/list-organizations/use-list-organizations';
@@ -11,9 +12,13 @@ import {
   type SuspendedFilter,
 } from '@/features/organizations/list-organizations/organizations-filter-bar';
 import { OrganizationsTable } from '@/features/organizations/list-organizations/organizations-table';
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { ErrorBanner } from '@/components/error-banner';
+import { StatsGrid, type StatsGridStat } from '@/components/stats-grid';
 
 export default function OrganizationsListPage() {
   const t = useTranslations('organizations');
+  const pathname = usePathname();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [suspended, setSuspended] = useState<SuspendedFilter>('all');
@@ -22,7 +27,7 @@ export default function OrganizationsListPage() {
   const [planId, setPlanId] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
 
-  const { data, isLoading, error } = useListOrganizations({
+  const { data, isLoading, error, refetch } = useListOrganizations({
     page,
     perPage: 20,
     search: search.trim() || undefined,
@@ -32,8 +37,13 @@ export default function OrganizationsListPage() {
     planId: planId.trim() || undefined,
   });
 
+  const stats: StatsGridStat[] = [
+    { label: 'Total', value: data?.meta.total ?? 0, variant: 'primary' },
+  ];
+
   return (
     <div className="space-y-6">
+      <Breadcrumbs pathname={pathname} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-2xl font-semibold">{t('title')}</h2>
@@ -41,6 +51,9 @@ export default function OrganizationsListPage() {
         </div>
         <Button onClick={() => setCreateOpen(true)}>{t('create.button')}</Button>
       </div>
+
+      <StatsGrid stats={stats} isLoading={isLoading} />
+      {/* TODO Phase 6.4 follow-up: extend BE list endpoint to return status breakdown (totalActive, totalSuspended, totalNew) for richer StatsGrid */}
 
       <OrganizationsFilterBar
         search={search}
@@ -79,9 +92,11 @@ export default function OrganizationsListPage() {
       />
 
       {error ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          {t('error.loadFailed', { message: (error as Error).message })}
-        </div>
+        <ErrorBanner
+          error={error}
+          onRetry={() => void refetch()}
+          context="page:organizations"
+        />
       ) : null}
 
       <OrganizationsTable items={data?.items} isLoading={isLoading} />

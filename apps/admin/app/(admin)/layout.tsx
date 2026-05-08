@@ -2,11 +2,14 @@ import type { ReactNode } from 'react';
 import { Sidebar } from '@/shell/sidebar';
 import { LogoutButton } from '@/shell/logout-button';
 import { useTranslations } from 'next-intl';
+import { OfflineBanner } from '@/components/offline-banner';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const t = useTranslations('nav');
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen flex-col">
+      <OfflineBanner />
+      <div className="flex flex-1">
       <aside className="w-60 shrink-0 border-r border-border bg-card px-4 py-6">
         <div className="mb-6 px-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -22,6 +25,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <main className="flex-1 h-screen overflow-y-auto">
         <div className="mx-auto max-w-7xl px-8 py-8">{children}</div>
       </main>
+      </div>
     </div>
   );
 }

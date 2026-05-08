@@ -1,0 +1,93 @@
+export const BREADCRUMB_TRAILS: Record<string, Array<{ label: string; href?: string }>> = {
+  '/': [{ label: 'Home' }],
+  '/organizations': [{ label: 'Home', href: '/' }, { label: 'Organizations' }],
+  '/organizations/:id': [
+    { label: 'Home', href: '/' },
+    { label: 'Organizations', href: '/organizations' },
+    { label: 'Detail' },
+  ],
+  '/plans': [{ label: 'Home', href: '/' }, { label: 'Plans' }],
+  '/plans/:id/edit': [
+    { label: 'Home', href: '/' },
+    { label: 'Plans', href: '/plans' },
+    { label: 'Edit' },
+  ],
+  '/plans/new': [{ label: 'Home', href: '/' }, { label: 'Plans', href: '/plans' }, { label: 'New' }],
+  '/verticals': [{ label: 'Home', href: '/' }, { label: 'Verticals' }],
+  '/billing': [{ label: 'Home', href: '/' }, { label: 'Billing' }],
+  '/billing/:orgId': [
+    { label: 'Home', href: '/' },
+    { label: 'Billing', href: '/billing' },
+    { label: 'Organization' },
+  ],
+  '/billing/invoices': [
+    { label: 'Home', href: '/' },
+    { label: 'Billing', href: '/billing' },
+    { label: 'Invoices' },
+  ],
+  '/billing/metrics': [
+    { label: 'Home', href: '/' },
+    { label: 'Billing', href: '/billing' },
+    { label: 'Metrics' },
+  ],
+  '/billing/zoho': [
+    { label: 'Home', href: '/' },
+    { label: 'Billing', href: '/billing' },
+    { label: 'Zoho' },
+  ],
+  '/audit-log': [{ label: 'Home', href: '/' }, { label: 'Audit Log' }],
+  '/impersonation-sessions': [{ label: 'Home', href: '/' }, { label: 'Impersonation' }],
+  '/users': [{ label: 'Home', href: '/' }, { label: 'Users' }],
+  '/notifications': [{ label: 'Home', href: '/' }, { label: 'Notifications' }],
+  '/metrics': [{ label: 'Home', href: '/' }, { label: 'Metrics' }],
+  '/settings': [{ label: 'Home', href: '/' }, { label: 'Settings' }],
+  '/settings/email': [
+    { label: 'Home', href: '/' },
+    { label: 'Settings', href: '/settings' },
+    { label: 'Email' },
+  ],
+  '/settings/email/templates': [
+    { label: 'Home', href: '/' },
+    { label: 'Settings', href: '/settings' },
+    { label: 'Email', href: '/settings/email' },
+    { label: 'Templates' },
+  ],
+  '/settings/email/templates/:slug': [
+    { label: 'Home', href: '/' },
+    { label: 'Settings', href: '/settings' },
+    { label: 'Email', href: '/settings/email' },
+    { label: 'Templates', href: '/settings/email/templates' },
+    { label: 'Edit' },
+  ],
+  '/settings/email/logs': [
+    { label: 'Home', href: '/' },
+    { label: 'Settings', href: '/settings' },
+    { label: 'Email', href: '/settings/email' },
+    { label: 'Logs' },
+  ],
+  '/settings/notifications': [
+    { label: 'Home', href: '/' },
+    { label: 'Settings', href: '/settings' },
+    { label: 'Notifications' },
+  ],
+  '/settings/billing': [
+    { label: 'Home', href: '/' },
+    { label: 'Settings', href: '/settings' },
+    { label: 'Billing' },
+  ],
+  '/settings/branding': [
+    { label: 'Home', href: '/' },
+    { label: 'Settings', href: '/settings' },
+    { label: 'Branding' },
+  ],
+  '/settings/health': [
+    { label: 'Home', href: '/' },
+    { label: 'Settings', href: '/settings' },
+    { label: 'Health' },
+  ],
+  '/settings/security': [
+    { label: 'Home', href: '/' },
+    { label: 'Settings', href: '/settings' },
+    { label: 'Security' },
+  ],
+};

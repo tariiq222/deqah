@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@deqah/ui/primitives/button';
 import { Input } from '@deqah/ui/primitives/input';
@@ -12,6 +12,7 @@ import { useListPlans } from '@/features/plans/list-plans/use-list-plans';
 import { PlanFormTabs } from '@/features/plans/plan-form-tabs';
 import { DEFAULT_PLAN_LIMITS, type PlanLimits } from '@/features/plans/plan-limits';
 import { useUpdatePlan } from '@/features/plans/update-plan/use-update-plan';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 interface EditForm {
   nameAr: string;
@@ -26,6 +27,7 @@ interface EditForm {
 export default function EditPlanPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const pathname = usePathname();
   const { data: plans, isLoading } = useListPlans();
   const mutation = useUpdatePlan();
   const [activeTab, setActiveTab] = useState('general');
@@ -217,6 +219,7 @@ export default function EditPlanPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs pathname={pathname} />
       <div>
         <Link href="/plans" className="text-sm text-muted-foreground hover:text-foreground">
           ← Back to plans
