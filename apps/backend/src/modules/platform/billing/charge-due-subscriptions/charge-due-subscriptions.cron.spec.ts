@@ -23,6 +23,11 @@ const buildPrisma = (subs: unknown[] = []) => ({
     },
     subscriptionInvoice: {
       create: jest.fn().mockResolvedValue({ id: 'inv-1' }),
+      update: jest.fn().mockResolvedValue({}),
+    },
+    billingCredit: {
+      findMany: jest.fn().mockResolvedValue([]),
+      update: jest.fn().mockResolvedValue({}),
     },
   },
 });
@@ -485,6 +490,197 @@ describe('ChargeDueSubscriptionsCron', () => {
           expect.objectContaining({ kind: 'OVERAGE', metric: 'BOOKINGS_PER_MONTH', amount: 25 }),
           expect.objectContaining({ kind: 'VAT' }),
         ]),
+      );
+    });
+  });
+
+  describe('BillingCredit FIFO consumption', () => {
+    const makeSub = (overrides: Partial<{
+      id: string;
+      organizationId: string;
+      billingCycle: string;
+      moyasarCardTokenRef: string | null;
+    }> = {}) => ({
+      id: 'sub-credit',
+      organizationId: 'org_a',
+      billingCycle: 'MONTHLY',
+      currentPeriodStart: new Date('2026-04-01'),
+      currentPeriodEnd: PAST_DATE,
+      moyasarCardTokenRef: 'tok_credit',
+      plan: { priceMonthly: 200, priceAnnual: 2000, limits: {} },
+      planVersion: null,
+      ...overrides,
+    });
+
+    it('consumes oldest BillingCredit before charging the card (FIFO)', async () => {
+      const creditUpdateCalls: Array<{ where: unknown; data: unknown }> = [];
+      const prisma = {
+        $allTenants: {
+          subscription: {
+            findMany: jest.fn().mockResolvedValue([makeSub()]),
+          },
+          subscriptionInvoice: {
+            create: jest.fn().mockResolvedValue({ id: 'inv-credit-1' }),
+            update: jest.fn().mockResolvedValue({}),
+          },
+          billingCredit: {
+            findMany: jest.fn().mockResolvedValue([
+              {
+                id: 'credit-1',
+                organizationId: 'org_a',
+                amount: '50.00',
+                consumedAt: null,
+                grantedAt: new Date('2026-03-01'),
+              },
+            ]),
+            update: jest.fn().mockImplementation((args: { where: unknown; data: unknown }) => {
+              creditUpdateCalls.push(args);
+              return Promise.resolve({});
+            }),
+          },
+        },
+      };
+
+      const deps = buildDeps();
+      const cron = buildCron(prisma as never, buildConfig(true), deps);
+      await cron.execute();
+
+      // invoice amount = 200 (flat) * 1.15 (VAT) = 230 gross; minus 50 credit = 180
+      const createCall = (prisma.$allTenants.subscriptionInvoice.create.mock.calls[0][0] as {
+        data: { amount: number };
+      });
+      expect(createCall.data.amount).toBe(180);
+
+      expect(creditUpdateCalls).toHaveLength(1);
+      expect(creditUpdateCalls[0].data).toEqual(
+        expect.objectContaining({
+          consumedInvoiceId: 'inv-credit-1',
+          consumedAt: expect.any(Date),
+        }),
+      );
+
+      // Moyasar charged the reduced amount (180 SAR → 18000 halalas)
+      expect(deps.moyasar.chargeWithToken).toHaveBeenCalledWith(
+        expect.objectContaining({ amount: 18_000 }),
+      );
+    });
+
+    it('consumes multiple credits FIFO until total is exhausted', async () => {
+      const creditUpdateCalls: Array<{ where: unknown; data: unknown }> = [];
+      const prisma = {
+        $allTenants: {
+          subscription: {
+            findMany: jest.fn().mockResolvedValue([makeSub()]),
+          },
+          subscriptionInvoice: {
+            create: jest.fn().mockResolvedValue({ id: 'inv-credit-2' }),
+            update: jest.fn().mockResolvedValue({}),
+          },
+          billingCredit: {
+            findMany: jest.fn().mockResolvedValue([
+              {
+                id: 'credit-a',
+                organizationId: 'org_a',
+                amount: '30.00',
+                consumedAt: null,
+                grantedAt: new Date('2026-02-01'),
+              },
+              {
+                id: 'credit-b',
+                organizationId: 'org_a',
+                amount: '50.00',
+                consumedAt: null,
+                grantedAt: new Date('2026-03-01'),
+              },
+            ]),
+            update: jest.fn().mockImplementation((args: { where: unknown; data: unknown }) => {
+              creditUpdateCalls.push(args);
+              return Promise.resolve({});
+            }),
+          },
+        },
+      };
+
+      const deps = buildDeps();
+      const cron = buildCron(prisma as never, buildConfig(true), deps);
+      await cron.execute();
+
+      // gross = 230; credits = 30 + 50 = 80; net = 150
+      const createCall = (prisma.$allTenants.subscriptionInvoice.create.mock.calls[0][0] as {
+        data: { amount: number };
+      });
+      expect(createCall.data.amount).toBe(150);
+
+      // Both credits consumed
+      expect(creditUpdateCalls).toHaveLength(2);
+      expect(creditUpdateCalls[0].data).toEqual(
+        expect.objectContaining({ consumedInvoiceId: 'inv-credit-2', consumedAt: expect.any(Date) }),
+      );
+      expect(creditUpdateCalls[1].data).toEqual(
+        expect.objectContaining({ consumedInvoiceId: 'inv-credit-2', consumedAt: expect.any(Date) }),
+      );
+
+      // Moyasar charged 150 SAR → 15000 halalas
+      expect(deps.moyasar.chargeWithToken).toHaveBeenCalledWith(
+        expect.objectContaining({ amount: 15_000 }),
+      );
+    });
+
+    it('caps consumption at invoice total (no negative invoices)', async () => {
+      const creditUpdateCalls: Array<{ where: unknown; data: unknown }> = [];
+      const prisma = {
+        $allTenants: {
+          subscription: {
+            findMany: jest.fn().mockResolvedValue([makeSub()]),
+          },
+          subscriptionInvoice: {
+            create: jest.fn().mockResolvedValue({ id: 'inv-credit-3' }),
+            update: jest.fn().mockResolvedValue({}),
+          },
+          billingCredit: {
+            findMany: jest.fn().mockResolvedValue([
+              {
+                id: 'credit-big',
+                organizationId: 'org_a',
+                amount: '500.00',
+                consumedAt: null,
+                grantedAt: new Date('2026-01-01'),
+              },
+            ]),
+            update: jest.fn().mockImplementation((args: { where: unknown; data: unknown }) => {
+              creditUpdateCalls.push(args);
+              return Promise.resolve({});
+            }),
+          },
+        },
+      };
+
+      const deps = buildDeps();
+      const cron = buildCron(prisma as never, buildConfig(true), deps);
+      await cron.execute();
+
+      // gross = 230; credit capped at 230 (not 500); net = 0
+      const createCall = (prisma.$allTenants.subscriptionInvoice.create.mock.calls[0][0] as {
+        data: { amount: number };
+      });
+      expect(createCall.data.amount).toBe(0);
+
+      // Credit consumed (only 230 out of 500 SAR applied — but we mark the
+      // whole row as consumed per the update call; partial-credit tracking
+      // is future work. Assert the update was called.)
+      expect(creditUpdateCalls).toHaveLength(1);
+      expect(creditUpdateCalls[0].data).toEqual(
+        expect.objectContaining({ consumedInvoiceId: 'inv-credit-3', consumedAt: expect.any(Date) }),
+      );
+
+      // Zero-total → Moyasar must NOT be called
+      expect(deps.moyasar.chargeWithToken).not.toHaveBeenCalled();
+
+      // Invoice should be marked PAID directly
+      expect(prisma.$allTenants.subscriptionInvoice.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'PAID', paidAt: expect.any(Date) }),
+        }),
       );
     });
   });

@@ -121,12 +121,34 @@ export class ChargeDueSubscriptionsCron {
     }));
     const subtotal = flatAmount + overageAmount;
     const vatAmt = Number((subtotal * PLATFORM_VAT_RATE).toFixed(2));
-    const total = Number((subtotal + vatAmt).toFixed(2));
     const lineItems = [
       flatLine,
       ...overageLines,
       { kind: 'VAT' as const, rate: PLATFORM_VAT_RATE, amount: vatAmt },
     ];
+
+    // Apply BillingCredit FIFO before invoicing (gross total after VAT).
+    const grossTotal = Number((subtotal + vatAmt).toFixed(2));
+
+    const credits = await this.prisma.$allTenants.billingCredit.findMany({
+      where: {
+        organizationId: sub.organizationId,
+        consumedAt: null,
+      },
+      orderBy: { grantedAt: 'asc' },
+    });
+
+    let remaining = grossTotal;
+    const creditsApplied: { id: string; amount: number }[] = [];
+    for (const credit of credits) {
+      if (remaining <= 0) break;
+      const take = Math.min(remaining, Number(credit.amount));
+      if (take <= 0) continue;
+      creditsApplied.push({ id: credit.id, amount: take });
+      remaining = Number((remaining - take).toFixed(2));
+    }
+
+    const total = Number(remaining.toFixed(2));
 
     // Create invoice
     const invoice = await this.prisma.$allTenants.subscriptionInvoice.create({
@@ -144,6 +166,25 @@ export class ChargeDueSubscriptionsCron {
         dueDate: now,
       },
     });
+
+    // Stamp consumed credits with the new invoice id.
+    if (creditsApplied.length > 0) {
+      for (const c of creditsApplied) {
+        await this.prisma.$allTenants.billingCredit.update({
+          where: { id: c.id, consumedAt: null },
+          data: { consumedInvoiceId: invoice.id, consumedAt: new Date() },
+        });
+      }
+    }
+
+    // Zero-total after credits — mark invoice paid immediately, skip gateway.
+    if (total === 0) {
+      await this.prisma.$allTenants.subscriptionInvoice.update({
+        where: { id: invoice.id },
+        data: { status: 'PAID', paidAt: new Date() },
+      });
+      return;
+    }
 
     if (!sub.moyasarCardTokenRef) {
       this.logger.warn(
