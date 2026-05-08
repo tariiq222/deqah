@@ -1,5 +1,5 @@
 ---
-"@deqah/admin": patch
+"admin": patch
 ---
 
 Phase 7/8 of 2026-05-08 admin audit fixes — mutation observability, currency centralization, LTR enforcement, per-route error boundaries.

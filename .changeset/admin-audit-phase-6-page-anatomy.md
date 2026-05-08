@@ -1,5 +1,5 @@
 ---
-"@deqah/admin": patch
+"admin": patch
 ---
 
 Phase 6/8 of 2026-05-08 admin audit fixes — Page Anatomy compliance.

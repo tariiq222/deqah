@@ -1,6 +1,6 @@
 ---
-"@deqah/backend": patch
-"@deqah/admin": patch
+"backend": patch
+"admin": patch
 ---
 
 Phase 5/8 of 2026-05-08 admin audit fixes — defense-in-depth.

@@ -1,5 +1,5 @@
 ---
-"@deqah/backend": patch
+"backend": patch
 ---
 
 Phase 3/8 of 2026-05-08 admin audit fixes — real system-health probes.

@@ -1,5 +1,5 @@
 ---
-"@deqah/backend": patch
+"backend": patch
 ---
 
 Closes the audit-log gap on platform settings writes (Phase 1/8 of 2026-05-08 admin audit fixes).
