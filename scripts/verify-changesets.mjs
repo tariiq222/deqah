@@ -5,7 +5,7 @@
 //
 // Logic:
 //   1. List files changed between origin/main and HEAD.
-//   2. For each of {backend, dashboard, admin, website}, determine if its source paths changed.
+//   2. For each of {backend, dashboard, admin, marketing}, determine if its source paths changed.
 //   3. For each touched app, check that EITHER:
 //        a) apps/<app>/package.json `version` differs from what's on origin/main, OR
 //        b) at least one .changeset/*.md file declares a bump for that app
@@ -21,7 +21,10 @@ import { execSync, spawnSync } from "node:child_process";
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
-const APPS = ["backend", "dashboard", "admin", "website"];
+// Apps whose changes must carry a changeset before promote can succeed.
+// Sawa website (apps/bespoke/sawa/website) is intentionally excluded — paused
+// from the production pipeline as of 2026-05-08. Re-add when it rejoins.
+const APPS = ["backend", "dashboard", "admin", "marketing"];
 const APP_PATH_RE = (app) =>
   new RegExp(
     `^apps/${app}/(src|prisma|app|components|public|lib|messages|next\\.config|Dockerfile|package\\.json|tsconfig)`

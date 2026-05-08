@@ -217,9 +217,14 @@ fi
 
 # Verify per-app CHANGELOG.md files survived (the deployed tree should carry
 # its own change history; if these are missing, the sanitizer over-stripped).
-for app in backend dashboard admin website; do
-  if [[ ! -f "${OUT_DIR}/apps/${app}/CHANGELOG.md" ]]; then
-    echo "[sync-main] FAIL: apps/${app}/CHANGELOG.md missing from main tree!" >&2
+# Only apps that actually ship to production should be listed here.
+# Sawa website (apps/bespoke/sawa/website) is intentionally excluded — paused
+# from the production pipeline as of 2026-05-08; its CHANGELOG isn't required
+# for promote to succeed. Re-add 'apps/bespoke/sawa/website' here once the
+# Sawa site rejoins the build matrix.
+for app_path in apps/backend apps/dashboard apps/admin apps/marketing; do
+  if [[ ! -f "${OUT_DIR}/${app_path}/CHANGELOG.md" ]]; then
+    echo "[sync-main] FAIL: ${app_path}/CHANGELOG.md missing from main tree!" >&2
     FAIL=1
   fi
 done

@@ -82,10 +82,12 @@ jobs:
           BACKEND_V=$(node -p "require('./apps/backend/package.json').version")
           DASHBOARD_V=$(node -p "require('./apps/dashboard/package.json').version")
           ADMIN_V=$(node -p "require('./apps/admin/package.json').version")
+          MARKETING_V=$(node -p "require('./apps/marketing/package.json').version")
           echo "backend=$BACKEND_V" >> $GITHUB_OUTPUT
           echo "dashboard=$DASHBOARD_V" >> $GITHUB_OUTPUT
           echo "admin=$ADMIN_V" >> $GITHUB_OUTPUT
-          echo "Captured versions: backend=$BACKEND_V, dashboard=$DASHBOARD_V, admin=$ADMIN_V"
+          echo "marketing=$MARKETING_V" >> $GITHUB_OUTPUT
+          echo "Captured versions: backend=$BACKEND_V, dashboard=$DASHBOARD_V, admin=$ADMIN_V, marketing=$MARKETING_V"
 
       - name: Append version-history.md row
         # version-history.md is pre-seeded with the 6-column header on develop
@@ -95,11 +97,12 @@ jobs:
           HISTORY="docs/operations/version-history.md"
           PROMOTED_AT=$(date -u +"%Y-%m-%d %H:%M UTC")
           SOURCE_SHORT=$(git rev-parse --short HEAD)
-          printf "| %s | v%s | v%s | v%s | %s |\n" \
+          printf "| %s | v%s | v%s | v%s | v%s | %s |\n" \
             "$PROMOTED_AT" \
             "${{ steps.versions.outputs.backend }}" \
             "${{ steps.versions.outputs.dashboard }}" \
             "${{ steps.versions.outputs.admin }}" \
+            "${{ steps.versions.outputs.marketing }}" \
             "$SOURCE_SHORT" >> "$HISTORY"
 
       - name: Commit version bump + history row, push to develop
@@ -144,7 +147,7 @@ jobs:
           git commit \
             -m "Production promote from develop @ ${SOURCE_SHORT}" \
             -m "Source: ${SOURCE_SHA}" \
-            -m "Versions: backend=v${{ steps.versions.outputs.backend }}, dashboard=v${{ steps.versions.outputs.dashboard }}, admin=v${{ steps.versions.outputs.admin }}"
+            -m "Versions: backend=v${{ steps.versions.outputs.backend }}, dashboard=v${{ steps.versions.outputs.dashboard }}, admin=v${{ steps.versions.outputs.admin }}, marketing=v${{ steps.versions.outputs.marketing }}"
           git push --force origin main
 
       - name: Trigger build-images workflow on main
