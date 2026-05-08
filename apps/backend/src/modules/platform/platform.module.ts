@@ -43,6 +43,7 @@ import { UpdateVerticalAdminHandler } from './admin/update-vertical/update-verti
 import { DeleteVerticalAdminHandler } from './admin/delete-vertical/delete-vertical-admin.handler';
 import { GetPlatformMetricsHandler } from './admin/get-platform-metrics/get-platform-metrics.handler';
 import { ListAuditLogHandler } from './admin/list-audit-log/list-audit-log.handler';
+import { LogPlatformSettingUpdateHandler } from './admin/log-platform-setting-update/log-platform-setting-update.handler';
 import { StartImpersonationHandler } from './admin/start-impersonation/start-impersonation.handler';
 import { EndImpersonationHandler } from './admin/end-impersonation/end-impersonation.handler';
 import { ListImpersonationSessionsHandler } from './admin/list-impersonation-sessions/list-impersonation-sessions.handler';
@@ -98,6 +99,7 @@ const ADMIN_HANDLERS = [
   DeleteVerticalAdminHandler,
   GetPlatformMetricsHandler,
   ListAuditLogHandler,
+  LogPlatformSettingUpdateHandler,
   StartImpersonationHandler,
   EndImpersonationHandler,
   ListImpersonationSessionsHandler,
