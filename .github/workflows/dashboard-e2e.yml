@@ -96,7 +96,7 @@ jobs:
           echo $! > /tmp/backend.pid
           # Wait up to 60 s for health endpoint
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:5100/api/health > /dev/null 2>&1; then
+            if curl -sf http://localhost:5100/api/v1/health > /dev/null 2>&1; then
               echo "Backend is up"
               exit 0
             fi
@@ -253,7 +253,7 @@ jobs:
           echo $! > /tmp/backend.pid
           # Wait up to 60 s for health endpoint
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:5100/api/health > /dev/null 2>&1; then
+            if curl -sf http://localhost:5100/api/v1/health > /dev/null 2>&1; then
               echo "Backend is up"
               exit 0
             fi
