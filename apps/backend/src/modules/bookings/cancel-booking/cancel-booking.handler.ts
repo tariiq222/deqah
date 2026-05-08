@@ -97,6 +97,11 @@ export class CancelBookingHandler {
       return cancelledBooking;
     });
 
+    const completedPayment = await this.prisma.payment.findFirst({
+      where: { invoice: { bookingId: booking.id }, status: 'COMPLETED' },
+      select: { id: true },
+    });
+
     const event = new BookingCancelledEvent({
       bookingId: booking.id,
       clientId: booking.clientId,
@@ -104,6 +109,8 @@ export class CancelBookingHandler {
       reason: cmd.reason,
       cancelNotes: cmd.cancelNotes,
       zoomMeetingId: (booking as Record<string, unknown>).zoomMeetingId as string | null ?? null,
+      refundType,
+      paymentId: completedPayment?.id ?? null,
     });
     await this.eventBus.publish(event.eventName, event.toEnvelope());
 

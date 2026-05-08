@@ -13,6 +13,9 @@ export const mockBooking = {
 };
 
 const buildPrismaRaw = () => ({
+  payment: {
+    findFirst: jest.fn().mockResolvedValue(null),
+  },
   booking: {
     findUnique: jest.fn().mockResolvedValue(mockBooking),
     findFirst: jest.fn().mockResolvedValue(null),

@@ -38,6 +38,7 @@ import { ListRefundsHandler } from './refund-payment/list-refunds.handler';
 import { GetMoyasarConfigHandler } from './moyasar-config/get-moyasar-config.handler';
 import { UpsertMoyasarConfigHandler } from './moyasar-config/upsert-moyasar-config.handler';
 import { TestMoyasarConfigHandler } from './moyasar-config/test-moyasar-config.handler';
+import { OnBookingCancelledRefundHandler } from './events/on-booking-cancelled.handler';
 
 const handlers = [
   CreateInvoiceHandler,
@@ -79,6 +80,7 @@ const handlers = [
     MoyasarApiClient,
     MoyasarSubscriptionClient,
     MoyasarSubscriptionWebhookHandler,
+    OnBookingCancelledRefundHandler,
   ],
   exports: [...handlers, MoyasarApiClient, MoyasarSubscriptionClient, MoyasarSubscriptionWebhookHandler],
 })
@@ -86,10 +88,12 @@ export class FinanceModule implements OnModuleInit {
   constructor(
     private readonly bookingConfirmedHandler: BookingConfirmedHandler,
     private readonly groupSessionReadyHandler: GroupSessionReadyHandler,
+    private readonly onBookingCancelledRefundHandler: OnBookingCancelledRefundHandler,
   ) {}
 
   onModuleInit(): void {
     this.bookingConfirmedHandler.register();
     this.groupSessionReadyHandler.register();
+    this.onBookingCancelledRefundHandler.register();
   }
 }

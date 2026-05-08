@@ -1,9 +1,11 @@
 import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { BookingStatus } from '@prisma/client';
+import { BookingStatus, RefundType } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
+import { EventBusService } from '../../../infrastructure/events';
 import { GetBookingSettingsHandler } from '../get-booking-settings/get-booking-settings.handler';
 import { ClientCancelBookingDto } from './client-cancel-booking.dto';
+import { BookingCancelledEvent } from '../events/booking-cancelled.event';
 
 export type ClientCancelCommand = ClientCancelBookingDto & {
   bookingId: string;
@@ -16,6 +18,7 @@ export class ClientCancelBookingHandler {
     private readonly prisma: PrismaService,
     private readonly tenant: TenantContextService,
     private readonly settingsHandler: GetBookingSettingsHandler,
+    private readonly eventBus: EventBusService,
   ) {}
 
   async execute(cmd: ClientCancelCommand) {
@@ -67,6 +70,10 @@ export class ClientCancelBookingHandler {
       return { status: 'CANCEL_REQUESTED', booking: updated, requiresApproval: true };
     }
 
+    const refundType = hoursUntilBooking >= settings.freeCancelBeforeHours
+      ? settings.freeCancelRefundType
+      : RefundType.NONE;
+
     const [updated] = await this.prisma.$transaction([
       this.prisma.booking.update({
         where: { id: cmd.bookingId },
@@ -88,6 +95,22 @@ export class ClientCancelBookingHandler {
         },
       }),
     ]);
+
+    const completedPayment = await this.prisma.payment.findFirst({
+      where: { invoice: { bookingId: booking.id }, status: 'COMPLETED' },
+      select: { id: true },
+    });
+
+    const event = new BookingCancelledEvent({
+      bookingId: booking.id,
+      clientId: booking.clientId,
+      employeeId: booking.employeeId,
+      reason: 'CLIENT_REQUESTED' as never,
+      cancelNotes: cmd.reason ?? undefined,
+      refundType,
+      paymentId: completedPayment?.id ?? null,
+    });
+    await this.eventBus.publish(event.eventName, event.toEnvelope());
 
     return { status: 'CANCELLED', booking: updated, requiresApproval: false };
   }

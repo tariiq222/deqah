@@ -1,6 +1,8 @@
 import { BaseEvent } from '../../../common/events';
 import { CancellationReason } from '@prisma/client';
 
+export type BookingRefundType = 'NONE' | 'FULL' | 'PARTIAL';
+
 export interface BookingCancelledPayload {
   bookingId: string;
   clientId: string;
@@ -8,6 +10,8 @@ export interface BookingCancelledPayload {
   reason: CancellationReason;
   cancelNotes?: string;
   zoomMeetingId?: string | null;
+  refundType: BookingRefundType;
+  paymentId: string | null;
 }
 
 /**
