@@ -178,7 +178,7 @@ export class AuditInterceptor implements NestInterceptor {
 
     const handlerName = ctx.getHandler().name;
     const controllerName = ctx.getClass().name;
-    const path = req.originalUrl ?? req.url;
+    const path = (req.originalUrl ?? req.url).split('?')[0];
     const entity = resolveEntity(controllerName, handlerName, path);
     const action = mapMethodToAction(method);
     const { userId, userEmail } = extractUserFromContext(req);

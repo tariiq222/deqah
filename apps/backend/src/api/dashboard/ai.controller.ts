@@ -7,6 +7,7 @@ import {
   ApiOkResponse, ApiNoContentResponse, ApiResponse, ApiProduces,
 } from '@nestjs/swagger';
 import { ApiStandardResponses } from '../../common/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { JwtGuard } from '../../common/guards/jwt.guard';
 import { CaslGuard } from '../../common/guards/casl.guard';
 import { ManageKnowledgeBaseHandler } from '../../modules/ai/manage-knowledge-base/manage-knowledge-base.handler';
@@ -127,6 +128,7 @@ export class DashboardAiController {
   // ── Chat Completion ────────────────────────────────────────────────────────
 
   @RequireFeature(FeatureKey.AI_CHATBOT)
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @Post('chat')
   @HttpCode(HttpStatus.OK)
   @ApiProduces('text/event-stream')

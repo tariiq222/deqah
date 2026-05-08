@@ -72,7 +72,7 @@ describe('RefundPaymentHandler', () => {
     expect(moyasar.createRefund).toHaveBeenCalledWith('org_1', expect.objectContaining({
       paymentId: 'moyasar_pay_abc',
       amount: expect.any(Number),
-      idempotencyKey: expect.stringMatching(/^refund:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/),
+      idempotencyKey: 'refund:pay_1:100.00',
     }));
   });
 

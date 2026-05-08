@@ -37,6 +37,7 @@ import { GetPublicEmployeeHandler } from './employees/public/get-public-employee
 import { SetClientActiveHandler } from './clients/set-client-active/set-client-active.handler';
 import { LogActivityHandler } from '../ops/log-activity/log-activity.handler';
 import { DashboardPeopleController } from '../../api/dashboard/people.controller';
+import { MAX_FILE_SIZE_BYTES } from '../media/files/upload-file.handler';
 
 const handlers = [
   CreateClientHandler, UpdateClientHandler, ListClientsHandler, GetClientHandler, DeleteClientHandler,
@@ -52,7 +53,7 @@ const handlers = [
 ];
 
 @Module({
-  imports: [DatabaseModule, MediaModule, MessagingModule, MulterModule.register({ storage: memoryStorage() }), forwardRef(() => BookingsModule), forwardRef(() => IdentityModule)],
+  imports: [DatabaseModule, MediaModule, MessagingModule, MulterModule.register({ storage: memoryStorage(), limits: { fileSize: MAX_FILE_SIZE_BYTES, files: 1 } }), forwardRef(() => BookingsModule), forwardRef(() => IdentityModule)],
   controllers: [DashboardPeopleController],
   providers: [...handlers],
   exports: [...handlers],

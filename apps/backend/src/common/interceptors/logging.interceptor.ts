@@ -16,7 +16,7 @@ export class LoggingInterceptor implements NestInterceptor {
   intercept(ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = ctx.switchToHttp().getRequest<Request>();
     const res = ctx.switchToHttp().getResponse<Response>();
-    const { method, url } = req;
+    const { method, path } = req;
     const start = Date.now();
 
     return next.handle().pipe(
@@ -25,13 +25,13 @@ export class LoggingInterceptor implements NestInterceptor {
           const context = RequestContextStorage.get();
           const ms = Date.now() - start;
           this.logger.log(
-            `${method} ${url} ${res.statusCode} ${ms}ms` +
+            `${method} ${path} ${res.statusCode} ${ms}ms` +
               (context ? ` reqId=${context.requestId}` : ''),
           );
         },
         error: () => {
           const ms = Date.now() - start;
-          this.logger.warn(`${method} ${url} ERR ${ms}ms`);
+          this.logger.warn(`${method} ${path} ERR ${ms}ms`);
         },
       }),
     );

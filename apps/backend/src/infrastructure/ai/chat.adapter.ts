@@ -9,7 +9,7 @@ export interface ChatMessage {
 }
 
 export interface IChatService {
-  complete(messages: ChatMessage[], model?: string): Promise<string>;
+  complete(messages: ChatMessage[], model?: string, options?: { maxTokens?: number }): Promise<string>;
   stream(messages: ChatMessage[], model?: string): AsyncIterable<string>;
   isAvailable(): boolean;
 }
@@ -46,11 +46,12 @@ export class ChatAdapter implements IChatService, OnModuleInit {
     return !!this.client;
   }
 
-  async complete(messages: ChatMessage[], model?: string): Promise<string> {
+  async complete(messages: ChatMessage[], model?: string, options?: { maxTokens?: number }): Promise<string> {
     if (!this.client) throw new Error('ChatAdapter is not available — set OPENROUTER_API_KEY');
     const response = await this.client.chat.completions.create({
       model: model ?? this.defaultModel,
       messages,
+      ...(options?.maxTokens !== undefined ? { max_tokens: options.maxTokens } : {}),
     });
     return response.choices[0]?.message?.content ?? '';
   }

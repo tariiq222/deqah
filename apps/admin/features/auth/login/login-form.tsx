@@ -55,7 +55,8 @@ function Inner() {
         return;
       }
       window.localStorage.setItem("admin.accessToken", res.accessToken);
-      document.cookie = `admin.authenticated=1; Path=/; SameSite=Lax; Max-Age=${60 * 60 * 24}`;
+      const secureFlag = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = `admin.authenticated=1; path=/; SameSite=Strict${secureFlag}; Max-Age=${60 * 60 * 24}`;
       router.push(next);
     } catch {
       toast.error(t("error.failed"));

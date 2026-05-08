@@ -352,6 +352,7 @@ export class AuthController {
   }
 
   @Post('switch-org')
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @UseGuards(JwtGuard)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
@@ -393,6 +394,7 @@ export class AuthController {
   }
 
   @Patch('memberships/:id/profile')
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @UseGuards(JwtGuard)
   @ApiBearerAuth()
   @ApiParam({ name: 'id', description: 'Membership UUID', format: 'uuid', example: '00000000-0000-0000-0000-000000000000' })
@@ -421,6 +423,7 @@ export class AuthController {
   }
 
   @Post('memberships/:id/avatar')
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @UseGuards(JwtGuard)
   @ApiBearerAuth()
   @ApiParam({ name: 'id', description: 'Membership UUID', format: 'uuid', example: '00000000-0000-0000-0000-000000000000' })

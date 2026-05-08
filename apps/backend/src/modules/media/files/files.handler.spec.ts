@@ -24,6 +24,7 @@ const mockFile = {
   ownerId: null,
   uploadedBy: null,
   isDeleted: false,
+  organizationId: 'org-A',
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -74,7 +75,7 @@ describe('Media files handlers', () => {
         },
         {
           provide: TenantContextService,
-          useValue: { requireOrganizationIdOrDefault: jest.fn().mockReturnValue('org-A') },
+          useValue: { requireOrganizationIdOrDefault: jest.fn().mockReturnValue('org-A'), requireOrganizationId: jest.fn().mockReturnValue('org-A') },
         },
         {
           provide: EventBusService,

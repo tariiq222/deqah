@@ -8,6 +8,7 @@ import { UploadFileHandler } from './files/upload-file.handler';
 import { GetFileHandler } from './files/get-file.handler';
 import { DeleteFileHandler } from './files/delete-file.handler';
 import { GeneratePresignedUrlHandler } from './files/generate-presigned-url.handler';
+import { MAX_FILE_SIZE_BYTES } from './files/upload-file.handler';
 import { DashboardMediaController } from '../../api/dashboard/media.controller';
 
 const handlers = [
@@ -22,7 +23,7 @@ const handlers = [
     DatabaseModule,
     ConfigModule,
     MessagingModule,
-    MulterModule.register({ storage: memoryStorage() }),
+    MulterModule.register({ storage: memoryStorage(), limits: { fileSize: MAX_FILE_SIZE_BYTES, files: 1 } }),
   ],
   controllers: [DashboardMediaController],
   providers: [...handlers],

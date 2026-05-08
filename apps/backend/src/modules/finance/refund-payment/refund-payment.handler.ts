@@ -51,7 +51,7 @@ export class RefundPaymentHandler {
     const moyasarRefund = await this.moyasar.createRefund(payment.invoice.organizationId, {
       paymentId: payment.gatewayRef,
       amount: Math.round(refundAmount * 100),
-      idempotencyKey: `refund:${refundRequestId}`,
+      idempotencyKey: `refund:${payment.id}:${Number(refundAmount).toFixed(2)}`,
     });
 
     const updatedPayment = await this.prisma.$transaction(async (tx) => {

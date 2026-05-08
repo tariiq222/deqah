@@ -59,7 +59,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message: message as string | string[],
       requestId: requestContext?.requestId,
       timestamp: new Date().toISOString(),
-      path: req.url,
+      path: req.path,
     };
 
     // Preserve any custom keys (e.g. `code`, `violations`) that callers attached
@@ -75,7 +75,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     if (status >= 500) {
       this.logger.error(
-        `${req.method} ${req.url} → ${status}`,
+        `${req.method} ${req.path} → ${status}`,
         exception instanceof Error ? exception.stack : String(exception),
       );
       Sentry.withScope((scope) => {
@@ -83,7 +83,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         if (requestContext?.userId) {
           scope.setUser({ id: requestContext.userId });
         }
-        scope.setTag('route', `${req.method} ${(req as Request & { route?: { path: string } }).route?.path ?? req.url}`);
+        scope.setTag('route', `${req.method} ${(req as Request & { route?: { path: string } }).route?.path ?? req.path}`);
         Sentry.captureException(exception);
       });
     }

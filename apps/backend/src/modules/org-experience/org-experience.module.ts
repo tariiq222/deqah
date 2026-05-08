@@ -31,6 +31,7 @@ import { GetOrgSettingsHandler } from './org-settings/get-org-settings.handler';
 import { UpsertOrgSettingsHandler } from './org-settings/upsert-org-settings.handler';
 import { GetBookingSettingsHandler } from '../bookings/get-booking-settings/get-booking-settings.handler';
 import { UpsertBookingSettingsHandler } from '../bookings/upsert-booking-settings/upsert-booking-settings.handler';
+import { MAX_FILE_SIZE_BYTES } from '../media/files/upload-file.handler';
 import { VerticalsModule } from '../platform/verticals/verticals.module';
 
 const serviceHandlers = [
@@ -41,7 +42,7 @@ const serviceHandlers = [
 ];
 
 @Module({
-  imports: [DatabaseModule, MediaModule, TenantModule, VerticalsModule, MessagingModule, MulterModule.register({ storage: memoryStorage() })],
+  imports: [DatabaseModule, MediaModule, TenantModule, VerticalsModule, MessagingModule, MulterModule.register({ storage: memoryStorage(), limits: { fileSize: MAX_FILE_SIZE_BYTES, files: 1 } })],
   controllers: [DashboardOrganizationSettingsController],
   providers: [
     ...serviceHandlers,

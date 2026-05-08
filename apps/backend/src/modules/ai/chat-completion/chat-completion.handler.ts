@@ -7,6 +7,8 @@ import { ChatCompletionDto, ChatCompletionResult } from './chat-completion.dto';
 
 export type ChatCompletionCommand = ChatCompletionDto;
 
+const MAX_OUTPUT_TOKENS = 800;
+
 const SYSTEM_PROMPT_TEMPLATE = (context: string) => `
 You are a helpful assistant for a medical clinic using Deqah.
 Answer the user's question based ONLY on the following context.
@@ -44,7 +46,7 @@ export class ChatCompletionHandler {
       { role: 'user' as const, content: dto.userMessage },
     ];
 
-    const reply = await this.chat.complete(messages);
+    const reply = await this.chat.complete(messages, undefined, { maxTokens: MAX_OUTPUT_TOKENS });
 
     let sessionId = dto.sessionId;
     if (!sessionId) {

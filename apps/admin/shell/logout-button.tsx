@@ -12,7 +12,8 @@ export function LogoutButton() {
       className="w-full justify-start"
       onClick={() => {
         window.localStorage.removeItem('admin.accessToken');
-        document.cookie = 'admin.authenticated=; Path=/; SameSite=Lax; Max-Age=0';
+        const secureFlag = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : '';
+        document.cookie = `admin.authenticated=; path=/; SameSite=Strict${secureFlag}; Max-Age=0`;
         router.push('/login');
       }}
     >
