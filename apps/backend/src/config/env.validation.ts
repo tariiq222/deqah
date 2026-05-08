@@ -243,16 +243,19 @@ export const envValidationSchema = Joi.object({
   AUTHENTICA_DEFAULT_TEMPLATE_ID: Joi.string().default('1'),
 
   // CAPTCHA (auth bot protection on OTP endpoints).
-  // 'noop' is allowed in production until Cloudflare Turnstile lands; per-account
-  // lockout (5 attempts → 15-minute lock) remains in place as the primary
-  // brute-force defense.
-  CAPTCHA_PROVIDER: Joi.string().valid('noop', 'hcaptcha', 'turnstile').default('noop'),
+  // In production, 'noop' is FORBIDDEN — a real provider (hcaptcha | turnstile) is required.
+  // Per-account lockout (5 attempts → 15-minute lock) remains in place as a secondary defense.
+  CAPTCHA_PROVIDER: Joi.string().valid('noop', 'hcaptcha', 'turnstile').when('NODE_ENV', {
+    is: 'production',
+    then: Joi.string().valid('hcaptcha', 'turnstile').required(),
+    otherwise: Joi.string().valid('noop', 'hcaptcha', 'turnstile').default('noop'),
+  }),
   HCAPTCHA_SECRET: Joi.when('CAPTCHA_PROVIDER', {
     is: 'hcaptcha',
     then: Joi.string().min(8).required(),
     otherwise: Joi.string().allow('').optional(),
   }),
-  // Cloudflare Turnstile (planned). Required only when CAPTCHA_PROVIDER='turnstile'.
+  // Cloudflare Turnstile. Required only when CAPTCHA_PROVIDER='turnstile'.
   TURNSTILE_SECRET: Joi.when('CAPTCHA_PROVIDER', {
     is: 'turnstile',
     then: Joi.string().min(8).required(),
