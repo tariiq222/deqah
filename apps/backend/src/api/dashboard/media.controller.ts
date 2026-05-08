@@ -11,6 +11,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtGuard } from '../../common/guards/jwt.guard';
 import { CaslGuard } from '../../common/guards/casl.guard';
+import { CurrentUser, JwtUser } from '../../common/auth/current-user.decorator';
 import { ApiStandardResponses } from '../../common/swagger';
 import { UploadFileHandler } from '../../modules/media/files/upload-file.handler';
 import { UploadFileDto } from '../../modules/media/files/upload-file.dto';
@@ -45,7 +46,6 @@ export class DashboardMediaController {
         visibility: { type: 'string', enum: ['PUBLIC', 'PRIVATE'], description: 'Storage visibility', example: 'PUBLIC' },
         ownerType: { type: 'string', description: 'Entity type that owns the file', example: 'Employee' },
         ownerId: { type: 'string', format: 'uuid', description: 'UUID of the owning entity', example: 'b3d2e1f0-9a8b-7c6d-5e4f-3a2b1c0d9e8f' },
-        uploadedBy: { type: 'string', format: 'uuid', description: 'UUID of the user uploading the file', example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' },
       },
       required: ['file'],
     },
@@ -68,6 +68,7 @@ export class DashboardMediaController {
   uploadFileEndpoint(
     @UploadedFile() file: Express.Multer.File | undefined,
     @Body() body: UploadFileDto,
+    @CurrentUser() user: JwtUser,
   ) {
     if (!file) throw new BadRequestException('No file uploaded');
 
@@ -77,6 +78,7 @@ export class DashboardMediaController {
         mimetype: file.mimetype,
         size: file.size,
         ...body,
+        uploadedBy: user.sub,
       },
       file.buffer,
     );

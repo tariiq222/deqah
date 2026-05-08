@@ -310,5 +310,26 @@ export const envValidationSchema = Joi.object({
         });
       }
     }
+    // P0 hardening (2026-05-09 audit): refuse to boot in production with the OWNER role.
+    // The runtime MUST use deqah_app (NOBYPASSRLS). Using `:deqah:` in DATABASE_URL means
+    // the app would silently bypass every RLS policy — defeating the whole tenant boundary.
+    if (typeof value.DATABASE_URL === 'string') {
+      // Match `:deqah:` or `://deqah:` but NOT `:deqah_app:` — split on '@' first to inspect creds only
+      const creds = value.DATABASE_URL.split('@')[0] ?? '';
+      if (/(?:^|\/\/|:)deqah:/.test(creds) && !/deqah_app:/.test(creds)) {
+        return helpers.error('any.invalid', {
+          message: 'DATABASE_URL uses the OWNER role (deqah). Production runtime MUST use the NOBYPASSRLS role (deqah_app). See docs/operations/p0-rls-cutover.md.',
+        });
+      }
+    }
+    // P0 hardening: RLS_GUC_INTERCEPTOR_ENABLED MUST be true in production. The Postgres
+    // RLS policies are fail-closed (post 2026-05-09) — leaving the interceptor off either
+    // (a) breaks every authenticated query if the role is deqah_app, or (b) silently
+    // bypasses RLS if the role is the OWNER. Both are unacceptable.
+    if (value.RLS_GUC_INTERCEPTOR_ENABLED !== 'true') {
+      return helpers.error('any.invalid', {
+        message: 'RLS_GUC_INTERCEPTOR_ENABLED must be "true" in production. Setting it false disables the per-request tenant GUC and leaves the database with no enforced tenant boundary.',
+      });
+    }
     return value;
   }, 'placeholder rejection in production');

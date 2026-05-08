@@ -21,7 +21,7 @@ describe('RefreshTokenHandler', () => {
         {
           provide: PrismaService,
           useValue: {
-            refreshToken: { findMany: jest.fn(), update: jest.fn() },
+            refreshToken: { findMany: jest.fn(), updateMany: jest.fn() },
             user: { findUnique: jest.fn() },
             membership: { findUnique: jest.fn().mockResolvedValue({ id: 'mem-1', role: 'ADMIN' }) },
           },
@@ -41,7 +41,7 @@ describe('RefreshTokenHandler', () => {
     ]);
     jest.spyOn(require('bcryptjs'), 'compare').mockResolvedValue(true);
     prisma.user.findUnique.mockResolvedValue({ id: 'user-1', email: 'a@b.com', role: 'ADMIN', customRoleId: null, customRole: null, isActive: true });
-    prisma.refreshToken.update.mockResolvedValue({});
+    prisma.refreshToken.updateMany.mockResolvedValue({ count: 1 });
     tokenService.issueTokenPair.mockResolvedValue({ accessToken: 'new-acc', refreshToken: 'new-ref' });
 
     const result = await handler.execute({ userId: 'user-1', rawToken: 'raw' });
@@ -55,13 +55,28 @@ describe('RefreshTokenHandler', () => {
     ).rejects.toThrow(UnauthorizedException);
   });
 
+  it('rejects when token was already revoked between findMany and updateMany (rotation race)', async () => {
+    // Simulates: T1 reads token, T2 reads token, T2 revokes, T1 attempts revoke
+    // → T1's updateMany sees revokedAt!=null and returns count=0.
+    prisma.refreshToken.findMany.mockResolvedValue([
+      { id: 'rt-1', userId: 'user-1', organizationId: 'org-A', tokenHash: '$2b$10$abc', expiresAt: futureDate, revokedAt: null, createdAt: new Date() },
+    ]);
+    jest.spyOn(require('bcryptjs'), 'compare').mockResolvedValue(true);
+    prisma.refreshToken.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(
+      handler.execute({ userId: 'user-1', rawToken: 'raw' }),
+    ).rejects.toThrow(UnauthorizedException);
+    expect(tokenService.issueTokenPair).not.toHaveBeenCalled();
+  });
+
   it('carries organizationId from old refresh token into new token pair', async () => {
     prisma.refreshToken.findMany.mockResolvedValue([
       { id: 'rt-1', userId: 'user-1', organizationId: 'org-A', tokenHash: '$2b$10$abc', expiresAt: futureDate, revokedAt: null, createdAt: new Date() },
     ]);
     jest.spyOn(require('bcryptjs'), 'compare').mockResolvedValue(true);
     prisma.user.findUnique.mockResolvedValue({ id: 'user-1', email: 'a@b.com', role: 'RECEPTIONIST', customRoleId: null, customRole: null, isActive: true });
-    prisma.refreshToken.update.mockResolvedValue({});
+    prisma.refreshToken.updateMany.mockResolvedValue({ count: 1 });
     tokenService.issueTokenPair.mockResolvedValue({ accessToken: 'new-acc', refreshToken: 'new-ref' });
 
     await handler.execute({ userId: 'user-1', rawToken: 'raw' });
@@ -78,7 +93,7 @@ describe('RefreshTokenHandler', () => {
     ]);
     jest.spyOn(require('bcryptjs'), 'compare').mockResolvedValue(true);
     prisma.user.findUnique.mockResolvedValue({ id: 'user-1', email: 'a@b.com', role: 'RECEPTIONIST', customRoleId: null, customRole: null, isActive: true });
-    prisma.refreshToken.update.mockResolvedValue({});
+    prisma.refreshToken.updateMany.mockResolvedValue({ count: 1 });
     tokenService.issueTokenPair.mockResolvedValue({ accessToken: 'new-acc', refreshToken: 'new-ref' });
 
     await handler.execute({ userId: 'user-1', rawToken: 'raw' });
@@ -95,7 +110,7 @@ describe('RefreshTokenHandler', () => {
     ]);
     jest.spyOn(require('bcryptjs'), 'compare').mockResolvedValue(true);
     prisma.user.findUnique.mockResolvedValue({ id: 'user-1', email: 'a@b.com', role: 'SUPER_ADMIN', isSuperAdmin: true, customRoleId: null, customRole: null, isActive: true });
-    prisma.refreshToken.update.mockResolvedValue({});
+    prisma.refreshToken.updateMany.mockResolvedValue({ count: 1 });
     tokenService.issueTokenPair.mockResolvedValue({ accessToken: 'new-acc', refreshToken: 'new-ref' });
 
     await handler.execute({ userId: 'user-1', rawToken: 'raw' });

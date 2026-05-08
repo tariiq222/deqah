@@ -24,7 +24,18 @@ export class RefreshTokenHandler {
 
     if (!matched) throw new UnauthorizedException('Invalid or expired refresh token');
 
-    await this.prisma.refreshToken.update({ where: { id: matched.id }, data: { revokedAt: new Date() } });
+    // Conditional revoke: if a concurrent request already consumed this token,
+    // updateMany with `revokedAt: null` will affect 0 rows and we reject —
+    // mirrors the safe pattern in client-refresh.handler.ts. Plain update()
+    // is unconditional and would let two parallel /auth/refresh calls each
+    // mint a fresh token pair from the same one-time refresh token.
+    const revoked = await this.prisma.refreshToken.updateMany({
+      where: { id: matched.id, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    if (revoked.count === 0) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
 
     const user = await this.prisma.user.findUnique({
       where: { id: cmd.userId },

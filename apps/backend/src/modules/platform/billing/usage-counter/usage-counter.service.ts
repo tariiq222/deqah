@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { FeatureKey } from '@deqah/shared/constants/feature-keys';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 
@@ -20,6 +21,15 @@ export class UsageCounterService {
   /**
    * Atomically increment a counter by `by` (default 1).
    * Creates the row if it does not exist yet.
+   *
+   * Uses INSERT ... ON CONFLICT DO UPDATE so concurrent increments cannot
+   * lose updates. The previous read-modify-write pattern under READ COMMITTED
+   * silently undercounted — two parallel +1s could land as a single +1,
+   * which is direct platform-revenue leak on overage-billed counters
+   * (monthly_bookings, STORAGE_MB).
+   *
+   * GREATEST(0, …) keeps the counter non-negative when `by` is negative
+   * (e.g. on refund decrement), preserving the previous Math.max(0, …) cap.
    */
   async increment(
     orgId: string,
@@ -27,38 +37,14 @@ export class UsageCounterService {
     periodStart: Date,
     by = 1,
   ): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
-      const row = await tx.usageCounter.findUnique({
-        where: {
-          organizationId_featureKey_periodStart: {
-            organizationId: orgId,
-            featureKey,
-            periodStart,
-          },
-        },
-        select: { value: true },
-      });
-
-      const currentValue = row?.value ?? 0;
-      const newValue = Math.max(0, currentValue + by);
-
-      await tx.usageCounter.upsert({
-        where: {
-          organizationId_featureKey_periodStart: {
-            organizationId: orgId,
-            featureKey,
-            periodStart,
-          },
-        },
-        update: { value: newValue },
-        create: {
-          organizationId: orgId,
-          featureKey,
-          periodStart,
-          value: Math.max(0, by),
-        },
-      });
-    });
+    await this.prisma.$executeRaw(Prisma.sql`
+      INSERT INTO "UsageCounter" ("id", "organizationId", "featureKey", "periodStart", "value", "updatedAt")
+      VALUES (gen_random_uuid(), ${orgId}::uuid, ${featureKey}, ${periodStart}, GREATEST(0, ${by}), NOW())
+      ON CONFLICT ("organizationId", "featureKey", "periodStart")
+      DO UPDATE SET
+        "value" = GREATEST(0, "UsageCounter"."value" + ${by}),
+        "updatedAt" = NOW()
+    `);
   }
 
   /**

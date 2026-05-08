@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database';
@@ -20,6 +21,8 @@ export interface RefundApprovalResult {
 
 @Injectable()
 export class ApproveRefundHandler {
+  private readonly logger = new Logger(ApproveRefundHandler.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly moyasarClient: MoyasarApiClient,
@@ -47,6 +50,11 @@ export class ApproveRefundHandler {
       },
     });
 
+    // Track whether Moyasar already moved real money. If so, a subsequent DB
+    // failure must NOT mark the row as FAILED — the funds are gone and the
+    // gatewayRef must be persisted so reconciliation can finalize the row.
+    let moyasarRefundId: string | undefined;
+
     try {
       const moyasarRefund = await this.moyasarClient.createRefund(
         refundRequest.organizationId,
@@ -56,24 +64,34 @@ export class ApproveRefundHandler {
           idempotencyKey: `refund:${refundRequest.id}`,
         },
       );
+      moyasarRefundId = moyasarRefund.id;
 
-      const updated = await this.prisma.refundRequest.update({
-        where: { id: cmd.refundRequestId },
-        data: {
-          status: 'COMPLETED',
-          gatewayRef: moyasarRefund.id,
-        },
-      });
+      // Atomic finalize — the three writes that commit the refund (mark
+      // request COMPLETED + invoice REFUNDED + payment REFUNDED) must land
+      // together or not at all. Previously they were three sequential awaits;
+      // a DB blip between any pair would leave books inconsistent with
+      // Moyasar (real money refunded but invoice still ISSUED).
+      const { updated, invoice } = await this.prisma.$transaction(async (tx) => {
+        const updated = await tx.refundRequest.update({
+          where: { id: cmd.refundRequestId },
+          data: {
+            status: 'COMPLETED',
+            gatewayRef: moyasarRefund.id,
+          },
+        });
 
-      const invoice = await this.prisma.invoice.update({
-        where: { id: refundRequest.invoiceId },
-        data: { status: 'REFUNDED' },
-        select: { id: true, bookingId: true, currency: true },
-      });
+        const invoice = await tx.invoice.update({
+          where: { id: refundRequest.invoiceId },
+          data: { status: 'REFUNDED' },
+          select: { id: true, bookingId: true, currency: true },
+        });
 
-      await this.prisma.payment.update({
-        where: { id: refundRequest.paymentId },
-        data: { status: 'REFUNDED' },
+        await tx.payment.update({
+          where: { id: refundRequest.paymentId },
+          data: { status: 'REFUNDED' },
+        });
+
+        return { updated, invoice };
       });
 
       // Phase 2 / Bug B11 — fire RefundCompletedEvent so the billing
@@ -98,12 +116,39 @@ export class ApproveRefundHandler {
         gatewayRef: moyasarRefund.id,
       };
     } catch (error) {
-      await this.prisma.refundRequest.update({
-        where: { id: cmd.refundRequestId },
-        data: {
-          status: 'FAILED',
-        },
-      });
+      // Two distinct failure modes — handle them differently:
+      //
+      // 1. Moyasar threw → no money moved. Safe to mark FAILED so the
+      //    request can be re-approved later.
+      // 2. Moyasar succeeded but the finalize transaction threw → money
+      //    HAS been refunded by Moyasar. Marking FAILED here would
+      //    desynchronize the books permanently. Persist the gatewayRef
+      //    on the row so reconciliation (or a human operator) can
+      //    finish the COMPLETED transition. We deliberately leave the
+      //    row in PROCESSING — the presence of gatewayRef plus PROCESSING
+      //    is the canonical "needs reconciliation" signal.
+      if (moyasarRefundId) {
+        this.logger.error(
+          `Refund ${cmd.refundRequestId}: Moyasar succeeded (gatewayRef=${moyasarRefundId}) but DB finalize failed — left in PROCESSING for reconciliation`,
+          error instanceof Error ? error.stack : undefined,
+        );
+        await this.prisma.refundRequest
+          .update({
+            where: { id: cmd.refundRequestId },
+            data: { gatewayRef: moyasarRefundId },
+          })
+          .catch((persistErr) => {
+            this.logger.error(
+              `Refund ${cmd.refundRequestId}: failed to persist gatewayRef after partial-success — manual intervention required`,
+              persistErr instanceof Error ? persistErr.stack : undefined,
+            );
+          });
+      } else {
+        await this.prisma.refundRequest.update({
+          where: { id: cmd.refundRequestId },
+          data: { status: 'FAILED' },
+        });
+      }
 
       throw error;
     }

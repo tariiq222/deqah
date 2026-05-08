@@ -16,8 +16,17 @@ interface RefundPaymentCommand {
 
 /**
  * Single-step refund used by `PATCH /payments/:id/refund` (clinic dashboard).
- * Calls Moyasar first; only flips local rows on success. Mirrors the
- * gateway-first pattern in `ApproveRefundHandler`.
+ *
+ * Ordering — CRITICAL for money-safety:
+ *   1. Persist a RefundRequest row in PROCESSING with the chosen idempotencyKey
+ *      BEFORE calling Moyasar. This way, if Moyasar succeeds but our DB write
+ *      fails afterwards, we have a record of the in-flight refund (with its
+ *      idempotencyKey) so reconciliation can complete it without double-charging.
+ *   2. Call Moyasar (real money moves).
+ *   3. Atomic finalize: flip RefundRequest → COMPLETED + Payment → REFUNDED +
+ *      Invoice → REFUNDED in a single transaction. If this transaction fails
+ *      after Moyasar succeeded, we keep the gatewayRef on the row and leave
+ *      it in PROCESSING for reconciliation.
  */
 @Injectable()
 export class RefundPaymentHandler {
@@ -45,43 +54,87 @@ export class RefundPaymentHandler {
 
     const refundAmount = cmd.amount ?? Number(payment.amount);
     const refundRequestId = randomUUID();
+    const idempotencyKey = `refund:${payment.id}:${Number(refundAmount).toFixed(2)}`;
 
-    // Gateway round-trip OUTSIDE the DB transaction. Never hold a transaction
-    // across an external HTTP call.
-    const moyasarRefund = await this.moyasar.createRefund(payment.invoice.organizationId, {
-      paymentId: payment.gatewayRef,
-      amount: Math.round(refundAmount * 100),
-      idempotencyKey: `refund:${payment.id}:${Number(refundAmount).toFixed(2)}`,
+    // Step 1 — record the in-flight refund BEFORE calling Moyasar. If we
+    // crash between Moyasar success and step 3, this row (with its
+    // idempotencyKey) is the breadcrumb reconciliation needs to know
+    // a refund is owed and avoid double-issuing.
+    await this.prisma.refundRequest.create({
+      data: {
+        id: refundRequestId,
+        organizationId: payment.invoice.organizationId,
+        invoiceId: payment.invoice.id,
+        paymentId: payment.id,
+        clientId: payment.invoice.clientId,
+        amount: refundAmount,
+        reason: cmd.reason,
+        status: 'PROCESSING',
+        processedAt: new Date(),
+        processedBy: cmd.performedBy ?? 'system',
+      },
+      select: { id: true },
     });
 
-    const updatedPayment = await this.prisma.$transaction(async (tx) => {
-      await this.rls.applyInTransaction(tx);
-      await tx.refundRequest.create({
-        data: {
-          id: refundRequestId,
-          organizationId: payment.invoice.organizationId,
-          invoiceId: payment.invoice.id,
-          paymentId: payment.id,
-          clientId: payment.invoice.clientId,
-          amount: refundAmount,
-          reason: cmd.reason,
-          status: 'COMPLETED',
-          processedAt: new Date(),
-          processedBy: cmd.performedBy ?? 'system',
-          gatewayRef: moyasarRefund.id,
-        },
-        select: { id: true },
+    // Step 2 — gateway round-trip OUTSIDE any DB transaction. Never hold a
+    // transaction across an external HTTP call.
+    let moyasarRefundId: string | undefined;
+    try {
+      const moyasarRefund = await this.moyasar.createRefund(payment.invoice.organizationId, {
+        paymentId: payment.gatewayRef,
+        amount: Math.round(refundAmount * 100),
+        idempotencyKey,
       });
-      const updated = await tx.payment.update({
-        where: { id: cmd.paymentId },
-        data: { status: PaymentStatus.REFUNDED, failureReason: cmd.reason },
+      moyasarRefundId = moyasarRefund.id;
+    } catch (error) {
+      // Moyasar refused the refund. No money moved. Safe to mark FAILED.
+      await this.prisma.refundRequest
+        .update({ where: { id: refundRequestId }, data: { status: 'FAILED' } })
+        .catch((persistErr) => {
+          this.logger.error(
+            `Refund ${refundRequestId}: failed to mark FAILED after Moyasar rejection`,
+            persistErr instanceof Error ? persistErr.stack : undefined,
+          );
+        });
+      throw error;
+    }
+
+    // Step 3 — atomic finalize. If this transaction fails, money has
+    // already moved at Moyasar; we persist gatewayRef separately and
+    // leave the row in PROCESSING for reconciliation.
+    let updatedPayment;
+    try {
+      updatedPayment = await this.prisma.$transaction(async (tx) => {
+        await this.rls.applyInTransaction(tx);
+        await tx.refundRequest.update({
+          where: { id: refundRequestId },
+          data: { status: 'COMPLETED', gatewayRef: moyasarRefundId },
+        });
+        const updated = await tx.payment.update({
+          where: { id: cmd.paymentId },
+          data: { status: PaymentStatus.REFUNDED, failureReason: cmd.reason },
+        });
+        await tx.invoice.update({
+          where: { id: payment.invoice.id },
+          data: { status: 'REFUNDED' },
+        });
+        return updated;
       });
-      await tx.invoice.update({
-        where: { id: payment.invoice.id },
-        data: { status: 'REFUNDED' },
-      });
-      return updated;
-    });
+    } catch (error) {
+      this.logger.error(
+        `Refund ${refundRequestId}: Moyasar succeeded (gatewayRef=${moyasarRefundId}) but DB finalize failed — left in PROCESSING for reconciliation`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      await this.prisma.refundRequest
+        .update({ where: { id: refundRequestId }, data: { gatewayRef: moyasarRefundId } })
+        .catch((persistErr) => {
+          this.logger.error(
+            `Refund ${refundRequestId}: failed to persist gatewayRef after partial-success — manual intervention required`,
+            persistErr instanceof Error ? persistErr.stack : undefined,
+          );
+        });
+      throw error;
+    }
 
     const event = new RefundCompletedEvent({
       refundRequestId,
