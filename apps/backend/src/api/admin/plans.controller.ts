@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
   UseInterceptors,
@@ -19,6 +20,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
@@ -49,9 +51,17 @@ export class AdminPlansController {
 
   @Get()
   @ApiOperation({ summary: 'List all plans (admin view, includes inactive)' })
-  @ApiOkResponse({ type: [PlanWithCountDto] })
-  list() {
-    return this.listHandler.execute();
+  @ApiOkResponse({ description: 'Paginated list of plans' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Page number (default 1)' })
+  @ApiQuery({ name: 'perPage', required: false, type: Number, example: 20, description: 'Items per page (default 20, max 100)' })
+  list(
+    @Query('page') page?: string,
+    @Query('perPage') perPage?: string,
+  ) {
+    return this.listHandler.execute({
+      page: page !== undefined ? Number(page) : undefined,
+      perPage: perPage !== undefined ? Number(perPage) : undefined,
+    });
   }
 
   @Post()

@@ -1,6 +1,13 @@
 import { adminRequest } from '@/lib/api-client';
+import type { PageMeta } from '@/lib/types';
 import type { PlanRow } from '../types';
 
-export function listPlans(): Promise<PlanRow[]> {
-  return adminRequest<PlanRow[]>('/plans');
+interface ListPlansResponse {
+  items: PlanRow[];
+  meta: PageMeta;
+}
+
+export async function listPlans(): Promise<PlanRow[]> {
+  const data = await adminRequest<ListPlansResponse>('/plans');
+  return data.items;
 }

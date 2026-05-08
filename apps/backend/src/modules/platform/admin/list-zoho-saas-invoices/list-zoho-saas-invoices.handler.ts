@@ -11,6 +11,12 @@ import { PrismaService } from '../../../../infrastructure/database';
  * Schedule visibility: each row also carries the parent subscription's
  * billingCycle + currentPeriodEnd so the UI can render an upcoming-charge
  * indicator without a separate query.
+ *
+ * Pagination correctness: when zohoMirrored filter is active we resolve the
+ * set of matching invoice IDs from zohoInvoiceLink BEFORE the main query so
+ * that both findMany AND count use the same filtered where clause. This
+ * prevents the old bug where count reported the unfiltered total while
+ * items showed only the in-memory-filtered subset.
  */
 export interface ListZohoSaasInvoicesQuery {
   page: number;
@@ -29,6 +35,24 @@ export class ListZohoSaasInvoicesHandler {
       status: q.status ?? { not: SubscriptionInvoiceStatus.DRAFT },
     };
     if (q.organizationId) where.organizationId = q.organizationId;
+
+    // Resolve zohoMirrored filter into an id set BEFORE the main query so
+    // that both findMany and count use the same where clause.
+    if (q.zohoMirrored === 'yes' || q.zohoMirrored === 'no') {
+      const mirroredLinks = await this.prisma.$allTenants.zohoInvoiceLink.findMany({
+        where: { scope: 'SAAS_TENANT', deqahInvoiceId: { not: null } },
+        select: { deqahInvoiceId: true },
+      });
+      const mirroredIds = mirroredLinks
+        .map((l) => l.deqahInvoiceId)
+        .filter((id): id is string => id !== null);
+
+      if (q.zohoMirrored === 'yes') {
+        where.id = { in: mirroredIds };
+      } else {
+        where.id = { notIn: mirroredIds };
+      }
+    }
 
     const [rawInvoices, total] = await Promise.all([
       this.prisma.$allTenants.subscriptionInvoice.findMany({
@@ -81,8 +105,10 @@ export class ListZohoSaasInvoicesHandler {
       };
     }
 
-    // Look up Zoho mirror rows in one shot. The link is keyed by deqahInvoiceId
-    // and scope=SAAS_TENANT; organizationId on the link is the platform org.
+    // Look up Zoho mirror rows in one shot for hydration. The link is keyed
+    // by deqahInvoiceId and scope=SAAS_TENANT; organizationId on the link is
+    // the platform org. This is hydration only — filtering is done in the
+    // where clause above.
     const ids = rawInvoices.map((r) => r.id);
     const mirrors = await this.prisma.$allTenants.zohoInvoiceLink.findMany({
       where: {
@@ -102,7 +128,7 @@ export class ListZohoSaasInvoicesHandler {
     });
     const mirrorByInvoice = new Map(mirrors.map((m) => [m.deqahInvoiceId!, m]));
 
-    let items = rawInvoices.map(({ subscription, ...invoice }) => {
+    const items = rawInvoices.map(({ subscription, ...invoice }) => {
       const zohoMirror = mirrorByInvoice.get(invoice.id) ?? null;
       return {
         ...invoice,
@@ -112,9 +138,6 @@ export class ListZohoSaasInvoicesHandler {
         zohoMirror,
       };
     });
-
-    if (q.zohoMirrored === 'yes') items = items.filter((i) => i.zohoMirror);
-    else if (q.zohoMirrored === 'no') items = items.filter((i) => !i.zohoMirror);
 
     return {
       items,

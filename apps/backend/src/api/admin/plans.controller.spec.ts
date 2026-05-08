@@ -21,10 +21,16 @@ describe('AdminPlansController', () => {
   const user = { id: 'admin-1' };
   const req = { ip: '1.1.1.1', headers: { 'user-agent': 'jest' } } as unknown as Request;
 
-  it('list — calls handler', async () => {
+  it('list — calls handler with no args when no query params', async () => {
     const { controller, listHandler } = buildController();
     await controller.list();
-    expect(listHandler.execute).toHaveBeenCalled();
+    expect(listHandler.execute).toHaveBeenCalledWith({ page: undefined, perPage: undefined });
+  });
+
+  it('list — passes parsed page and perPage to handler', async () => {
+    const { controller, listHandler } = buildController();
+    await controller.list('2', '50');
+    expect(listHandler.execute).toHaveBeenCalledWith({ page: 2, perPage: 50 });
   });
 
   it('create — strips reason from data and passes context', async () => {
