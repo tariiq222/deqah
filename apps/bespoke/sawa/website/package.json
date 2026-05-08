@@ -1,5 +1,5 @@
 {
-  "name": "website",
+  "name": "@bespoke/sawa-website",
   "version": "0.2.1",
   "private": true,
   "scripts": {

@@ -35,7 +35,7 @@ pnpm dev:all
 | `apps/backend/` | NestJS 11 + Prisma 7 + PostgreSQL + RLS | API, business logic, BullMQ jobs, all 14 vertical-slice clusters |
 | `apps/dashboard/` | Next.js 15 + React 19 | Per-tenant clinic admin |
 | `apps/admin/` | Next.js 15 | Super-admin SaaS control plane (tenants, plans, verticals, billing oversight, impersonation) |
-| `apps/website/` | Next.js 15 | Public marketing/info site |
+| `apps/bespoke/sawa/website/` | Next.js 15 | Public marketing/info site (Sawa) |
 | `apps/mobile/` | React Native 0.83 (Expo SDK 55) | Client + employee mobile app |
 | `packages/api-client/` | TypeScript | `@deqah/api-client` — typed fetch shared by UIs |
 | `packages/shared/` | TypeScript | `@deqah/shared` — types, enums, i18n tokens, vertical seeds |

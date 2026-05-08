@@ -6,7 +6,8 @@ const root = process.cwd();
 const productionRoots = [
   'apps/dashboard',
   'apps/admin',
-  'apps/website',
+  'apps/marketing',
+  'apps/bespoke/sawa/website',
   'apps/mobile',
   'packages/shared',
   'packages/ui',
