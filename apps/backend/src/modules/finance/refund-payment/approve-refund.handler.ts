@@ -53,6 +53,7 @@ export class ApproveRefundHandler {
         {
           paymentId: refundRequest.paymentId,
           amount: Math.round(Number(refundRequest.amount) * 100),
+          idempotencyKey: `refund:${refundRequest.id}`,
         },
       );
 

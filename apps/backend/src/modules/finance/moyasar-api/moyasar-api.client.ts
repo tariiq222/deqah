@@ -185,7 +185,7 @@ export class MoyasarApiClient {
 
   async createRefund(
     organizationId: string,
-    params: { paymentId: string; amount: number },
+    params: { paymentId: string; amount: number; idempotencyKey: string },
   ): Promise<MoyasarRefund> {
     const body = {
       payment_id: params.paymentId,
@@ -202,6 +202,7 @@ export class MoyasarApiClient {
     }>(organizationId, '/refunds', {
       method: 'POST',
       body: JSON.stringify(body),
+      headers: { 'Idempotency-Key': params.idempotencyKey },
     });
 
     return {

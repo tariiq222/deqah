@@ -60,6 +60,22 @@ describe('RefundPaymentHandler', () => {
     expect(callOrder[0]).toBe('moyasar');
   });
 
+  it('forwards Idempotency-Key as refund:<uuid> to Moyasar', async () => {
+    prisma.payment.findFirst.mockResolvedValue(completedPayment());
+    moyasar.createRefund.mockResolvedValue({ id: 'ref_xyz', amount: 10000, currency: 'SAR', status: 'refunded', paymentId: 'moyasar_pay_abc', createdAt: new Date().toISOString() });
+    prisma.refundRequest.create.mockResolvedValue({ id: 'rr_1' });
+    prisma.payment.update.mockResolvedValue({});
+    prisma.invoice.update.mockResolvedValue({});
+
+    await handler.execute({ paymentId: 'pay_1', reason: 'test' });
+
+    expect(moyasar.createRefund).toHaveBeenCalledWith('org_1', expect.objectContaining({
+      paymentId: 'moyasar_pay_abc',
+      amount: expect.any(Number),
+      idempotencyKey: expect.stringMatching(/^refund:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/),
+    }));
+  });
+
   it('persists gatewayRef from Moyasar onto RefundRequest', async () => {
     prisma.payment.findFirst.mockResolvedValue(completedPayment());
     moyasar.createRefund.mockResolvedValue({ id: 'ref_xyz', amount: 10000, currency: 'SAR', status: 'refunded', paymentId: 'moyasar_pay_abc', createdAt: new Date().toISOString() });
@@ -69,6 +85,11 @@ describe('RefundPaymentHandler', () => {
 
     await handler.execute({ paymentId: 'pay_1', reason: 'test' });
 
+    expect(moyasar.createRefund).toHaveBeenCalledWith('org_1', expect.objectContaining({
+      paymentId: 'moyasar_pay_abc',
+      amount: expect.any(Number),
+      idempotencyKey: expect.stringMatching(/^refund:/),
+    }));
     expect(prisma.refundRequest.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ gatewayRef: 'ref_xyz' }),
     }));

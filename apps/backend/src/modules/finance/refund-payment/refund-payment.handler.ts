@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { PaymentStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
 import { EventBusService } from '../../../infrastructure/events';
@@ -43,18 +44,21 @@ export class RefundPaymentHandler {
     }
 
     const refundAmount = cmd.amount ?? Number(payment.amount);
+    const refundRequestId = randomUUID();
 
     // Gateway round-trip OUTSIDE the DB transaction. Never hold a transaction
     // across an external HTTP call.
     const moyasarRefund = await this.moyasar.createRefund(payment.invoice.organizationId, {
       paymentId: payment.gatewayRef,
       amount: Math.round(refundAmount * 100),
+      idempotencyKey: `refund:${refundRequestId}`,
     });
 
-    const { updatedPayment, refundRequestId } = await this.prisma.$transaction(async (tx) => {
+    const updatedPayment = await this.prisma.$transaction(async (tx) => {
       await this.rls.applyInTransaction(tx);
-      const refundRow = await tx.refundRequest.create({
+      await tx.refundRequest.create({
         data: {
+          id: refundRequestId,
           organizationId: payment.invoice.organizationId,
           invoiceId: payment.invoice.id,
           paymentId: payment.id,
@@ -76,7 +80,7 @@ export class RefundPaymentHandler {
         where: { id: payment.invoice.id },
         data: { status: 'REFUNDED' },
       });
-      return { updatedPayment: updated, refundRequestId: refundRow.id };
+      return updated;
     });
 
     const event = new RefundCompletedEvent({
