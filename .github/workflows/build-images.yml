@@ -196,8 +196,8 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/deqah-${{ matrix.app }}:${{ needs.detect.outputs.tag }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/deqah-${{ matrix.app }}:${{ github.sha }}
-          cache-from: type=gha,scope=${{ matrix.app }}-${{ needs.detect.outputs.env_name }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.app }}-${{ needs.detect.outputs.env_name }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/deqah-${{ matrix.app }}:buildcache-${{ needs.detect.outputs.env_name }}
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/deqah-${{ matrix.app }}:buildcache-${{ needs.detect.outputs.env_name }},mode=max
 
   # ─────────────────────────────────────────────────────────────────────────
   # 3. Trigger Dokploy deploy for each freshly built app
