@@ -1,0 +1,75 @@
+{
+  "nav": {
+    "logo": "Deqah",
+    "switchLang": "العربية",
+    "whatsapp": "Chat on WhatsApp"
+  },
+  "hero": {
+    "title": "Deqah — the digital backbone for Saudi clinics",
+    "subtitle": "A multi-tenant SaaS platform unifying bookings, billing, branding, and subscription management for clinics.",
+    "ctaPrimary": "Chat on WhatsApp",
+    "ctaSecondary": "View Pricing"
+  },
+  "problemSolution": {
+    "heading": "Clinics today lose hours to legacy systems",
+    "beforeLabel": "Before Deqah",
+    "afterLabel": "With Deqah",
+    "pain1": "Missed appointments and tangled schedules",
+    "pain2": "Manual invoicing that takes hours",
+    "pain3": "Scattered reports with no unified view",
+    "pain4": "Complex, slow payment integration",
+    "gain1": "Self-booking for clients around the clock",
+    "gain2": "Automated invoices issued in one click",
+    "gain3": "Unified dashboard for instant decisions",
+    "gain4": "Moyasar integrated and production-ready"
+  },
+  "pricing": {
+    "heading": "A plan for every clinic size",
+    "popular": "Most popular",
+    "priceUnit": "/ month",
+    "ctaButton": "Chat on WhatsApp",
+    "starter": {
+      "name": "Starter",
+      "nameAr": "TODO: Arabic name to be finalized",
+      "price": "---",
+      "description": "For small clinics starting their digital journey.",
+      "features": [
+        "Up to 3 staff members",
+        "Unlimited bookings",
+        "Moyasar payment gateway",
+        "Email support"
+      ]
+    },
+    "pro": {
+      "name": "Pro",
+      "nameAr": "TODO: Arabic name to be finalized",
+      "price": "---",
+      "description": "For growing clinics that need advanced tools.",
+      "features": [
+        "Up to 15 staff members",
+        "Automated SMS notifications",
+        "Advanced financial reports",
+        "AI assistant",
+        "Priority support"
+      ]
+    },
+    "scale": {
+      "name": "Scale",
+      "nameAr": "TODO: Arabic name to be finalized",
+      "price": "---",
+      "description": "For medical groups and multi-branch clinics.",
+      "features": [
+        "Unlimited staff members",
+        "Multiple branches",
+        "Zoom integration for remote sessions",
+        "Full white-label branding",
+        "Dedicated account manager"
+      ]
+    }
+  },
+  "cta": {
+    "heading": "Ready to move your clinic to the next generation?",
+    "subheading": "Talk to us today on WhatsApp and start your free trial.",
+    "button": "Get started on WhatsApp"
+  }
+}
