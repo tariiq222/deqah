@@ -6,7 +6,7 @@
 #   - manual workflow_dispatch
 #
 # Outputs (per app):
-#   ghcr.io/tariiq222/deqah-{backend,dashboard,admin,website}:v<semver>          ← primary, from apps/<app>/package.json
+#   ghcr.io/tariiq222/deqah-{backend,dashboard,admin}:v<semver>          ← primary, from apps/<app>/package.json
 #                                                              :v<semver>-<sha>  ← versioned + sha (main only)
 #                                                              :latest           ← supplementary (main only)
 #                                                              :<sha>            ← supplementary
@@ -14,7 +14,7 @@
 #
 # IMPORTANT — Manual step after the FIRST successful run:
 # 1. Go to https://github.com/users/tariiq222/packages
-# 2. Click each of the 4 packages (deqah-backend, deqah-dashboard, deqah-admin, deqah-website)
+# 2. Click each of the 3 packages (deqah-backend, deqah-dashboard, deqah-admin)
 # 3. Settings → Change visibility → Public
 # This makes Dokploy able to pull without authentication. Only needed once per package.
 #
@@ -60,13 +60,6 @@ jobs:
             target: runner
             build_args: |
               NEXT_PUBLIC_API_URL=https://api.deqah.net/api/v1
-              NEXT_PUBLIC_HCAPTCHA_SITE_KEY=8c765c14-831e-4a76-a1c0-0e3eac06c7f6
-          - name: website
-            dockerfile: apps/website/Dockerfile
-            target: runner
-            build_args: |
-              NEXT_PUBLIC_API_URL=https://api.deqah.net
-              NEXT_PUBLIC_DEFAULT_ORG_ID=00000000-0000-0000-0000-000000000001
               NEXT_PUBLIC_HCAPTCHA_SITE_KEY=8c765c14-831e-4a76-a1c0-0e3eac06c7f6
     steps:
       - name: Checkout
@@ -217,7 +210,6 @@ jobs:
           DOKPLOY_BACKEND_WEBHOOK: ${{ secrets.DOKPLOY_BACKEND_WEBHOOK }}
           DOKPLOY_DASHBOARD_WEBHOOK: ${{ secrets.DOKPLOY_DASHBOARD_WEBHOOK }}
           DOKPLOY_ADMIN_WEBHOOK: ${{ secrets.DOKPLOY_ADMIN_WEBHOOK }}
-          DOKPLOY_WEBSITE_WEBHOOK: ${{ secrets.DOKPLOY_WEBSITE_WEBHOOK }}
         run: |
           set -euo pipefail
           APP="${{ matrix.app.name }}"
@@ -225,7 +217,6 @@ jobs:
             backend)   WEBHOOK="$DOKPLOY_BACKEND_WEBHOOK" ;;
             dashboard) WEBHOOK="$DOKPLOY_DASHBOARD_WEBHOOK" ;;
             admin)     WEBHOOK="$DOKPLOY_ADMIN_WEBHOOK" ;;
-            website)   WEBHOOK="$DOKPLOY_WEBSITE_WEBHOOK" ;;
             *)         echo "::error::unknown app $APP"; exit 1 ;;
           esac
           if [ -z "${WEBHOOK:-}" ]; then
