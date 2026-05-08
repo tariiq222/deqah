@@ -78,7 +78,7 @@ RUN ARCH=$(uname -m | sed 's/aarch64/arm64/;s/x86_64/x64/') \
 # Next.js bakes NEXT_PUBLIC_* into the JS bundle at build time.
 # These ARGs are passed via --build-arg from the GitHub Actions workflow.
 ARG NEXT_PUBLIC_API_URL=http://localhost:5100/api/v1
-ARG NEXT_PUBLIC_HCAPTCHA_SITE_KEY=
+ARG NEXT_PUBLIC_HCAPTCHA_SITE_KEY=8c765c14-831e-4a76-a1c0-0e3eac06c7f6
 ARG NEXT_PUBLIC_MOYASAR_PLATFORM_PUBLISHABLE_KEY=pk_test_replace_me
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_HCAPTCHA_SITE_KEY=$NEXT_PUBLIC_HCAPTCHA_SITE_KEY
