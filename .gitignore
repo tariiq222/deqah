@@ -120,3 +120,11 @@ graphify-out/
 # ─── Local scratch / tool artifacts (never commit) ────────────
 testsprite_tests/
 test-results/
+
+# ─── Bespoke/Sawa mobile native build artifacts (from `expo prebuild`) ─
+# These directories are generated locally and must never enter the pipeline.
+# Sawa mobile is currently paused from production (CLAUDE.md note: 2026-05-08).
+apps/bespoke/sawa/mobile/android/
+apps/bespoke/sawa/mobile/ios/
+apps/bespoke/sawa/mobile/.expo/
+apps/bespoke/sawa/mobile/node_modules/

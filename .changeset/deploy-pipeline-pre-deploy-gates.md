@@ -5,7 +5,9 @@ ci: add pre-deploy gates to build-images pipeline
 
 - Automated `prisma migrate deploy` job runs before Dokploy webhooks fire;
   migration failure blocks all deployments.
-- Optional SSH pre-deploy DB backup (gated behind `BACKUP_ENABLED` variable).
+- migrate-prod and backup-prod-db run on a self-hosted VPS runner
+  (`[self-hosted, deqah-prod]`) inside dokploy-network — connects to
+  `deqah-database-jeprin:5432` directly; no external DB URL or SSH required.
 - GHCR package visibility auto-check sets new packages to public after push.
 - Changeset-aware build matrix reads `.deploy-manifest.json` written by
   promote-to-main before sanitization, building only affected apps.

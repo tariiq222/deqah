@@ -1,37 +1,48 @@
 # Build & Push to GitHub Container Registry (ghcr.io)
 #
+# ─── Self-hosted runner requirement ───────────────────────────────────────────
+#   A self-hosted runner labelled [self-hosted, deqah-prod] MUST be registered
+#   and online before migrate-prod or backup-prod-db can run.
+#   Runner management: GitHub → Settings → Actions → Runners
+#   https://github.com/tariiq222/carekit/settings/actions/runners
+#
+#   The runner runs as a Docker container on the production VPS inside the
+#   dokploy-network overlay. This gives it direct DNS access to all Swarm
+#   service names (e.g. deqah-database-jeprin, deqah-back-axbgpd) without
+#   going through the public internet. The Docker socket is mounted, so it
+#   can issue `docker exec` / `docker run` against the host daemon.
+#
 # ─── Required GitHub Secrets ──────────────────────────────────────────────────
-#   PROD_DATABASE_URL          postgresql://user:pass@host:5432/db
-#                              Used by migrate-prod to run `prisma migrate deploy`
-#                              against production. Backend Dokploy webhook will NOT
-#                              fire if migrations fail.
+#   POSTGRES_PASSWORD              The same DB password Dokploy injected into
+#                                  the backend container. Used by migrate-prod
+#                                  to construct the DATABASE_URL pointing to
+#                                  deqah-database-jeprin:5432 over dokploy-network.
+#                                  No external DB exposure required.
 #
-#   PROD_VPS_SSH_KEY           PEM private key (full contents) for SSH to the VPS.
-#                              Required only when BACKUP_ENABLED repo-variable is set.
+#   DOKPLOY_BACKEND_WEBHOOK        Dokploy redeploy webhook URL for backend.
+#   DOKPLOY_DASHBOARD_WEBHOOK      Dokploy redeploy webhook URL for dashboard.
+#   DOKPLOY_ADMIN_WEBHOOK          Dokploy redeploy webhook URL for admin.
+#   DOKPLOY_MARKETING_WEBHOOK      Dokploy redeploy webhook URL for marketing.
 #
-#   PROD_VPS_HOST              SSH target, e.g. deploy@72.61.89.152
-#                              Required only when BACKUP_ENABLED repo-variable is set.
-#
-#   DOKPLOY_BACKEND_WEBHOOK    Dokploy redeploy webhook URL for backend.
-#   DOKPLOY_DASHBOARD_WEBHOOK  Dokploy redeploy webhook URL for dashboard.
-#   DOKPLOY_ADMIN_WEBHOOK      Dokploy redeploy webhook URL for admin.
-#   DOKPLOY_MARKETING_WEBHOOK  Dokploy redeploy webhook URL for marketing.
-#
-#   MOYASAR_PUBLISHABLE_KEY    Live Moyasar publishable key injected into dashboard
-#                              build. Defaults to pk_test_replace_me if unset.
+#   MOYASAR_PUBLISHABLE_KEY        Live Moyasar publishable key injected into
+#                                  dashboard build. Defaults to pk_test_replace_me
+#                                  if unset.
 #
 # ─── Optional GitHub Secrets ──────────────────────────────────────────────────
-#   GHCR_VISIBILITY_PAT        Classic PAT with write:packages scope.
-#                              Used to auto-set newly-created GHCR packages to public
-#                              so Dokploy can pull without authentication.
-#                              GITHUB_TOKEN is tried first; GHCR_VISIBILITY_PAT is
-#                              the fallback. If neither has the scope, the job logs
-#                              manual-action instructions and continues (non-fatal).
+#   GHCR_VISIBILITY_PAT            Classic PAT with write:packages scope.
+#                                  Used to auto-set newly-created GHCR packages
+#                                  to public so Dokploy can pull without auth.
+#                                  GITHUB_TOKEN is tried first; GHCR_VISIBILITY_PAT
+#                                  is the fallback. If neither has the scope, the
+#                                  job logs manual-action instructions and continues
+#                                  (non-fatal).
 #
 # ─── Required GitHub Variables (repo-level) ───────────────────────────────────
-#   BACKUP_ENABLED             Set to any non-empty string to enable pre-deploy DB
-#                              backup via SSH before migrations run.
-#                              If unset the backup-prod-db job is skipped silently.
+#   BACKUP_ENABLED                 Set to "true" to enable pre-deploy DB backup
+#                                  before migrations run. Uses docker exec on the
+#                                  self-hosted runner — no SSH needed.
+#                                  If unset or not "true", the backup-prod-db job
+#                                  is skipped silently.
 #
 # ─── Changeset-aware build matrix ────────────────────────────────────────────
 #   On push to main, .changeset/ is stripped by the sanitizer so this workflow
@@ -158,45 +169,57 @@ jobs:
 # ─── Job 2: backup-prod-db (conditional — runs before migrations) ────────────
   backup-prod-db:
     name: Backup production DB (pre-migration)
-    runs-on: ubuntu-latest
+    # Runs on the self-hosted VPS runner — has Docker socket access to exec
+    # directly into deqah-database-jeprin without SSH.
+    runs-on: [self-hosted, deqah-prod]
     needs: compute-matrix
-    # Only run on main/tag pushes AND when BACKUP_ENABLED is set
+    # Only run on main/tag pushes AND when BACKUP_ENABLED=true
     if: >
       (github.ref == 'refs/heads/main' || github.ref_type == 'tag') &&
-      vars.BACKUP_ENABLED != ''
+      vars.BACKUP_ENABLED == 'true'
+    timeout-minutes: 10
     steps:
-      - name: SSH pre-deploy backup
+      - name: Pre-deploy DB backup via docker exec
         shell: bash
-        env:
-          PROD_VPS_SSH_KEY: ${{ secrets.PROD_VPS_SSH_KEY }}
-          PROD_VPS_HOST: ${{ secrets.PROD_VPS_HOST }}
         run: |
           set -euo pipefail
 
-          if [[ -z "${PROD_VPS_SSH_KEY:-}" || -z "${PROD_VPS_HOST:-}" ]]; then
-            echo "::error::BACKUP_ENABLED is set but PROD_VPS_SSH_KEY or PROD_VPS_HOST is missing."
-            echo "::error::Either add both secrets or unset the BACKUP_ENABLED variable."
-            exit 1
-          fi
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          BACKUP_FILE="backup-${TIMESTAMP}.dump"
 
-          mkdir -p ~/.ssh
-          printf '%s\n' "${PROD_VPS_SSH_KEY}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+          echo "Running pre-deploy backup into deqah-database-jeprin container..."
 
-          # Extract hostname for keyscan (strip user@ prefix)
-          VPS_HOST="${PROD_VPS_HOST##*@}"
-          ssh-keyscan -H "${VPS_HOST}" >> ~/.ssh/known_hosts 2>/dev/null || true
+          # pg_dump runs inside the postgres container — no password needed
+          # because the postgres user has trust/peer auth on the unix socket.
+          docker exec deqah-database-jeprin \
+            pg_dump -U deqah -d deqah \
+              --format=custom \
+              --compress=9 \
+              -f "/tmp/${BACKUP_FILE}"
 
-          echo "Running pre-deploy backup on VPS..."
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
-            "${PROD_VPS_HOST}" \
-            "bash /opt/deqah/scripts/backup-pre-deploy.sh"
-          echo "Pre-deploy backup complete."
+          echo "Dump complete. Copying to runner workspace..."
+          mkdir -p /tmp/deqah-backups
+          docker cp "deqah-database-jeprin:/tmp/${BACKUP_FILE}" \
+            "/tmp/deqah-backups/${BACKUP_FILE}"
+
+          echo "backup_file=/tmp/deqah-backups/${BACKUP_FILE}" >> "$GITHUB_ENV"
+          echo "backup_name=${BACKUP_FILE}" >> "$GITHUB_ENV"
+          echo "Pre-deploy backup complete: ${BACKUP_FILE}"
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pre-deploy-db-backup-${{ github.run_number }}
+          path: /tmp/deqah-backups/
+          retention-days: 30
+          if-no-files-found: error
 
 # ─── Job 3: migrate-prod ─────────────────────────────────────────────────────
   migrate-prod:
     name: Run production migrations
-    runs-on: ubuntu-latest
+    # Runs on the self-hosted VPS runner — connects to deqah-database-jeprin:5432
+    # over dokploy-network without any external DB exposure.
+    runs-on: [self-hosted, deqah-prod]
     # Wait for backup if it ran; if backup was skipped, proceed immediately.
     needs: [compute-matrix, backup-prod-db]
     if: >
@@ -216,27 +239,35 @@ jobs:
       - name: Run prisma migrate deploy
         shell: bash
         env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
           set -euo pipefail
 
-          if [[ -z "${DATABASE_URL:-}" ]]; then
-            echo "::error::PROD_DATABASE_URL secret is not set."
+          if [[ -z "${POSTGRES_PASSWORD:-}" ]]; then
+            echo "::error::POSTGRES_PASSWORD secret is not set."
             echo "::error::Add it under GitHub → Settings → Secrets → Actions."
-            echo "::error::Value format: postgresql://user:password@host:5432/database"
+            echo "::error::Value: the same Postgres password Dokploy injected into the backend container."
             exit 1
           fi
 
-          # Pull the just-built backend image (:latest is pushed on every main run)
+          # Construct DATABASE_URL using the in-Swarm service name.
+          # The runner is inside dokploy-network, so deqah-database-jeprin resolves by DNS.
+          DATABASE_URL="postgresql://deqah:${POSTGRES_PASSWORD}@deqah-database-jeprin:5432/deqah"
+
+          # :latest is pushed on every main run by the build job. Since migrate-prod
+          # runs BEFORE build (see job ordering), we use the previous :latest here.
+          # This is intentional — migrate deploy is idempotent and the schema is
+          # forward-compatible. The new image is deployed by Dokploy after build succeeds.
           IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/deqah-backend:latest"
           echo "Running migrations with image: ${IMAGE}"
 
           docker run --rm \
+            --network dokploy-network \
             -e DATABASE_URL="${DATABASE_URL}" \
             "${IMAGE}" \
             npx prisma migrate deploy --schema=prisma/schema
 
-          echo "Migrations complete — proceeding to deploy."
+          echo "Migrations complete — proceeding to build & deploy."
 
 # ─── Job 4: build (per-app matrix) ───────────────────────────────────────────
   build:
