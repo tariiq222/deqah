@@ -1,6 +1,8 @@
 import { envValidationSchema } from '@/config/env.validation';
 
 describe('envValidationSchema', () => {
+  const ENC_KEY_32 = Buffer.alloc(32).toString('base64');
+
   const devEnv = {
     NODE_ENV: 'development',
     DATABASE_URL: 'postgresql://localhost:5432/test',
@@ -14,9 +16,15 @@ describe('envValidationSchema', () => {
     JWT_ACCESS_SECRET: 'dev-access-secret-change-me',
     JWT_REFRESH_SECRET: 'dev-refresh-secret-change-me',
     JWT_CLIENT_ACCESS_SECRET: 'dev-client-access-secret-change-me',
-    SMS_PROVIDER_ENCRYPTION_KEY: Buffer.alloc(32).toString('base64'),
-    ZOOM_PROVIDER_ENCRYPTION_KEY: Buffer.alloc(32).toString('base64'),
-    MOYASAR_TENANT_ENCRYPTION_KEY: Buffer.alloc(32).toString('base64'),
+    SMS_PROVIDER_ENCRYPTION_KEY: ENC_KEY_32,
+    ZOOM_PROVIDER_ENCRYPTION_KEY: ENC_KEY_32,
+    MOYASAR_TENANT_ENCRYPTION_KEY: ENC_KEY_32,
+    EMAIL_PROVIDER_ENCRYPTION_KEY: ENC_KEY_32,
+    ZOHO_PROVIDER_ENCRYPTION_KEY: ENC_KEY_32,
+    PLATFORM_VAT_NUMBER: '300000000000003',
+    PLATFORM_COMPANY_NAME_AR: 'منصة دِقة',
+    PLATFORM_COMPANY_NAME_EN: 'Deqah Platform',
+    SUPER_ADMIN_PASSWORD: 'TestAdmin@2026Test!!',
   };
 
   it('passes minimal dev env', () => {
@@ -32,8 +40,16 @@ describe('envValidationSchema', () => {
       CAPTCHA_PROVIDER: 'hcaptcha',
       HCAPTCHA_SECRET: 'real-hcaptcha-secret',
       JWT_OTP_SECRET: 'a-real-otp-secret-32-bytes-or-more',
+      JWT_ACCESS_SECRET: 'dev-access-secret-change-me',
       DASHBOARD_PUBLIC_URL: 'https://app.example.com',
       PUBLIC_WEBSITE_URL: 'https://example.com',
+      API_PUBLIC_URL: 'https://api.example.com',
+      MOYASAR_PLATFORM_SECRET_KEY: 'sk_live_platform_key_test',
+      MOYASAR_PLATFORM_WEBHOOK_SECRET: 'real-webhook-secret-value',
+      SUPER_ADMIN_PASSWORD: 'RealSuperAdminPass2026!',
+      ZOHO_OAUTH_CLIENT_ID: 'zoho-client-id',
+      ZOHO_OAUTH_CLIENT_SECRET: 'zoho-client-secret',
+      ZOHO_OAUTH_REDIRECT_URI: 'https://api.example.com/zoho/callback',
     };
     const r = envValidationSchema.validate(env, { abortEarly: false });
     expect(r.error).toBeDefined();
@@ -55,9 +71,11 @@ describe('envValidationSchema', () => {
       JWT_REFRESH_SECRET: 'a-real-refresh-secret-32-bytes-long',
       JWT_CLIENT_ACCESS_SECRET: 'a-real-client-secret-32-bytes-long',
       JWT_OTP_SECRET: 'a-real-otp-secret-32-bytes-or-more',
-      SMS_PROVIDER_ENCRYPTION_KEY: Buffer.alloc(32).toString('base64'),
-      ZOOM_PROVIDER_ENCRYPTION_KEY: Buffer.alloc(32).toString('base64'),
-      MOYASAR_TENANT_ENCRYPTION_KEY: Buffer.alloc(32).toString('base64'),
+      SMS_PROVIDER_ENCRYPTION_KEY: ENC_KEY_32,
+      ZOOM_PROVIDER_ENCRYPTION_KEY: ENC_KEY_32,
+      MOYASAR_TENANT_ENCRYPTION_KEY: ENC_KEY_32,
+      EMAIL_PROVIDER_ENCRYPTION_KEY: ENC_KEY_32,
+      ZOHO_PROVIDER_ENCRYPTION_KEY: ENC_KEY_32,
       CORS_ORIGINS: 'https://app.example.com',
       ADMIN_HOSTS: 'admin.example.com',
       AUTHENTICA_API_KEY: 'real-authentica-key-1234567890',
@@ -65,6 +83,16 @@ describe('envValidationSchema', () => {
       HCAPTCHA_SECRET: 'real-hcaptcha-secret',
       DASHBOARD_PUBLIC_URL: 'https://app.example.com',
       PUBLIC_WEBSITE_URL: 'https://example.com',
+      API_PUBLIC_URL: 'https://api.example.com',
+      MOYASAR_PLATFORM_SECRET_KEY: 'sk_live_platform_key_test',
+      MOYASAR_PLATFORM_WEBHOOK_SECRET: 'real-webhook-secret-value',
+      PLATFORM_VAT_NUMBER: '300000000000003',
+      PLATFORM_COMPANY_NAME_AR: 'منصة دِقة',
+      PLATFORM_COMPANY_NAME_EN: 'Deqah Platform',
+      SUPER_ADMIN_PASSWORD: 'RealSuperAdminPass2026!',
+      ZOHO_OAUTH_CLIENT_ID: 'zoho-client-id-long',
+      ZOHO_OAUTH_CLIENT_SECRET: 'zoho-client-secret-long',
+      ZOHO_OAUTH_REDIRECT_URI: 'https://api.example.com/zoho/callback',
     };
     const r = envValidationSchema.validate(env, { abortEarly: false });
     expect(r.error).toBeUndefined();

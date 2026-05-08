@@ -17,12 +17,14 @@ const buildSettingsHandler = (overrides = {}) => ({
   }),
 });
 
+const buildEventBus = () => ({ publish: jest.fn().mockResolvedValue(undefined) });
+
 describe('ClientCancelBookingHandler', () => {
   it('cancels a PENDING booking with >24h notice → CANCELLED', async () => {
     const prisma = buildPrisma();
     prisma.booking.findUnique.mockResolvedValue(futureBooking);
     const settings = buildSettingsHandler();
-    const handler = new ClientCancelBookingHandler(prisma as never, buildTenant() as never, settings as never);
+    const handler = new ClientCancelBookingHandler(prisma as never, buildTenant() as never, settings as never, buildEventBus() as never);
 
     const result = await handler.execute({
       bookingId: 'book-1',
@@ -63,7 +65,7 @@ describe('ClientCancelBookingHandler', () => {
     const prisma = buildPrisma();
     prisma.booking.findUnique.mockResolvedValue(soonBooking);
     const settings = buildSettingsHandler({ freeCancelBeforeHours: 24 });
-    const handler = new ClientCancelBookingHandler(prisma as never, buildTenant() as never, settings as never);
+    const handler = new ClientCancelBookingHandler(prisma as never, buildTenant() as never, settings as never, buildEventBus() as never);
 
     const result = await handler.execute({
       bookingId: 'book-1',
@@ -82,7 +84,7 @@ describe('ClientCancelBookingHandler', () => {
   it('throws NotFoundException when booking does not exist', async () => {
     const prisma = buildPrisma();
     prisma.booking.findUnique.mockResolvedValue(null);
-    const handler = new ClientCancelBookingHandler(prisma as never, buildTenant() as never, buildSettingsHandler() as never);
+    const handler = new ClientCancelBookingHandler(prisma as never, buildTenant() as never, buildSettingsHandler() as never, buildEventBus() as never);
 
     await expect(
       handler.execute({ bookingId: 'bad-id', clientId: 'client-1' }),
@@ -92,7 +94,7 @@ describe('ClientCancelBookingHandler', () => {
   it('throws ForbiddenException when client does not own the booking', async () => {
     const prisma = buildPrisma();
     prisma.booking.findUnique.mockResolvedValue(futureBooking);
-    const handler = new ClientCancelBookingHandler(prisma as never, buildTenant() as never, buildSettingsHandler() as never);
+    const handler = new ClientCancelBookingHandler(prisma as never, buildTenant() as never, buildSettingsHandler() as never, buildEventBus() as never);
 
     await expect(
       handler.execute({ bookingId: 'book-1', clientId: 'other-client' }),
@@ -105,7 +107,7 @@ describe('ClientCancelBookingHandler', () => {
       ...futureBooking,
       status: BookingStatus.COMPLETED,
     });
-    const handler = new ClientCancelBookingHandler(prisma as never, buildTenant() as never, buildSettingsHandler() as never);
+    const handler = new ClientCancelBookingHandler(prisma as never, buildTenant() as never, buildSettingsHandler() as never, buildEventBus() as never);
 
     await expect(
       handler.execute({ bookingId: 'book-1', clientId: 'client-1' }),
@@ -118,7 +120,7 @@ describe('ClientCancelBookingHandler', () => {
       ...futureBooking,
       status: BookingStatus.AWAITING_PAYMENT,
     });
-    const handler = new ClientCancelBookingHandler(prisma as never, buildTenant() as never, buildSettingsHandler() as never);
+    const handler = new ClientCancelBookingHandler(prisma as never, buildTenant() as never, buildSettingsHandler() as never, buildEventBus() as never);
 
     const result = await handler.execute({ bookingId: 'book-1', clientId: 'client-1' });
 

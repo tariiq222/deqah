@@ -55,7 +55,7 @@ describe('Moyasar Webhook — Idempotency (e2e-style)', () => {
         currency: 'SAR',
         status: 'CONFIRMED',
         bookingType: 'INDIVIDUAL',
-        bookingNumber: Date.now(),
+        bookingNumber: Math.floor(Math.random() * 1_000_000) + 1,
       },
     });
     bookingId = booking.id;

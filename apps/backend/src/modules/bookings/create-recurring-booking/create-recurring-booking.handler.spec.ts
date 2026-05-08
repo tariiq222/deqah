@@ -221,8 +221,8 @@ describe('CreateRecurringBookingHandler', () => {
       const prisma = buildPrisma({
         findFirst: jest.fn().mockImplementation(() => {
           callCount++;
-          // No conflict on 1st occurrence, conflict on 2nd
-          return callCount === 2 ? Promise.resolve({ id: 'existing' }) : Promise.resolve(null);
+          // Call 1: lastBooking number lookup (no conflict). Call 2: occurrence 1 conflict check (no conflict). Call 3: occurrence 2 conflict check (conflict).
+          return callCount === 3 ? Promise.resolve({ id: 'existing' }) : Promise.resolve(null);
         }),
         create: jest.fn().mockImplementation(({ data }) =>
           Promise.resolve(mockBooking(data.scheduledAt)),

@@ -42,6 +42,9 @@ const buildEventBus = () => ({
   subscribe: jest.fn(),
 });
 const buildRls = () => ({ applyInTransaction: jest.fn().mockResolvedValue(undefined) } as unknown as RlsHelper);
+const buildMoyasar = () => ({
+  createRefund: jest.fn().mockResolvedValue({ id: 'refund-gw-1' }),
+});
 
 const PAY_ID = 'pay-1';
 
@@ -49,6 +52,7 @@ describe('RefundPaymentHandler', () => {
   const PAYMENT_BASE = {
     id: PAY_ID,
     amount: 100,
+    gatewayRef: 'pay_test_gw_123',
     invoice: {
       id: 'inv-1',
       bookingId: 'book-1',
@@ -61,13 +65,14 @@ describe('RefundPaymentHandler', () => {
   it('refunds a completed payment + creates RefundRequest + emits RefundCompletedEvent', async () => {
     const prisma = buildPrisma();
     const eventBus = buildEventBus();
+    const moyasar = buildMoyasar();
     const completedPayment = { ...PAYMENT_BASE, status: PaymentStatus.COMPLETED };
     const refunded = { ...completedPayment, status: PaymentStatus.REFUNDED, failureReason: 'client request' };
     prisma.payment.findFirst.mockResolvedValue(completedPayment);
     prisma.payment.update.mockResolvedValue(refunded);
     prisma.invoice.update.mockResolvedValue({ id: 'inv-1' });
 
-    const handler = new RefundPaymentHandler(prisma as never, eventBus as never, buildRls());
+    const handler = new RefundPaymentHandler(prisma as never, eventBus as never, buildRls(), moyasar as never);
     const result = await handler.execute({ paymentId: PAY_ID, reason: 'client request' });
 
     expect(result.status).toBe(PaymentStatus.REFUNDED);
@@ -103,7 +108,7 @@ describe('RefundPaymentHandler', () => {
     prisma.payment.findFirst.mockResolvedValue(null);
 
     await expect(
-      new RefundPaymentHandler(prisma as never, eventBus as never, buildRls()).execute({ paymentId: 'bad', reason: 'x' }),
+      new RefundPaymentHandler(prisma as never, eventBus as never, buildRls(), buildMoyasar() as never).execute({ paymentId: 'bad', reason: 'x' }),
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -113,7 +118,7 @@ describe('RefundPaymentHandler', () => {
     prisma.payment.findFirst.mockResolvedValue({ ...PAYMENT_BASE, status: PaymentStatus.PENDING });
 
     await expect(
-      new RefundPaymentHandler(prisma as never, eventBus as never, buildRls()).execute({ paymentId: PAY_ID, reason: 'x' }),
+      new RefundPaymentHandler(prisma as never, eventBus as never, buildRls(), buildMoyasar() as never).execute({ paymentId: PAY_ID, reason: 'x' }),
     ).rejects.toThrow(BadRequestException);
   });
 });
