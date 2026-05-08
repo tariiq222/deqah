@@ -25,7 +25,8 @@ For non-trivial work (touching 2+ files), use either pipeline. Don't freelance.
 - **Backend**: NestJS 11, Prisma 7 (PostgreSQL + pgvector), BullMQ, Redis, MinIO
 - **Per-tenant Dashboard**: Next.js 15 (App Router) + React 19, TanStack Query, Tailwind 4, next-intl (AR/EN)
 - **Super-admin (`apps/admin`)**: Next.js 15 — SaaS control plane (tenants, plans, verticals, billing oversight, impersonation, metrics)
-- **Public Website (`apps/website`)**: Next.js 15 — marketing/info site
+- **Public Website (`apps/bespoke/sawa/website`)**: Next.js 15 — marketing/info site
+- **Sawa tenant website**: paused from production pipeline as of 2026-05-08. Code remains at `apps/bespoke/sawa/website` and runs locally via `pnpm dev:website`. Mobile (`apps/mobile`) was never part of this pipeline.
 - **Mobile**: React Native 0.83, Expo SDK 55, Expo Router, Redux Toolkit (auth slice only) + TanStack Query — **single-tenant per build** (see "Mobile Tenant Strategy" below)
 - **Shared packages**:
   - `@deqah/api-client` — typed fetch client
@@ -141,7 +142,7 @@ deqah/
 │   │   └── src/modules/      # 14 clusters (vertical-slice handlers within)
 │   ├── dashboard/        # Per-tenant clinic admin (Next.js 15)
 │   ├── admin/            # Super-admin SaaS control plane (Next.js 15)
-│   ├── website/          # Public marketing/info site (Next.js 15)
+│   ├── bespoke/sawa/website/  # Public marketing/info site (Sawa tenant, Next.js 15)
 │   └── mobile/           # Expo — Client + Employee + Auth flows
 ├── packages/
 │   ├── api-client/       # @deqah/api-client

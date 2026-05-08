@@ -201,25 +201,57 @@ services:
         max-size: "10m"
         max-file: "5"
 
-  website:
+  # Sawa tenant website — paused 2026-05-08, awaiting separate Dokploy project setup.
+  # Uncomment this block + re-add to build-images.yml matrix to resume builds.
+  # website:
+  #   build:
+  #     context: ..
+  #     dockerfile: apps/bespoke/sawa/website/Dockerfile
+  #     args:
+  #       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+  #   container_name: deqah-website
+  #   restart: unless-stopped
+  #   environment:
+  #     NODE_ENV: production
+  #     PORT: "5105"
+  #     NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+  #   depends_on:
+  #     backend:
+  #       condition: service_healthy
+  #   expose:
+  #     - "5105"
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "wget -qO- http://localhost:5105/ >/dev/null 2>&1 || exit 1"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 45s
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 512M
+  #   logging:
+  #     driver: json-file
+  #     options:
+  #       max-size: "10m"
+  #       max-file: "5"
+
+  marketing:
     build:
       context: ..
-      dockerfile: apps/website/Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-    container_name: deqah-website
+      dockerfile: apps/marketing/Dockerfile
+    container_name: deqah-marketing
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      PORT: "5105"
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      PORT: "5106"
     depends_on:
       backend:
         condition: service_healthy
     expose:
-      - "5105"
+      - "5106"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:5105/ >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5106/ >/dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -366,7 +398,7 @@ services:
         condition: service_healthy
       admin:
         condition: service_healthy
-      website:
+      marketing:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost/nginx-health || exit 1"]

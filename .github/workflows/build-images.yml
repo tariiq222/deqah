@@ -6,15 +6,15 @@
 #   - manual workflow_dispatch
 #
 # Outputs (per app):
-#   ghcr.io/tariiq222/deqah-{backend,dashboard,admin}:v<semver>          ← primary, from apps/<app>/package.json
+#   ghcr.io/tariiq222/deqah-{backend,dashboard,admin,marketing}:v<semver>  ← primary, from package_json_path
 #                                                              :v<semver>-<sha>  ← versioned + sha (main only)
 #                                                              :latest           ← supplementary (main only)
 #                                                              :<sha>            ← supplementary
 #                                                              :<date>-<run>     ← supplementary
 #
-# IMPORTANT — Manual step after the FIRST successful run:
+# IMPORTANT — Manual step after the FIRST successful run for a new app:
 # 1. Go to https://github.com/users/tariiq222/packages
-# 2. Click each of the 3 packages (deqah-backend, deqah-dashboard, deqah-admin)
+# 2. Click the new package (e.g. deqah-marketing)
 # 3. Settings → Change visibility → Public
 # This makes Dokploy able to pull without authentication. Only needed once per package.
 #
@@ -47,28 +47,36 @@ jobs:
         app:
           - name: backend
             dockerfile: apps/backend/Dockerfile
+            package_json_path: apps/backend/package.json
             target: runner
             build_args: ""
           - name: dashboard
             dockerfile: apps/dashboard/Dockerfile
+            package_json_path: apps/dashboard/package.json
             target: runner
             build_args: |
               NEXT_PUBLIC_API_URL=https://api.deqah.net/api/v1
               NEXT_PUBLIC_HCAPTCHA_SITE_KEY=8c765c14-831e-4a76-a1c0-0e3eac06c7f6
           - name: admin
             dockerfile: apps/admin/Dockerfile
+            package_json_path: apps/admin/package.json
             target: runner
             build_args: |
               NEXT_PUBLIC_API_URL=https://api.deqah.net/api/v1
               NEXT_PUBLIC_HCAPTCHA_SITE_KEY=8c765c14-831e-4a76-a1c0-0e3eac06c7f6
+          - name: marketing
+            dockerfile: apps/marketing/Dockerfile
+            package_json_path: apps/marketing/package.json
+            target: runner
+            build_args: ""
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
-      # Version-based filter: build only if apps/<this-app>/package.json version
-      # is NOT already in GHCR. The Changesets pipeline guarantees that any
+      # Version-based filter: build only if the version tag for this app does
+      # NOT already exist in GHCR. The Changesets pipeline guarantees that any
       # meaningful change bumps the version (or fails the promote gate), so
       # "version exists in registry" == "nothing new to ship for this app."
       #
@@ -92,8 +100,8 @@ jobs:
             exit 0
           fi
 
-          # Read version from package.json.
-          VERSION=$(node -p "require('./apps/${APP}/package.json').version" 2>/dev/null || echo "")
+          # Read version from explicit package_json_path (supports non-standard dirs like bespoke).
+          VERSION=$(node -p "require('./${{ matrix.app.package_json_path }}').version" 2>/dev/null || echo "")
           if [ -z "$VERSION" ]; then
             echo "should_build=true" >> "$GITHUB_OUTPUT"
             echo "Reason: could not read version for ${APP} — building defensively"
@@ -131,9 +139,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          VERSION=$(node -p "require('./apps/${{ matrix.app.name }}/package.json').version")
+          VERSION=$(node -p "require('./${{ matrix.app.package_json_path }}').version")
           if [ -z "$VERSION" ]; then
-            echo "::error::Could not read version from apps/${{ matrix.app.name }}/package.json"
+            echo "::error::Could not read version from ${{ matrix.app.package_json_path }}"
             exit 1
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -210,6 +218,7 @@ jobs:
           DOKPLOY_BACKEND_WEBHOOK: ${{ secrets.DOKPLOY_BACKEND_WEBHOOK }}
           DOKPLOY_DASHBOARD_WEBHOOK: ${{ secrets.DOKPLOY_DASHBOARD_WEBHOOK }}
           DOKPLOY_ADMIN_WEBHOOK: ${{ secrets.DOKPLOY_ADMIN_WEBHOOK }}
+          DOKPLOY_MARKETING_WEBHOOK: ${{ secrets.DOKPLOY_MARKETING_WEBHOOK }}
         run: |
           set -euo pipefail
           APP="${{ matrix.app.name }}"
@@ -217,6 +226,7 @@ jobs:
             backend)   WEBHOOK="$DOKPLOY_BACKEND_WEBHOOK" ;;
             dashboard) WEBHOOK="$DOKPLOY_DASHBOARD_WEBHOOK" ;;
             admin)     WEBHOOK="$DOKPLOY_ADMIN_WEBHOOK" ;;
+            marketing) WEBHOOK="$DOKPLOY_MARKETING_WEBHOOK" ;;
             *)         echo "::error::unknown app $APP"; exit 1 ;;
           esac
           if [ -z "${WEBHOOK:-}" ]; then
