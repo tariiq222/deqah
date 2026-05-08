@@ -1,7 +1,9 @@
 import { Test } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { ClsModule, ClsService } from 'nestjs-cls';
 import { TenantContextService, TenantContext } from './tenant-context.service';
 import { DEFAULT_ORGANIZATION_ID } from './tenant.constants';
+import { UnauthorizedTenantAccessError } from './tenant.errors';
 
 describe('TenantContextService', () => {
   let cls: ClsService;
@@ -10,7 +12,15 @@ describe('TenantContextService', () => {
   beforeEach(async () => {
     const mod = await Test.createTestingModule({
       imports: [ClsModule.forRoot({ global: true, middleware: { mount: false } })],
-      providers: [TenantContextService],
+      providers: [
+        TenantContextService,
+        // Provide permissive mode so the legacy fallback tests remain valid
+        // (they pre-date P1.2 hardening; new strict-mode tests live in their own describe block below).
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn().mockReturnValue('permissive') },
+        },
+      ],
     }).compile();
 
     cls = mod.get(ClsService);
@@ -79,6 +89,64 @@ describe('TenantContextService', () => {
     cls.run(() => {
       svc.set(ctx);
       expect(svc.requireOrganizationIdOrDefault()).toBe('org-1');
+    });
+  });
+
+  describe('requireOrganizationIdOrDefault — strict guard (P1.2)', () => {
+    let strictCls: ClsService;
+    let strictSvc: TenantContextService;
+    let permissiveCls: ClsService;
+    let permissiveSvc: TenantContextService;
+
+    beforeEach(async () => {
+      // Module with strict enforcement
+      const strictMod = await Test.createTestingModule({
+        imports: [ClsModule.forRoot({ global: true, middleware: { mount: false } })],
+        providers: [
+          TenantContextService,
+          {
+            provide: ConfigService,
+            useValue: { get: jest.fn().mockReturnValue('strict') },
+          },
+        ],
+      }).compile();
+      strictCls = strictMod.get(ClsService);
+      strictSvc = strictMod.get(TenantContextService);
+
+      // Module with permissive enforcement
+      const permissiveMod = await Test.createTestingModule({
+        imports: [ClsModule.forRoot({ global: true, middleware: { mount: false } })],
+        providers: [
+          TenantContextService,
+          {
+            provide: ConfigService,
+            useValue: { get: jest.fn().mockReturnValue('permissive') },
+          },
+        ],
+      }).compile();
+      permissiveCls = permissiveMod.get(ClsService);
+      permissiveSvc = permissiveMod.get(TenantContextService);
+    });
+
+    it('throws UnauthorizedTenantAccessError under strict mode when no tenant is set', () => {
+      strictCls.run(() => {
+        expect(() => strictSvc.requireOrganizationIdOrDefault()).toThrow(
+          UnauthorizedTenantAccessError,
+        );
+      });
+    });
+
+    it('returns DEFAULT_ORGANIZATION_ID under permissive mode when no tenant is set', () => {
+      permissiveCls.run(() => {
+        expect(permissiveSvc.requireOrganizationIdOrDefault()).toBe(DEFAULT_ORGANIZATION_ID);
+      });
+    });
+
+    it('returns the resolved tenant id under strict mode when tenant is set', () => {
+      strictCls.run(() => {
+        strictSvc.set(ctx);
+        expect(strictSvc.requireOrganizationIdOrDefault()).toBe('org-1');
+      });
     });
   });
 });

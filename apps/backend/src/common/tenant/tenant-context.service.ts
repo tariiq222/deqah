@@ -1,4 +1,5 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ClsService } from 'nestjs-cls';
 import { DEFAULT_ORGANIZATION_ID, SYSTEM_CONTEXT_CLS_KEY, TENANT_CLS_KEY } from './tenant.constants';
 import { UnauthorizedTenantAccessError } from './tenant.errors';
@@ -39,6 +40,7 @@ export class TenantContextService {
     @Optional()
     @Inject(SUBSCRIPTION_CACHE_TOKEN)
     private readonly subscriptionCache?: SubscriptionCacheLookup,
+    @Optional() private readonly config?: ConfigService,
   ) {}
 
   set(ctx: TenantContext): void {
@@ -69,9 +71,28 @@ export class TenantContextService {
    * that must keep working under `TENANT_ENFORCEMENT=off` (no middleware
    * populates CLS in that mode) while still writing/reading a concrete
    * organizationId. Never returns undefined.
+   *
+   * P1.2 hardening: under strict mode, returning the DEFAULT_ORGANIZATION_ID
+   * would let any code path that "forgot" a tenant write rows to a phantom
+   * org — a silent multi-tenant data corruption sink. Strict mode now throws,
+   * matching the contract that every scoped query MUST have a resolved tenant.
+   * off/permissive callers still get the default (dev-only convenience).
    */
   requireOrganizationIdOrDefault(): string {
-    return this.getOrganizationId() ?? DEFAULT_ORGANIZATION_ID;
+    const id = this.getOrganizationId();
+    if (id) return id;
+    // P1.2 hardening: under strict mode, returning the DEFAULT_ORGANIZATION_ID
+    // would let any code path that "forgot" a tenant write rows to a phantom
+    // org — a silent multi-tenant data corruption sink. Strict mode now throws,
+    // matching the contract that every scoped query MUST have a resolved tenant.
+    // off/permissive callers still get the default (dev-only convenience).
+    const mode = this.config?.get<string>('TENANT_ENFORCEMENT', 'strict') ?? 'strict';
+    if (mode === 'strict') {
+      throw new UnauthorizedTenantAccessError(
+        'requireOrganizationIdOrDefault() called without a tenant under strict mode — handler must run inside an authenticated request or an explicit cls.run with the resolved org',
+      );
+    }
+    return DEFAULT_ORGANIZATION_ID;
   }
 
   isSuperAdmin(): boolean {
