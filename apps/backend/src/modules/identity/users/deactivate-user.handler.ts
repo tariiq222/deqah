@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database';
+import { TenantContextService } from '../../../common/tenant/tenant-context.service';
 
 export interface DeactivateUserCommand {
   userId: string;
@@ -7,9 +8,19 @@ export interface DeactivateUserCommand {
 
 @Injectable()
 export class DeactivateUserHandler {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tenant: TenantContextService,
+  ) {}
 
   async execute(cmd: DeactivateUserCommand): Promise<void> {
+    const orgId = this.tenant.requireOrganizationIdOrDefault();
+    const membership = await this.prisma.membership.findFirst({
+      where: { userId: cmd.userId, organizationId: orgId, isActive: true },
+      select: { id: true },
+    });
+    if (!membership) throw new NotFoundException('User not found');
+
     const user = await this.prisma.user.findUnique({ where: { id: cmd.userId } });
     if (!user) throw new NotFoundException('User not found');
 

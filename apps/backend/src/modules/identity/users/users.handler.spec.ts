@@ -18,6 +18,7 @@ const buildUsersPrisma = () => {
       count: jest.fn().mockResolvedValue(1),
     },
     membership: {
+      findFirst: jest.fn().mockResolvedValue({ id: 'mem_1' }),
       upsert: jest.fn().mockResolvedValue({ id: 'm-1', userId: 'u-1', organizationId: 'org-1' }),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
@@ -34,6 +35,10 @@ const buildUsersPrisma = () => {
 
 const buildTenantCtx = (organizationId = 'org-1') => ({
   requireOrganizationId: jest.fn().mockReturnValue(organizationId),
+});
+
+const buildDeactivateTenant = (organizationId = 'org-1') => ({
+  requireOrganizationIdOrDefault: jest.fn().mockReturnValue(organizationId),
 });
 const buildRls = () => ({ applyInTransaction: jest.fn().mockResolvedValue(undefined) } as unknown as RlsHelper);
 
@@ -80,7 +85,8 @@ describe('CreateUserHandler', () => {
 describe('DeactivateUserHandler', () => {
   it('deactivates user', async () => {
     const prisma = buildUsersPrisma();
-    const handler = new DeactivateUserHandler(prisma as never);
+    const tenant = buildDeactivateTenant();
+    const handler = new DeactivateUserHandler(prisma as never, tenant as never);
     await handler.execute({ userId: 'u-1' });
     expect(prisma.user.update).toHaveBeenCalledWith(expect.objectContaining({ data: { isActive: false } }));
   });
@@ -88,7 +94,8 @@ describe('DeactivateUserHandler', () => {
   it('throws NotFoundException when user not found', async () => {
     const prisma = buildUsersPrisma();
     prisma.user.findUnique = jest.fn().mockResolvedValue(null);
-    const handler = new DeactivateUserHandler(prisma as never);
+    const tenant = buildDeactivateTenant();
+    const handler = new DeactivateUserHandler(prisma as never, tenant as never);
     await expect(handler.execute({ userId: 'u-1' })).rejects.toThrow(NotFoundException);
   });
 
@@ -99,7 +106,8 @@ describe('DeactivateUserHandler', () => {
         { id: 'm-owner', organizationId: 'org-1' },
       ]);
       prisma.$allTenants.membership.count = jest.fn().mockResolvedValue(0);
-      const handler = new DeactivateUserHandler(prisma as never);
+      const tenant = buildDeactivateTenant();
+      const handler = new DeactivateUserHandler(prisma as never, tenant as never);
       await expect(handler.execute({ userId: 'u-1' })).rejects.toThrow(/last active OWNER|active OWNER/i);
       expect(prisma.user.update).not.toHaveBeenCalled();
     });
@@ -110,7 +118,8 @@ describe('DeactivateUserHandler', () => {
         { id: 'm-owner', organizationId: 'org-1' },
       ]);
       prisma.$allTenants.membership.count = jest.fn().mockResolvedValue(1);
-      const handler = new DeactivateUserHandler(prisma as never);
+      const tenant = buildDeactivateTenant();
+      const handler = new DeactivateUserHandler(prisma as never, tenant as never);
       await handler.execute({ userId: 'u-1' });
       expect(prisma.user.update).toHaveBeenCalled();
     });
@@ -118,7 +127,8 @@ describe('DeactivateUserHandler', () => {
     it('allows deactivating a non-OWNER user without checking', async () => {
       const prisma = buildUsersPrisma();
       prisma.$allTenants.membership.findMany = jest.fn().mockResolvedValue([]);
-      const handler = new DeactivateUserHandler(prisma as never);
+      const tenant = buildDeactivateTenant();
+      const handler = new DeactivateUserHandler(prisma as never, tenant as never);
       await handler.execute({ userId: 'u-1' });
       expect(prisma.$allTenants.membership.count).not.toHaveBeenCalled();
       expect(prisma.user.update).toHaveBeenCalled();
