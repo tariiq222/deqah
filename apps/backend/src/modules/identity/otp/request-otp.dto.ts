@@ -18,10 +18,10 @@ export class RequestOtpDto {
   @IsEnum(OtpPurpose)
   purpose!: OtpPurpose;
 
-  @ApiProperty({ description: 'hCaptcha token', example: '10000000-aaaa-bbbb-cccc-000000000001' })
+  @ApiPropertyOptional({ description: 'Captcha token (ignored — kept for client compatibility until Cloudflare Turnstile lands)', example: '10000000-aaaa-bbbb-cccc-000000000001' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  hCaptchaToken!: string;
+  hCaptchaToken?: string;
 
   @ApiPropertyOptional({ description: 'Target organization ID' })
   @IsOptional()

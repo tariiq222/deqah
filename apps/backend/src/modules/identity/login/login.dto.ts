@@ -1,5 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class LoginDto {
   @ApiProperty({ description: 'User email address', example: 'user@example.com' })
@@ -11,8 +11,8 @@ export class LoginDto {
   @MinLength(8)
   password!: string;
 
-  @ApiProperty({ description: 'hCaptcha verification token' })
+  @ApiPropertyOptional({ description: 'Captcha verification token (ignored — kept for client compatibility until Cloudflare Turnstile lands)' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  hCaptchaToken!: string;
+  hCaptchaToken?: string;
 }

@@ -29,8 +29,8 @@ export class VerifyOtpDto {
   @IsString()
   organizationId?: string;
 
-  @ApiProperty({ example: '<hCaptcha token>', description: 'hCaptcha token from the OTP verify form' })
+  @ApiPropertyOptional({ example: '<captcha token>', description: 'Captcha token (ignored — kept for client compatibility until Cloudflare Turnstile lands)' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  hCaptchaToken!: string;
+  hCaptchaToken?: string;
 }

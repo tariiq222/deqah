@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, MinLength, Matches } from 'class-validator';
+import { IsOptional, IsString, MinLength, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RegisterDto {
@@ -14,8 +14,8 @@ export class RegisterDto {
   @Matches(/[0-9]/, { message: 'Password must contain at least 1 digit' })
   password!: string;
 
-  @ApiProperty({ example: '<hCaptcha token>', description: 'hCaptcha token from the registration form' })
+  @ApiPropertyOptional({ example: '<captcha token>', description: 'Captcha token (ignored — kept for client compatibility until Cloudflare Turnstile lands)' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  hCaptchaToken!: string;
+  hCaptchaToken?: string;
 }
