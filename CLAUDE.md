@@ -61,7 +61,7 @@ For non-trivial work (touching 2+ files), use either pipeline. Don't freelance.
 - **Tests must pass** before any commit — fix first, ship after
 - **No audit loops** — code correct on first delivery
 - **Ports 5000–5999** reserved exclusively for Deqah tools/environments
-- **All DB changes via Prisma migrations** — never `prisma db push`, never manual SQL
+- **All DB changes via Prisma migrations** — never commit `prisma db push` to scripts/CI/Dockerfiles (CI guards via `scripts/ci/check-no-db-push.sh`). Manual local `db push` for prototyping is fine; never `prisma db push` in committed code, and never manual SQL.
 - **Tenant-isolation tests required** for any new scoped model
 - **i18n parity (AR/EN)** required for any user-facing string in dashboard/mobile/admin/website
 - **RTL-first layout** — use logical properties (`start`/`end`, `ps-`/`pe-`, `ms-`/`me-`); never hardcode `left`/`right`
