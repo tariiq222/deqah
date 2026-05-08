@@ -1,7 +1,7 @@
 # Build & Push to GitHub Container Registry (ghcr.io)
 #
 # Triggers:
-#   - push to main (after the sanitizer publishes from develop→main)
+#   - push to main (after the sanitizer publishes from develop→main) — ALL images rebuild unconditionally
 #   - push of a semver tag (v*) — triggered by scripts/release.sh
 #   - manual workflow_dispatch
 #
@@ -75,58 +75,10 @@ jobs:
         with:
           fetch-depth: 2
 
-      # Version-based filter: build only if the version tag for this app does
-      # NOT already exist in GHCR. The Changesets pipeline guarantees that any
-      # meaningful change bumps the version (or fails the promote gate), so
-      # "version exists in registry" == "nothing new to ship for this app."
-      #
-      # Triggers a build when:
-      #   - tag push (always — explicit release)
-      #   - the v<semver> tag for this app does NOT yet exist in ghcr.io
-      #   - cannot reach GHCR (defensive: build to be safe)
-      - name: Decide if this app needs to build
-        id: filter
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -uo pipefail
-          APP="${{ matrix.app.name }}"
-
-          # Tag pushes always build (explicit release intent).
-          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref_type }}" = "tag" ]; then
-            echo "should_build=true" >> "$GITHUB_OUTPUT"
-            echo "Reason: tag push — always build"
-            exit 0
-          fi
-
-          # Read version from explicit package_json_path (supports non-standard dirs like bespoke).
-          VERSION=$(node -p "require('./${{ matrix.app.package_json_path }}').version" 2>/dev/null || echo "")
-          if [ -z "$VERSION" ]; then
-            echo "should_build=true" >> "$GITHUB_OUTPUT"
-            echo "Reason: could not read version for ${APP} — building defensively"
-            exit 0
-          fi
-          echo "Resolved ${APP} target version: v${VERSION}"
-
-          # Login to GHCR for the manifest check.
-          echo "${GH_TOKEN}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin >/dev/null 2>&1 || true
-
-          IMAGE="ghcr.io/${{ github.repository_owner }}/deqah-${APP}"
-          if docker manifest inspect "${IMAGE}:v${VERSION}" >/dev/null 2>&1; then
-            echo "should_build=false" >> "$GITHUB_OUTPUT"
-            echo "Reason: ${IMAGE}:v${VERSION} already exists in GHCR — skipping"
-          else
-            echo "should_build=true" >> "$GITHUB_OUTPUT"
-            echo "Reason: ${IMAGE}:v${VERSION} not in GHCR — building"
-          fi
-
       - name: Set up Docker Buildx
-        if: steps.filter.outputs.should_build == 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
-        if: steps.filter.outputs.should_build == 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -134,7 +86,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Read app version
-        if: steps.filter.outputs.should_build == 'true'
         id: app_version
         shell: bash
         run: |
@@ -148,7 +99,6 @@ jobs:
           echo "Building ${{ matrix.app.name }} v$VERSION"
 
       - name: Extract metadata
-        if: steps.filter.outputs.should_build == 'true'
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -171,7 +121,6 @@ jobs:
       # available inside matrix definitions, only inside step inputs/env).
       - name: Resolve build args
         id: build_args
-        if: steps.filter.outputs.should_build == 'true'
         shell: bash
         run: |
           MOYASAR_KEY="${{ secrets.MOYASAR_PUBLISHABLE_KEY }}"
@@ -181,7 +130,6 @@ jobs:
           echo "moyasar_key=$MOYASAR_KEY" >> "$GITHUB_OUTPUT"
 
       - name: Build & push
-        if: steps.filter.outputs.should_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -198,7 +146,7 @@ jobs:
           cache-to: type=gha,scope=${{ matrix.app.name }},mode=max
 
       - name: Verify version tag was pushed
-        if: steps.filter.outputs.should_build == 'true' && github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         shell: bash
         run: |
           set -euo pipefail
@@ -212,7 +160,7 @@ jobs:
           echo "✅ $IMAGE:$VERSION confirmed in registry."
 
       - name: Trigger Dokploy redeploy
-        if: steps.filter.outputs.should_build == 'true' && (github.ref == 'refs/heads/main' || github.ref_type == 'tag')
+        if: github.ref == 'refs/heads/main' || github.ref_type == 'tag'
         shell: bash
         env:
           DOKPLOY_BACKEND_WEBHOOK: ${{ secrets.DOKPLOY_BACKEND_WEBHOOK }}
