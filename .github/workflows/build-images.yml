@@ -19,10 +19,20 @@
 #                                  deqah-database-jeprin:5432 over dokploy-network.
 #                                  No external DB exposure required.
 #
-#   DOKPLOY_BACKEND_WEBHOOK        Dokploy redeploy webhook URL for backend.
-#   DOKPLOY_DASHBOARD_WEBHOOK      Dokploy redeploy webhook URL for dashboard.
-#   DOKPLOY_ADMIN_WEBHOOK          Dokploy redeploy webhook URL for admin.
-#   DOKPLOY_MARKETING_WEBHOOK      Dokploy redeploy webhook URL for marketing.
+#   DOKPLOY_API_URL                Base URL of the Dokploy instance.
+#                                  e.g. https://admin.tomooh.cloud
+#                                  Used by deploy-and-verify to trigger deploys
+#                                  via the Dokploy REST API.
+#
+#   DOKPLOY_API_TOKEN              Dokploy API token (Settings → API Tokens).
+#                                  Used to call /api/application.deploy and poll
+#                                  deployment status. If missing/invalid, falls
+#                                  back to webhook URLs (Plan B).
+#
+#   DOKPLOY_BACKEND_WEBHOOK        Dokploy redeploy webhook URL for backend (Plan B fallback).
+#   DOKPLOY_DASHBOARD_WEBHOOK      Dokploy redeploy webhook URL for dashboard (Plan B fallback).
+#   DOKPLOY_ADMIN_WEBHOOK          Dokploy redeploy webhook URL for admin (Plan B fallback).
+#   DOKPLOY_MARKETING_WEBHOOK      Dokploy redeploy webhook URL for marketing (Plan B fallback).
 #
 #   MOYASAR_PUBLISHABLE_KEY        Live Moyasar publishable key injected into
 #                                  dashboard build. Defaults to pk_test_replace_me
@@ -44,6 +54,13 @@
 #                                  If unset or not "true", the backup-prod-db job
 #                                  is skipped silently.
 #
+#   DEPLOY_ROLLBACK_DISABLED       Set to "true" to skip auto-rollback steps.
+#                                  Health checks still run (visibility) and GitHub
+#                                  Issues still open on failure. Use as a kill switch
+#                                  when you need to deploy a known-broken image or
+#                                  temporarily override rollback during an incident.
+#                                  Default: unset (auto-rollback enabled).
+#
 # ─── Changeset-aware build matrix ────────────────────────────────────────────
 #   On push to main, .changeset/ is stripped by the sanitizer so this workflow
 #   cannot read changeset files directly. Instead promote-to-main.yml writes
@@ -61,10 +78,18 @@
 #
 # ─── Job ordering ────────────────────────────────────────────────────────────
 #   compute-matrix → backup-prod-db → migrate-prod → build (per-app matrix)
-#   Frontends (dashboard/admin/marketing) share the build job but their Dokploy
-#   webhooks run independently — they do NOT depend on migrate-prod individually,
-#   but the build job as a whole waits for migrate-prod to succeed. This ensures
-#   that if migrations fail, NO service is deployed (not just backend).
+#                                                   → deploy-and-verify (per-app matrix, self-hosted)
+#
+#   deploy-and-verify replaces the old fire-and-forget "Trigger Dokploy redeploy"
+#   step. Each app gets its own matrix job (backend rollback does not block
+#   dashboard). Each job:
+#     1. Captures pre-deploy image tag (for rollback).
+#     2. Triggers Dokploy via REST API (falls back to webhook on API failure).
+#     3. Polls Dokploy for up to 5 minutes until status = done/error.
+#     4. Runs health check (5 × 30s = 150s ceiling).
+#     5. On failure: defense-in-depth rollback (Swarm rollback → image redeploy).
+#     6. On catastrophic failure: opens GitHub Issue + exits 1.
+#     7. On success: updates .deploy-state.json (last-known-good image tag).
 #
 # ─── Sanitizer re-injection ───────────────────────────────────────────────────
 #   scripts/sync-main-branch.sh keeps ONLY this file from .github/ when
@@ -85,8 +110,9 @@ on:
         default: false
 
 permissions:
-  contents: read
+  contents: write   # deploy-and-verify updates .deploy-state.json via gh api
   packages: write
+  issues: write     # deploy-and-verify opens GitHub Issues on failure
 
 env:
   REGISTRY: ghcr.io
@@ -474,40 +500,61 @@ jobs:
             exit 1
           fi
 
-      - name: Trigger Dokploy redeploy
+      - name: Output built image tag
+        id: built_image
         if: github.ref == 'refs/heads/main' || github.ref_type == 'tag'
         shell: bash
-        env:
-          DOKPLOY_BACKEND_WEBHOOK: ${{ secrets.DOKPLOY_BACKEND_WEBHOOK }}
-          DOKPLOY_DASHBOARD_WEBHOOK: ${{ secrets.DOKPLOY_DASHBOARD_WEBHOOK }}
-          DOKPLOY_ADMIN_WEBHOOK: ${{ secrets.DOKPLOY_ADMIN_WEBHOOK }}
-          DOKPLOY_MARKETING_WEBHOOK: ${{ secrets.DOKPLOY_MARKETING_WEBHOOK }}
         run: |
           set -euo pipefail
-          APP="${{ matrix.app }}"
-          case "$APP" in
-            backend)   WEBHOOK="${DOKPLOY_BACKEND_WEBHOOK:-}" ;;
-            dashboard) WEBHOOK="${DOKPLOY_DASHBOARD_WEBHOOK:-}" ;;
-            admin)     WEBHOOK="${DOKPLOY_ADMIN_WEBHOOK:-}" ;;
-            marketing) WEBHOOK="${DOKPLOY_MARKETING_WEBHOOK:-}" ;;
-            *)         echo "::error::Unknown app $APP"; exit 1 ;;
-          esac
+          # Expose the versioned image tag for the deploy-and-verify job
+          VERSION="v${{ steps.app_version.outputs.version }}"
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/deqah-${{ matrix.app }}:${VERSION}"
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "Built image: ${IMAGE}"
 
-          if [ -z "${WEBHOOK:-}" ]; then
-            echo "No Dokploy webhook configured for $APP — skipping"
-            exit 0
-          fi
 
-          echo "Triggering Dokploy redeploy for $APP..."
-          set +e
-          HTTP_CODE=$(curl -sS -o /tmp/dokploy.body -w "%{http_code}" \
-            -X POST --max-time 30 --retry 2 --retry-delay 5 "$WEBHOOK")
-          CURL_EXIT=$?
-          set -e
-          echo "Dokploy responded $HTTP_CODE for $APP"
-          if [ $CURL_EXIT -ne 0 ] || [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
-            echo "::error::Dokploy webhook for $APP failed with HTTP $HTTP_CODE"
-            cat /tmp/dokploy.body || true
-            exit 1
-          fi
-          echo "Dokploy redeploy triggered for $APP"
+# ─── Job 5: deploy-and-verify (per-app matrix, self-hosted) ──────────────────
+# All deploy/health/rollback/issue/state logic lives in the composite action
+# at .github/actions/deploy-app/action.yml.
+# Kill switch: set repo variable DEPLOY_ROLLBACK_DISABLED=true to skip rollback
+# steps while still running health checks and opening issues on failure.
+  deploy-and-verify:
+    name: Deploy & verify ${{ matrix.app }}
+    runs-on: [self-hosted, deqah-prod]
+    needs: [compute-matrix, build]
+    if: >
+      always() &&
+      needs.compute-matrix.result == 'success' &&
+      needs.build.result == 'success' &&
+      (github.ref == 'refs/heads/main' || github.ref_type == 'tag')
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJson(needs.compute-matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout (for CI scripts + composite action)
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 1
+
+      - name: Deploy, health-check & rollback
+        uses: ./.github/actions/deploy-app
+        with:
+          app:                       ${{ matrix.app }}
+          registry:                  ${{ env.REGISTRY }}
+          image_owner:               ${{ env.IMAGE_OWNER }}
+          repository:                ${{ github.repository }}
+          sha:                       ${{ github.sha }}
+          actor:                     ${{ github.actor }}
+          run_id:                    ${{ github.run_id }}
+          server_url:                ${{ github.server_url }}
+          dokploy_api_url:           ${{ secrets.DOKPLOY_API_URL }}
+          dokploy_api_token:         ${{ secrets.DOKPLOY_API_TOKEN }}
+          dokploy_backend_webhook:   ${{ secrets.DOKPLOY_BACKEND_WEBHOOK }}
+          dokploy_dashboard_webhook: ${{ secrets.DOKPLOY_DASHBOARD_WEBHOOK }}
+          dokploy_admin_webhook:     ${{ secrets.DOKPLOY_ADMIN_WEBHOOK }}
+          dokploy_marketing_webhook: ${{ secrets.DOKPLOY_MARKETING_WEBHOOK }}
+          github_token:              ${{ secrets.GITHUB_TOKEN }}
+          rollback_disabled:         ${{ vars.DEPLOY_ROLLBACK_DISABLED }}

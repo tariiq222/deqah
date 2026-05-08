@@ -1,0 +1,373 @@
+name: Deploy App & Verify
+description: >
+  Trigger a Dokploy deploy, wait for completion, run health checks,
+  perform defense-in-depth rollback on failure, and open a GitHub Issue
+  on catastrophic failure. Updates .deploy-state.json on success.
+
+inputs:
+  app:
+    description: App name (backend|dashboard|admin|marketing)
+    required: true
+  registry:
+    description: Container registry (e.g. ghcr.io)
+    required: true
+  image_owner:
+    description: Image owner (github.repository_owner)
+    required: true
+  repository:
+    description: github.repository (owner/repo)
+    required: true
+  sha:
+    description: github.sha
+    required: true
+  actor:
+    description: github.actor
+    required: true
+  run_id:
+    description: github.run_id
+    required: true
+  server_url:
+    description: github.server_url
+    required: true
+  dokploy_api_url:
+    description: Dokploy API base URL
+    required: false
+    default: ''
+  dokploy_api_token:
+    description: Dokploy API token
+    required: false
+    default: ''
+  dokploy_backend_webhook:
+    description: Dokploy webhook URL for backend (Plan B)
+    required: false
+    default: ''
+  dokploy_dashboard_webhook:
+    description: Dokploy webhook URL for dashboard (Plan B)
+    required: false
+    default: ''
+  dokploy_admin_webhook:
+    description: Dokploy webhook URL for admin (Plan B)
+    required: false
+    default: ''
+  dokploy_marketing_webhook:
+    description: Dokploy webhook URL for marketing (Plan B)
+    required: false
+    default: ''
+  github_token:
+    description: GITHUB_TOKEN for issue creation and state updates
+    required: true
+  rollback_disabled:
+    description: Set to "true" to skip rollback steps (kill switch)
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    # ── Step 1: Capture pre-deploy state ────────────────────────────────────────
+    - name: Capture pre-deploy state
+      id: pre_deploy
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+      run: |
+        set -euo pipefail
+        APP="${{ inputs.app }}"
+        case "$APP" in
+          backend)   LABEL="back" ;;
+          dashboard) LABEL="dashboard" ;;
+          admin)     LABEL="admin" ;;
+          marketing) LABEL="marketing" ;;
+          *)         echo "::error::Unknown app: $APP"; exit 1 ;;
+        esac
+
+        SERVICE_NAME=$(docker service ls \
+          --filter "name=deqah-${LABEL}" \
+          --format "{{.Name}}" | head -1)
+        if [[ -z "${SERVICE_NAME}" ]]; then
+          echo "::warning::No Swarm service found matching 'deqah-${LABEL}'."
+          SERVICE_NAME="deqah-${LABEL}-unknown"
+        fi
+        echo "service_name=${SERVICE_NAME}" >> "$GITHUB_OUTPUT"
+        echo "Resolved service: ${SERVICE_NAME}"
+
+        PREVIOUS_IMAGE=$(docker service inspect "${SERVICE_NAME}" \
+          --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}' 2>/dev/null || echo "")
+
+        if [[ -z "${PREVIOUS_IMAGE}" ]]; then
+          PREVIOUS_IMAGE=$(gh api \
+            "repos/${{ inputs.repository }}/contents/.deploy-state.json?ref=develop" \
+            --jq ".content" 2>/dev/null \
+            | base64 -d 2>/dev/null \
+            | node -e "
+              let d=''; process.stdin.on('data',c=>d+=c);
+              process.stdin.on('end',()=>{
+                try{const s=JSON.parse(d);console.log(s.lastKnownGood['${APP}']?.image||'');}
+                catch{console.log('');}
+              });
+            " 2>/dev/null || echo "")
+        fi
+        echo "previous_image=${PREVIOUS_IMAGE:-}" >> "$GITHUB_OUTPUT"
+        echo "Pre-deploy image: ${PREVIOUS_IMAGE:-'(unknown)'}"
+
+    # ── Step 2: Trigger Dokploy deploy ──────────────────────────────────────────
+    - name: Trigger Dokploy deploy
+      id: trigger
+      shell: bash
+      env:
+        DOKPLOY_API_URL:   ${{ inputs.dokploy_api_url }}
+        DOKPLOY_API_TOKEN: ${{ inputs.dokploy_api_token }}
+        DOKPLOY_BACKEND_WEBHOOK:   ${{ inputs.dokploy_backend_webhook }}
+        DOKPLOY_DASHBOARD_WEBHOOK: ${{ inputs.dokploy_dashboard_webhook }}
+        DOKPLOY_ADMIN_WEBHOOK:     ${{ inputs.dokploy_admin_webhook }}
+        DOKPLOY_MARKETING_WEBHOOK: ${{ inputs.dokploy_marketing_webhook }}
+      run: |
+        set -euo pipefail
+        APP="${{ inputs.app }}"
+        API_SUCCESS=false
+
+        if [[ -n "${DOKPLOY_API_URL:-}" && -n "${DOKPLOY_API_TOKEN:-}" ]]; then
+          set +e
+          node scripts/ci/dokploy-client.mjs list >/dev/null 2>&1
+          LIST_EXIT=$?
+          set -e
+
+          if [[ $LIST_EXIT -eq 0 ]]; then
+            # TODO: verify Dokploy app names on first run (enable DOKPLOY_DEBUG=1)
+            set +e
+            DEPLOY_OUT=$(node -e "
+              import('./scripts/ci/dokploy-client.mjs').then(async({getApplicationByName,triggerDeploy})=>{
+                const names={backend:'deqah-backend',dashboard:'deqah-dashboard',admin:'deqah-admin',marketing:'deqah-marketing'};
+                const app=await getApplicationByName({apiUrl:process.env.DOKPLOY_API_URL,token:process.env.DOKPLOY_API_TOKEN,name:names['$APP']});
+                const r=await triggerDeploy({apiUrl:process.env.DOKPLOY_API_URL,token:process.env.DOKPLOY_API_TOKEN,applicationId:app.applicationId});
+                console.log(JSON.stringify(r));
+              }).catch(e=>{process.stderr.write(e.message+'\n');process.exit(1);});
+            " 2>&1)
+            DEPLOY_EXIT=$?
+            set -e
+            if [[ $DEPLOY_EXIT -eq 0 ]]; then
+              API_SUCCESS=true
+              DEPLOYMENT_ID=$(echo "${DEPLOY_OUT}" | node -e "
+                let d='';process.stdin.on('data',c=>d+=c);
+                process.stdin.on('end',()=>{try{console.log(JSON.parse(d.trim().split('\n').pop()||'{}').deploymentId||'');}catch{console.log('');}});
+              " 2>/dev/null || echo "")
+              echo "deployment_id=${DEPLOYMENT_ID}" >> "$GITHUB_OUTPUT"
+              echo "api_triggered=true" >> "$GITHUB_OUTPUT"
+              echo "API deploy triggered. deploymentId=${DEPLOYMENT_ID:-'(not returned)'}"
+            else
+              echo "::warning::API deploy failed — falling back to webhook."
+              echo "${DEPLOY_OUT}" | head -10
+            fi
+          else
+            echo "::warning::Dokploy API unreachable — falling back to webhook."
+          fi
+        else
+          echo "API credentials not set — using webhook fallback."
+        fi
+
+        if [[ "${API_SUCCESS}" != "true" ]]; then
+          case "$APP" in
+            backend)   WEBHOOK="${DOKPLOY_BACKEND_WEBHOOK:-}" ;;
+            dashboard) WEBHOOK="${DOKPLOY_DASHBOARD_WEBHOOK:-}" ;;
+            admin)     WEBHOOK="${DOKPLOY_ADMIN_WEBHOOK:-}" ;;
+            marketing) WEBHOOK="${DOKPLOY_MARKETING_WEBHOOK:-}" ;;
+          esac
+          if [[ -z "${WEBHOOK:-}" ]]; then
+            echo "::error::No API credentials and no webhook for $APP — cannot deploy."; exit 1
+          fi
+          HTTP_CODE=$(curl -sS -o /tmp/dokploy-wh.body -w "%{http_code}" \
+            -X POST --max-time 30 --retry 2 --retry-delay 5 "${WEBHOOK}")
+          [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]] || {
+            echo "::error::Webhook for $APP failed (HTTP ${HTTP_CODE})"; cat /tmp/dokploy-wh.body||true; exit 1
+          }
+          echo "api_triggered=false" >> "$GITHUB_OUTPUT"
+          echo "deployment_id=" >> "$GITHUB_OUTPUT"
+          echo "Deploy triggered via webhook for $APP."
+        fi
+
+    # ── Step 3: Wait for deploy completion ──────────────────────────────────────
+    - name: Wait for deploy completion
+      id: wait_deploy
+      shell: bash
+      env:
+        DOKPLOY_API_URL:   ${{ inputs.dokploy_api_url }}
+        DOKPLOY_API_TOKEN: ${{ inputs.dokploy_api_token }}
+      run: |
+        set -euo pipefail
+        API_TRIGGERED="${{ steps.trigger.outputs.api_triggered }}"
+        DEPLOYMENT_ID="${{ steps.trigger.outputs.deployment_id }}"
+
+        if [[ "${API_TRIGGERED}" != "true" || -z "${DEPLOYMENT_ID}" ]]; then
+          echo "Webhook deploy (no deploymentId) — waiting 60s for image pull..."
+          sleep 60; exit 0
+        fi
+
+        echo "Polling deployment ${DEPLOYMENT_ID} (max 300s)..."
+        TIMEOUT=300; ELAPSED=0; INTERVAL=10
+        while [[ $ELAPSED -lt $TIMEOUT ]]; do
+          STATUS=$(node -e "
+            import('./scripts/ci/dokploy-client.mjs').then(async({getDeployStatus})=>{
+              const r=await getDeployStatus({apiUrl:process.env.DOKPLOY_API_URL,token:process.env.DOKPLOY_API_TOKEN,deploymentId:'${DEPLOYMENT_ID}'});
+              console.log(r.status);
+            }).catch(()=>console.log('unknown'));
+          " 2>/dev/null || echo "unknown")
+          echo "[$(date -u +%H:%M:%S)] status=${STATUS} (${ELAPSED}s)"
+          case "${STATUS}" in
+            success) echo "Deploy done."; exit 0 ;;
+            failed)  echo "::error::Deploy FAILED in Dokploy."; exit 1 ;;
+            *)       sleep "${INTERVAL}"; ELAPSED=$((ELAPSED+INTERVAL)) ;;
+          esac
+        done
+        echo "::error::Timed out waiting for deploy (${TIMEOUT}s)."; exit 1
+
+    # ── Step 4: Health check ────────────────────────────────────────────────────
+    - name: Health check
+      id: health
+      shell: bash
+      run: |
+        set -euo pipefail
+        APP="${{ inputs.app }}"
+        case "$APP" in
+          backend)   PORT=5100; HC_PATH="/api/v1/health" ;;
+          dashboard) PORT=5103; HC_PATH="/" ;;
+          admin)     PORT=5104; HC_PATH="/" ;;
+          marketing) PORT=5106; HC_PATH="/" ;;
+          *)         echo "::error::Unknown app: $APP"; exit 1 ;;
+        esac
+        node scripts/ci/health-check.mjs \
+          --service "$APP" --port "$PORT" --path "$HC_PATH" \
+          --retries 5 --interval 30
+
+    # ── Step 5a: Swarm rollback ─────────────────────────────────────────────────
+    - name: Rollback — Swarm built-in
+      id: rollback_swarm
+      if: failure() && steps.health.conclusion == 'failure' && inputs.rollback_disabled != 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        SERVICE="${{ steps.pre_deploy.outputs.service_name }}"
+        echo "::warning::Health failed — Swarm rollback on ${SERVICE}..."
+        docker service update --rollback "${SERVICE}" || { echo "::warning::Swarm rollback failed."; exit 0; }
+        echo "Swarm rollback issued. Waiting 30s..."; sleep 30
+
+    - name: Rollback — health check after Swarm rollback
+      id: health_post_swarm
+      if: always() && steps.rollback_swarm.conclusion != 'skipped' && inputs.rollback_disabled != 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        APP="${{ inputs.app }}"
+        case "$APP" in
+          backend)   PORT=5100; HC_PATH="/api/v1/health" ;;
+          dashboard) PORT=5103; HC_PATH="/" ;;
+          admin)     PORT=5104; HC_PATH="/" ;;
+          marketing) PORT=5106; HC_PATH="/" ;;
+        esac
+        node scripts/ci/health-check.mjs \
+          --service "$APP" --port "$PORT" --path "$HC_PATH" \
+          --retries 3 --interval 15
+
+    # ── Step 5b: Force image redeploy ───────────────────────────────────────────
+    - name: Rollback — force previous image
+      id: rollback_image
+      if: always() && steps.health_post_swarm.conclusion == 'failure' && inputs.rollback_disabled != 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        SERVICE="${{ steps.pre_deploy.outputs.service_name }}"
+        PREV="${{ steps.pre_deploy.outputs.previous_image }}"
+        if [[ -z "${PREV}" ]]; then
+          echo "::error::No previous image for ${{ inputs.app }} — manual intervention required."; exit 1
+        fi
+        echo "::warning::Force-redeploying previous image: ${PREV}"
+        docker service update --image "${PREV}" "${SERVICE}"
+        echo "Image update issued. Waiting 60s..."; sleep 60
+
+    - name: Rollback — final health check
+      id: health_final
+      if: always() && steps.rollback_image.conclusion != 'skipped' && inputs.rollback_disabled != 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        APP="${{ inputs.app }}"
+        case "$APP" in
+          backend)   PORT=5100; HC_PATH="/api/v1/health" ;;
+          dashboard) PORT=5103; HC_PATH="/" ;;
+          admin)     PORT=5104; HC_PATH="/" ;;
+          marketing) PORT=5106; HC_PATH="/" ;;
+        esac
+        node scripts/ci/health-check.mjs \
+          --service "$APP" --port "$PORT" --path "$HC_PATH" \
+          --retries 3 --interval 20
+
+    # ── Step 6: Open GitHub Issue on any failure ─────────────────────────────────
+    - name: Open deploy failure issue
+      if: failure()
+      shell: bash
+      env:
+        GITHUB_TOKEN:    ${{ inputs.github_token }}
+        GITHUB_REPOSITORY: ${{ inputs.repository }}
+        DEPLOY_APP:      ${{ inputs.app }}
+        DEPLOY_SHA:      ${{ inputs.sha }}
+        DEPLOY_ACTOR:    ${{ inputs.actor }}
+        DEPLOY_RUN_URL:  ${{ inputs.server_url }}/${{ inputs.repository }}/actions/runs/${{ inputs.run_id }}
+        DEPLOY_PREVIOUS_IMAGE: ${{ steps.pre_deploy.outputs.previous_image }}
+        DEPLOY_CURRENT_IMAGE:  ${{ inputs.registry }}/${{ inputs.image_owner }}/deqah-${{ inputs.app }}:latest
+      run: |
+        set -euo pipefail
+        APP="${{ inputs.app }}"
+        SERVICE="${{ steps.pre_deploy.outputs.service_name }}"
+
+        if [[ "${{ steps.health_final.conclusion }}" == "failure" ]]; then STAGE="catastrophic"
+        elif [[ "${{ steps.rollback_image.conclusion }}" == "failure" ]]; then STAGE="rollback"
+        elif [[ "${{ steps.health.conclusion }}" == "failure" ]]; then STAGE="health"
+        else STAGE="deploy"; fi
+        export DEPLOY_STAGE="${STAGE}"
+
+        export DEPLOY_DOCKER_LOGS=$(docker service logs "${SERVICE}" \
+          --tail 50 --no-task-ids 2>&1 || echo "(logs unavailable)")
+        export DEPLOY_HEALTH_OUTPUT=$(node scripts/ci/health-check.mjs \
+          --service "$APP" --retries 1 --interval 1 2>&1 || echo "(health check unavailable)")
+
+        node scripts/ci/open-deploy-failure-issue.mjs
+
+    # ── Step 7: Update last-known-good on success ────────────────────────────────
+    - name: Update last-known-good state
+      if: success()
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+      run: |
+        set -euo pipefail
+        APP="${{ inputs.app }}"
+        REGISTRY="${{ inputs.registry }}"
+        IMAGE_OWNER="${{ inputs.image_owner }}"
+        REPO="${{ inputs.repository }}"
+        SHA="${{ inputs.sha }}"
+
+        CURRENT=$(gh api "repos/${REPO}/contents/.deploy-state.json?ref=develop" \
+          --jq ".content" 2>/dev/null | base64 -d 2>/dev/null \
+          || echo '{"lastKnownGood":{}}')
+
+        NEW_STATE=$(echo "${CURRENT}" | node -e "
+          let d='';process.stdin.on('data',c=>d+=c);
+          process.stdin.on('end',()=>{
+            try{const s=JSON.parse(d)||{lastKnownGood:{}};if(!s.lastKnownGood)s.lastKnownGood={};
+              s.lastKnownGood['${APP}']={image:'${REGISTRY}/${IMAGE_OWNER}/deqah-${APP}:latest',deployedAt:new Date().toISOString(),sha:'${SHA}'.slice(0,8)};
+              console.log(JSON.stringify(s,null,2));}
+            catch{const s={lastKnownGood:{}};s.lastKnownGood['${APP}']={image:'${REGISTRY}/${IMAGE_OWNER}/deqah-${APP}:latest',deployedAt:new Date().toISOString(),sha:'${SHA}'.slice(0,8)};
+              console.log(JSON.stringify(s,null,2));}
+          });
+        ")
+
+        FILE_SHA=$(gh api "repos/${REPO}/contents/.deploy-state.json?ref=develop" \
+          --jq ".sha" 2>/dev/null || echo "")
+        ENCODED=$(echo -n "${NEW_STATE}" | base64 | tr -d '\n')
+
+        PAYLOAD=(-f "message=chore: update last-known-good for ${APP} [skip ci]" \
+                 -f "content=${ENCODED}" -f "branch=develop")
+        [[ -n "${FILE_SHA}" ]] && PAYLOAD+=(-f "sha=${FILE_SHA}")
+
+        gh api --method PUT "repos/${REPO}/contents/.deploy-state.json" \
+          "${PAYLOAD[@]}" --silent
+        echo "Updated .deploy-state.json (${APP})"

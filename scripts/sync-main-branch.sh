@@ -138,8 +138,13 @@ log "Nested-file stripping complete."
 # ─── Step 2b: Re-inject .github/workflows/build-images.yml ──────────────────
 # All of .github/ was excluded from rsync above (to prevent CI/test workflows,
 # PR templates, and internal tooling from reaching main).
-# We copy ONLY build-images.yml back in so GitHub Actions can run the Docker
-# image build on push to main.
+# We copy ONLY build-images.yml and its composite action back in so GitHub
+# Actions can run the Docker image build on push to main.
+#
+# build-images.yml references .github/actions/deploy-app/action.yml via
+#   uses: ./.github/actions/deploy-app
+# GitHub Actions resolves local composite actions from the checked-out ref
+# (main), so the action.yml must also be present in main.
 BUILD_IMAGES_SRC="${REPO_ROOT}/.github/workflows/build-images.yml"
 BUILD_IMAGES_DST="${OUT_DIR}/.github/workflows/build-images.yml"
 if [[ -f "${BUILD_IMAGES_SRC}" ]]; then
@@ -150,12 +155,35 @@ else
   log "WARNING: .github/workflows/build-images.yml not found in source — skipping re-injection."
 fi
 
+# Re-inject composite action used by build-images.yml
+DEPLOY_ACTION_SRC="${REPO_ROOT}/.github/actions/deploy-app/action.yml"
+DEPLOY_ACTION_DST="${OUT_DIR}/.github/actions/deploy-app/action.yml"
+if [[ -f "${DEPLOY_ACTION_SRC}" ]]; then
+  mkdir -p "$(dirname "${DEPLOY_ACTION_DST}")"
+  cp "${DEPLOY_ACTION_SRC}" "${DEPLOY_ACTION_DST}"
+  log "Re-injected .github/actions/deploy-app/action.yml into main tree."
+else
+  log "WARNING: .github/actions/deploy-app/action.yml not found — build-images.yml deploy job will fail."
+fi
+
 # ─── Step 2c: Re-inject .deploy-manifest.json ────────────────────────────────
-# promote-to-main.yml writes .deploy-manifest.json (changeset analysis) BEFORE
-# the sanitizer runs, then passes the cleaned tree to main. build-images.yml
-# reads this file to determine which apps to build.
-# The manifest contains only: { apps: [...], sha: "...", reason: "..." }
-# — no secrets, no internal docs — so it is safe to expose in the main branch.
+# NOTE: Two deploy-* files exist; they belong on different branches:
+#
+#   .deploy-manifest.json  → RE-INJECTED to main (this step below).
+#                            Written by promote-to-main.yml (changeset analysis)
+#                            before the sanitizer runs. build-images.yml reads it
+#                            on main to determine which apps to build.
+#                            Safe on main: contains only { apps, sha, reason }.
+#
+#   .deploy-state.json     → DEVELOP ONLY. Never re-injected to main.
+#                            Written by the deploy-and-verify CI job on success.
+#                            Tracks last-known-good image tags per app.
+#                            build-images.yml reads it via gh api ?ref=develop,
+#                            not via the local filesystem — so it never needs
+#                            to be present in the main tree.
+#
+# If you are tempted to add .deploy-state.json to this rsync block: don't.
+# It is intentionally absent from main to keep the main tree minimal.
 MANIFEST_SRC="${REPO_ROOT}/.deploy-manifest.json"
 MANIFEST_DST="${OUT_DIR}/.deploy-manifest.json"
 if [[ -f "${MANIFEST_SRC}" ]]; then
@@ -221,9 +249,17 @@ if [[ ! -f "${OUT_DIR}/.github/workflows/build-images.yml" ]]; then
   FAIL=1
 fi
 
-# Verify no other .github/ content leaked in (other than build-images.yml)
+# Verify composite action was re-injected (build-images.yml references it via
+# uses: ./.github/actions/deploy-app — must be present in main)
+if [[ ! -f "${OUT_DIR}/.github/actions/deploy-app/action.yml" ]]; then
+  echo "[sync-main] FAIL: .github/actions/deploy-app/action.yml missing from main tree!" >&2
+  FAIL=1
+fi
+
+# Verify no other .github/ content leaked in beyond the expected files
 OTHER_GITHUB=$(find "${OUT_DIR}/.github" -type f \
-  ! -path "${OUT_DIR}/.github/workflows/build-images.yml" 2>/dev/null)
+  ! -path "${OUT_DIR}/.github/workflows/build-images.yml" \
+  ! -path "${OUT_DIR}/.github/actions/deploy-app/action.yml" 2>/dev/null)
 if [[ -n "${OTHER_GITHUB}" ]]; then
   echo "[sync-main] FAIL: unexpected .github/ files in main tree:" >&2
   echo "${OTHER_GITHUB}" >&2
@@ -274,6 +310,7 @@ if [[ -z "${IS_CI}" ]]; then
   echo "    [PASS] No CLAUDE.md in tree"
   echo "    [PASS] No AGENTS.md in tree"
   echo "    [PASS] .github/workflows/build-images.yml present"
+  echo "    [PASS] .github/actions/deploy-app/action.yml present"
   echo "    [PASS] No other .github/ files leaked"
 
   echo ""
