@@ -1,5 +1,6 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Put, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Put, Req, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
+import { Request } from 'express';
 import { ApiStandardResponses } from '../../common/swagger';
 import { AdminHostGuard } from '../../common/guards/admin-host.guard';
 import { JwtGuard } from '../../common/guards/jwt.guard';
@@ -8,6 +9,7 @@ import { SuperAdminContextInterceptor } from '../../common/interceptors/super-ad
 import { CurrentUser, JwtUser } from '../../common/auth/current-user.decorator';
 import { PlatformSettingsService } from '../../modules/platform/settings/platform-settings.service';
 import { UpdatePlatformBrandDto } from './dto/update-platform-brand.dto';
+import { LogPlatformSettingUpdateHandler } from '../../modules/platform/admin/log-platform-setting-update/log-platform-setting-update.handler';
 
 @ApiTags('Admin / Branding Settings')
 @ApiBearerAuth()
@@ -16,7 +18,10 @@ import { UpdatePlatformBrandDto } from './dto/update-platform-brand.dto';
 @UseGuards(AdminHostGuard, JwtGuard, SuperAdminGuard)
 @UseInterceptors(SuperAdminContextInterceptor)
 export class BrandingSettingsController {
-  constructor(private readonly settings: PlatformSettingsService) {}
+  constructor(
+    private readonly settings: PlatformSettingsService,
+    private readonly logHandler: LogPlatformSettingUpdateHandler,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get platform branding configuration' })
@@ -59,7 +64,14 @@ export class BrandingSettingsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update platform branding configuration' })
   @ApiOkResponse({ schema: { type: 'object', properties: { updated: { type: 'boolean' } } } })
-  async updateBrand(@Body() body: UpdatePlatformBrandDto, @CurrentUser() user: JwtUser) {
+  async updateBrand(
+    @Body() body: UpdatePlatformBrandDto,
+    @CurrentUser() user: JwtUser,
+    @Req() req: Request,
+  ) {
+    const ipAddress = req.ip ?? req.socket?.remoteAddress ?? 'unknown';
+    const userAgent = req.headers['user-agent'] ?? 'unknown';
+
     const updates: Array<[string, unknown]> = [];
     if ('logoUrl' in body) updates.push(['platform.brand.logoUrl', body.logoUrl]);
     if ('primaryColor' in body) updates.push(['platform.brand.primaryColor', body.primaryColor]);
@@ -71,7 +83,24 @@ export class BrandingSettingsController {
       if ('dateFormat' in loc) updates.push(['platform.locale.dateFormat', loc.dateFormat]);
       if ('currencyFormat' in loc) updates.push(['platform.locale.currencyFormat', loc.currencyFormat]);
     }
-    await Promise.all(updates.map(([key, value]) => this.settings.set(key, value, user.sub)));
+
+    // Order: set then log. If logHandler.execute throws, the setting is written but
+    // unaudited for that key — preferred over logging an unwritten change. Per-key
+    // partial failures are surfaced via thrown error; loop does not swallow.
+    for (const [key, nextValue] of updates) {
+      const previousValue = await this.settings.get(key);
+      if (previousValue === nextValue) continue;
+      await this.settings.set(key, nextValue, user.sub);
+      await this.logHandler.execute({
+        superAdminUserId: user.sub,
+        settingKey: key,
+        previousValue,
+        nextValue,
+        ipAddress,
+        userAgent,
+      });
+    }
+
     return { updated: true };
   }
 }
