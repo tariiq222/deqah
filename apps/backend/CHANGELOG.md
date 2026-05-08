@@ -1,5 +1,15 @@
 # backend
 
+## 2.1.9
+
+### Patch Changes
+
+- [`2252982`](https://github.com/tariiq222/deqah/commit/22529828cf60f3b7f0cb24cb0fd2bc3debaf53b3) - Force rebuild backend image — earlier promote skipped backend build due to a
+  false-positive in the version-existence filter, leaving production on the
+  pre-pagination shape of `GET /admin/plans` while the admin frontend was
+  already updated to expect `{ items, meta }`. Filter is removed in the same
+  PR; this bump forces v2.1.9 to actually build and deploy.
+
 ## 2.1.8
 
 ### Patch Changes

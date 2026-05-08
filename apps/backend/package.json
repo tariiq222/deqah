@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "2.1.8",
+  "version": "2.1.9",
   "private": true,
   "description": "Deqah Backend v2 — NestJS + Bounded Contexts + Vertical Slices",
   "scripts": {
