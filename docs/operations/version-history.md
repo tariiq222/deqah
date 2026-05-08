@@ -14,3 +14,4 @@ See `apps/<app>/CHANGELOG.md` for the change details behind each version.
 | 2026-05-08 04:44 UTC | v2.1.4 | v0.6.1 | v0.4.0 | v0.2.1 | 6b30ffb6 |
 | 2026-05-08 05:20 UTC | v2.1.5 | v0.6.1 | v0.4.0 | v0.2.1 | 029f16ae |
 | 2026-05-08 07:14 UTC | v2.1.6 | v0.6.1 | v0.4.1 | 470e8628 |
+| 2026-05-08 07:16 UTC | v2.1.6 | v0.6.1 | v0.4.1 | ade8d987 |
