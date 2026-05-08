@@ -11,7 +11,10 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 vi.mock('@/features/verticals/list-verticals/use-list-verticals', () => ({
   useListVerticals: () => ({
-    data: [{ slug: 'general', nameAr: 'عام', nameEn: 'General', isActive: true }],
+    data: {
+      items: [{ slug: 'general', nameAr: 'عام', nameEn: 'General', isActive: true }],
+      meta: { page: 1, perPage: 20, total: 1, totalPages: 1 },
+    },
   }),
 }));
 

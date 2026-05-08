@@ -11,6 +11,7 @@ import type { VerticalRow } from '@/features/verticals/types';
 
 export default function VerticalsPage() {
   const { data, isLoading, error } = useListVerticals();
+  const items = data?.items;
   const [createOpen, setCreateOpen] = useState(false);
   const [editVertical, setEditVertical] = useState<VerticalRow | null>(null);
   const [deleteVertical, setDeleteVertical] = useState<VerticalRow | null>(null);
@@ -34,7 +35,7 @@ export default function VerticalsPage() {
       ) : null}
 
       <VerticalsTable
-        items={data}
+        items={items}
         isLoading={isLoading}
         onEdit={(vertical) => setEditVertical(vertical)}
         onDelete={(vertical) => setDeleteVertical(vertical)}

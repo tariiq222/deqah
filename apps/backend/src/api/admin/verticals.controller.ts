@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
   UseInterceptors,
@@ -19,6 +20,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
@@ -35,7 +37,7 @@ import {
   UpdateVerticalDto,
   DeleteVerticalDto,
 } from './dto/vertical.dto';
-import { VerticalResponseDto } from './dto/admin-response.dto';
+import { VerticalListResponseDto, VerticalResponseDto } from './dto/admin-response.dto';
 
 @ApiTags('Admin / Verticals')
 @ApiBearerAuth()
@@ -53,9 +55,17 @@ export class AdminVerticalsController {
 
   @Get()
   @ApiOperation({ summary: 'List all verticals (admin view, includes inactive)' })
-  @ApiOkResponse({ type: [VerticalResponseDto] })
-  list() {
-    return this.listHandler.execute();
+  @ApiOkResponse({ type: VerticalListResponseDto })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)', example: 1 })
+  @ApiQuery({ name: 'perPage', required: false, type: Number, description: 'Items per page, max 100 (default: 20)', example: 20 })
+  list(
+    @Query('page') page?: string,
+    @Query('perPage') perPage?: string,
+  ) {
+    return this.listHandler.execute({
+      page: page !== undefined ? Number(page) : undefined,
+      perPage: perPage !== undefined ? Number(perPage) : undefined,
+    });
   }
 
   @Post()

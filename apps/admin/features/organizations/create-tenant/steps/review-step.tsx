@@ -19,7 +19,8 @@ interface Props {
 export function ReviewStep({ form, onEditStep, errorMessage }: Props) {
   const t = useTranslations('organizations.create');
   const { data: plans } = useListPlans();
-  const { data: verticals } = useListVerticals();
+  const { data: verticalsData } = useListVerticals();
+  const verticals = verticalsData?.items;
 
   const planName = plans?.find((p) => p.id === form.planId)?.nameAr ?? t('noPlan');
   const verticalName = verticals?.find((v) => v.slug === form.verticalSlug)?.nameAr ?? t('noVertical');

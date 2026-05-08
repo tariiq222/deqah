@@ -26,7 +26,8 @@ interface Props {
 
 export function OrgStep({ form, set }: Props) {
   const t = useTranslations('organizations.create');
-  const { data: verticals } = useListVerticals();
+  const { data: verticalsData } = useListVerticals();
+  const verticals = verticalsData?.items;
 
   return (
     <div className="grid gap-4 md:grid-cols-2">

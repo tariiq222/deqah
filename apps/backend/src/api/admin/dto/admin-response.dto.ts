@@ -266,6 +266,14 @@ export class VerticalResponseDto {
   updatedAt!: Date;
 }
 
+export class VerticalListResponseDto {
+  @ApiProperty({ type: [VerticalResponseDto] })
+  items!: VerticalResponseDto[];
+
+  @ApiProperty({ type: AdminPaginationMetaDto })
+  meta!: AdminPaginationMetaDto;
+}
+
 // ---------------------------------------------------------------------------
 // Audit log
 // ---------------------------------------------------------------------------
