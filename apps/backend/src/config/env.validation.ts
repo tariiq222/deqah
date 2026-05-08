@@ -178,6 +178,11 @@ export const envValidationSchema = Joi.object({
   PLATFORM_COMPANY_NAME_AR: Joi.string().min(1).required(),
   PLATFORM_COMPANY_NAME_EN: Joi.string().min(1).required(),
 
+  // 32-byte base64 master key for AES-256-GCM encryption of per-tenant SMTP
+  // credentials in EmailCredentialsService. Same shape as the other
+  // *_ENCRYPTION_KEY entries above.
+  EMAIL_PROVIDER_ENCRYPTION_KEY: Joi.string().required(),
+
   // Dedicated OTP-token secret. Falls back to JWT_ACCESS_SECRET in dev with a
   // warning; production REQUIRES a distinct secret so a leaked OTP token
   // cannot forge an access token.
