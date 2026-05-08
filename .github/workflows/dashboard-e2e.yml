@@ -69,6 +69,12 @@ jobs:
       - name: Generate Prisma client
         run: pnpm --filter backend prisma:generate
 
+      - name: Build shared package
+        # @deqah/shared is consumed by backend at runtime via packages/shared/dist/.
+        # Without this step, backend startup fails with:
+        #   Cannot find module '.../packages/shared/dist/constants/permissions-catalog.js'
+        run: pnpm --filter @deqah/shared build
+
       - name: Build backend
         run: pnpm --filter backend build
 
@@ -214,6 +220,12 @@ jobs:
 
       - name: Generate Prisma client
         run: pnpm --filter backend prisma:generate
+
+      - name: Build shared package
+        # @deqah/shared is consumed by backend at runtime via packages/shared/dist/.
+        # Without this step, backend startup fails with:
+        #   Cannot find module '.../packages/shared/dist/constants/permissions-catalog.js'
+        run: pnpm --filter @deqah/shared build
 
       - name: Build backend
         run: pnpm --filter backend build
