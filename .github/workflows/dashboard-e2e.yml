@@ -88,7 +88,7 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/deqah_test?schema=public
           SUPER_ADMIN_EMAIL: admin@example.com
-          SUPER_ADMIN_PASSWORD: Admin@1234
+          SUPER_ADMIN_PASSWORD: Admin@1234TestKey!
 
       - name: Start backend
         run: |
@@ -132,7 +132,7 @@ jobs:
           PLATFORM_COMPANY_NAME_EN: 'Deqah Platform'
           PLATFORM_DEFAULT_PLAN_SLUG: BASIC
           SUPER_ADMIN_EMAIL: admin@example.com
-          SUPER_ADMIN_PASSWORD: Admin@1234
+          SUPER_ADMIN_PASSWORD: Admin@1234TestKey!
           ADMIN_HOSTS: localhost:5100
           THROTTLER_DISABLED: 'true'
           BILLING_CRON_ENABLED: 'false'
@@ -245,7 +245,7 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/deqah_test?schema=public
           SUPER_ADMIN_EMAIL: admin@example.com
-          SUPER_ADMIN_PASSWORD: Admin@1234
+          SUPER_ADMIN_PASSWORD: Admin@1234TestKey!
 
       - name: Start backend
         run: |
@@ -289,7 +289,7 @@ jobs:
           PLATFORM_COMPANY_NAME_EN: 'Deqah Platform'
           PLATFORM_DEFAULT_PLAN_SLUG: BASIC
           SUPER_ADMIN_EMAIL: admin@example.com
-          SUPER_ADMIN_PASSWORD: Admin@1234
+          SUPER_ADMIN_PASSWORD: Admin@1234TestKey!
           ADMIN_HOSTS: localhost:5100
           THROTTLER_DISABLED: 'true'
           BILLING_CRON_ENABLED: 'false'
