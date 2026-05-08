@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable, Logger, Optional, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { ClsService } from 'nestjs-cls';
 import { TenantContextService } from '../../common/tenant/tenant-context.service';
 import {
@@ -9,6 +9,7 @@ import {
   TenantScopedModelRegistry,
 } from '../../common/tenant/tenant-scoping.extension';
 import {
+  REQUEST_TX_CLS_KEY,
   SUPER_ADMIN_CONTEXT_CLS_KEY,
   TenantEnforcementMode,
 } from '../../common/tenant/tenant.constants';
@@ -200,6 +201,29 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         ) {
           return Reflect.get(target, prop, receiver);
         }
+        // CLS-pinned transaction routing: when TenantGucInterceptor wrapped this
+        // request in a transaction, route model accessors through the pinned tx
+        // so every query reuses the same connection (and sees app.current_org_id).
+        // Skip $-prefixed methods and well-known internal symbols -- those are the
+        // orchestration API of PrismaClient itself, not model accessors.
+        if (
+          typeof prop === 'string' &&
+          !prop.startsWith('$') &&
+          !prop.startsWith('_') &&
+          prop !== 'then' &&
+          prop !== 'catch' &&
+          prop !== 'finally' &&
+          prop !== 'constructor'
+        ) {
+          const tx = self.cls?.get<Prisma.TransactionClient | undefined>(
+            REQUEST_TX_CLS_KEY,
+          );
+          if (tx) {
+            const modelOnTx = Reflect.get(tx as object, prop);
+            if (modelOnTx !== undefined) return modelOnTx;
+          }
+        }
+
         const fromExtended = Reflect.get(self.extended as object, prop);
         if (typeof fromExtended === 'function') {
           return (fromExtended as (...args: unknown[]) => unknown).bind(self.extended);

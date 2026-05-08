@@ -12,6 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { LoggingInterceptor, AuditInterceptor, TenantGucInterceptor } from './common/interceptors';
 import { PrismaService } from './infrastructure/database';
 import { TenantContextService } from './common/tenant/tenant-context.service';
+import { ClsService } from 'nestjs-cls';
 import { HttpExceptionFilter } from './common/filters';
 
 async function bootstrap(): Promise<void> {
@@ -50,7 +51,7 @@ async function bootstrap(): Promise<void> {
   app.useGlobalInterceptors(new AuditInterceptor(app.get(PrismaService), app.get(TenantContextService)));
   if (process.env.RLS_GUC_INTERCEPTOR_ENABLED === 'true') {
     app.useGlobalInterceptors(
-      new TenantGucInterceptor(app.get(PrismaService), app.get(TenantContextService)),
+      new TenantGucInterceptor(app.get(PrismaService), app.get(TenantContextService), app.get(ClsService)),
     );
   }
   app.useGlobalFilters(new HttpExceptionFilter());
