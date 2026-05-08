@@ -10,7 +10,7 @@ jest.mock('@sentry/node', () => ({
 
 const makeHost = (statusFn = jest.fn(), jsonFn = jest.fn()) => ({
   switchToHttp: () => ({
-    getRequest: () => ({ method: 'GET', url: '/test' }),
+    getRequest: () => ({ method: 'GET', url: '/test', path: '/test' }),
     getResponse: () => ({
       status: (code: number) => { statusFn(code); return { json: jsonFn }; },
     }),
