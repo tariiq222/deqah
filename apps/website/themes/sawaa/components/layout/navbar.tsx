@@ -31,20 +31,9 @@ export function Navbar() {
           border: '1px solid rgba(255,255,255,0.5)',
         }}
       >
-        <Link href="/" className="flex items-center gap-2.5 ps-1 pe-3">
-          <div
-            className="w-[38px] h-[38px] rounded-xl p-1 flex items-center justify-center"
-            style={{ background: 'var(--sw-primary-50)' }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logo} alt={brandName} className="w-full h-full rounded-lg object-contain" />
-          </div>
-          <b
-            className="text-[0.938rem] font-extrabold tracking-tight whitespace-nowrap hidden sm:inline"
-            style={{ color: 'var(--sw-primary-700)' }}
-          >
-            {brandName}
-          </b>
+        <Link href="/" aria-label={brandName} className="flex items-center ps-2 pe-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logo} alt={brandName} className="h-7 sm:h-8 w-auto" style={{ display: 'block' }} />
         </Link>
 
         <div className="hidden md:flex gap-0.5 rounded-full p-1">

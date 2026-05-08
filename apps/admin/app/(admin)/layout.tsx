@@ -9,7 +9,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen">
       <aside className="w-60 shrink-0 border-r border-border bg-card px-4 py-6">
         <div className="mb-6 px-2">
-          <h1 className="text-lg font-semibold">{t('title')}</h1>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logos/diqqa-logo.svg" alt="Deqah" className="h-7 w-auto mb-3" />
+          <h1 className="text-sm font-semibold">{t('title')}</h1>
           <p className="text-xs text-muted-foreground">Platform control plane</p>
         </div>
         <Sidebar />

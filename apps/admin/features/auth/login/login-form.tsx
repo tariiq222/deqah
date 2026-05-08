@@ -70,6 +70,8 @@ function Inner() {
     <div className="grid min-h-screen place-items-center px-6">
       <Card className="w-full max-w-md">
         <CardHeader>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logos/diqqa-logo.svg" alt="Deqah" className="h-8 w-auto mb-4" />
           <CardTitle>{t("title")}</CardTitle>
           <CardDescription>{t("description")}</CardDescription>
         </CardHeader>
