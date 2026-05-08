@@ -1,6 +1,12 @@
 import { HttpException, HttpStatus, BadRequestException } from '@nestjs/common';
+import * as Sentry from '@sentry/node';
 import { HttpExceptionFilter } from './http-exception.filter';
 import { RequestContextStorage } from '../http/request-context';
+
+jest.mock('@sentry/node', () => ({
+  withScope: jest.fn(),
+  captureException: jest.fn(),
+}));
 
 const makeHost = (statusFn = jest.fn(), jsonFn = jest.fn()) => ({
   switchToHttp: () => ({
@@ -141,5 +147,53 @@ describe('HttpExceptionFilter', () => {
     expect(body.statusCode).toBe(400);
     expect(body.path).toBe('/test');
     expect(body.timestamp).not.toBe('fake');
+  });
+
+  describe('Sentry scope tags', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('attaches requestId + userId tags on 5xx', () => {
+      const setTag = jest.fn();
+      const setUser = jest.fn();
+      (Sentry.withScope as jest.Mock).mockImplementation((cb: (scope: { setTag: jest.Mock; setUser: jest.Mock }) => void) =>
+        cb({ setTag, setUser }),
+      );
+
+      const host: any = {
+        switchToHttp: () => ({
+          getRequest: () => ({ method: 'POST', url: '/api/v1/x', route: { path: '/api/v1/x' } }),
+          getResponse: () => ({ status: () => ({ json: jest.fn() }) }),
+        }),
+      };
+
+      RequestContextStorage.run(
+        { requestId: 'rid-1', userId: 'u-1' },
+        () => {
+          filter.catch(new Error('boom'), host);
+        },
+      );
+
+      expect(Sentry.withScope).toHaveBeenCalledTimes(1);
+      expect(setTag).toHaveBeenCalledWith('requestId', 'rid-1');
+      expect(setTag).toHaveBeenCalledWith('route', 'POST /api/v1/x');
+      expect(setUser).toHaveBeenCalledWith({ id: 'u-1' });
+      expect(Sentry.captureException).toHaveBeenCalled();
+    });
+
+    it('does not call Sentry.withScope on 4xx', () => {
+      const host: any = {
+        switchToHttp: () => ({
+          getRequest: () => ({ method: 'GET', url: '/x', route: { path: '/x' } }),
+          getResponse: () => ({ status: () => ({ json: jest.fn() }) }),
+        }),
+      };
+
+      filter.catch(new BadRequestException('nope'), host);
+
+      expect(Sentry.withScope).not.toHaveBeenCalled();
+      expect(Sentry.captureException).not.toHaveBeenCalled();
+    });
   });
 });

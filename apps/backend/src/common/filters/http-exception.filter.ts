@@ -78,7 +78,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
         `${req.method} ${req.url} → ${status}`,
         exception instanceof Error ? exception.stack : String(exception),
       );
-      Sentry.captureException(exception);
+      Sentry.withScope((scope) => {
+        scope.setTag('requestId', requestContext?.requestId ?? 'unknown');
+        if (requestContext?.userId) {
+          scope.setUser({ id: requestContext.userId });
+        }
+        scope.setTag('route', `${req.method} ${(req as Request & { route?: { path: string } }).route?.path ?? req.url}`);
+        Sentry.captureException(exception);
+      });
     }
 
     res.status(status).json(body);
