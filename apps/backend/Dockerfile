@@ -136,10 +136,16 @@ RUN mkdir -p /app/node_modules/@deqah \
  && ln -sf /app/packages/shared     /app/node_modules/@deqah/shared \
  && ln -sf /app/packages/api-client /app/node_modules/@deqah/api-client
 
+# Non-root user — drops capability surface dramatically.
+RUN groupadd --system --gid 1001 app \
+ && useradd  --system --uid 1001 --gid app --home /app --shell /usr/sbin/nologin app \
+ && chown -R app:app /app
+USER app
+
 WORKDIR /app/apps/backend
 EXPOSE 5100
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:5100/api/v1/health || exit 1
 
-CMD ["sh", "-c", "printf '[boot] DATABASE_URL=%.30s...\\n' \"${DATABASE_URL:-MISSING}\" && /app/node_modules/.bin/prisma migrate deploy --schema=prisma/schema && node --import tsx dist/main.js"]
+CMD ["sh", "-c", "printf '[boot] DATABASE_URL=%.30s...\\n' \"${DATABASE_URL:-MISSING}\" && node --import tsx dist/main.js"]
