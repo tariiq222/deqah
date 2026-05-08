@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsBoolean, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsCidrOrIpArray } from '../../../common/validators/is-cidr-or-ip.validator';
 
 export class SecuritySettingsDto {
   @ApiProperty({ description: 'Session TTL in minutes', example: 60 })
@@ -20,5 +21,5 @@ export class UpdateSecuritySettingsDto {
   @IsOptional() @IsBoolean() require2fa?: boolean;
 
   @ApiPropertyOptional({ description: 'IP allowlist (CIDR)', type: [String] })
-  @IsOptional() @IsArray() @IsString({ each: true }) ipAllowlist?: string[];
+  @IsOptional() @IsArray() @IsString({ each: true }) @IsCidrOrIpArray() ipAllowlist?: string[];
 }

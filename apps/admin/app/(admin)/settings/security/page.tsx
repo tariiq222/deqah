@@ -2,12 +2,24 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import * as ipaddr from 'ipaddr.js';
 import { ApiError } from '@/lib/api-client';
 import {
   getSecuritySettings,
   updateSecuritySettings,
   type SecuritySettings,
 } from '@/features/security-settings/security-settings.api';
+
+function isValidCidrOrIp(entry: string): boolean {
+  if (!entry) return false;
+  try {
+    if (entry.includes('/')) ipaddr.parseCIDR(entry);
+    else ipaddr.parse(entry);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const inputClass =
   'w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring';
@@ -20,6 +32,7 @@ export default function SecuritySettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [ipErrors, setIpErrors] = useState<string[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -37,6 +50,14 @@ export default function SecuritySettingsPage() {
 
   const handleSave = async () => {
     if (!settings) return;
+
+    const invalid = settings.ipAllowlist.filter((line) => !isValidCidrOrIp(line));
+    if (invalid.length > 0) {
+      setIpErrors(invalid);
+      return;
+    }
+    setIpErrors([]);
+
     setSaving(true);
     setError(null);
     setSuccess(false);
@@ -125,16 +146,26 @@ export default function SecuritySettingsPage() {
             className={`${inputClass} font-mono`}
             rows={4}
             value={settings.ipAllowlist.join('\n')}
-            onChange={(e) =>
+            onChange={(e) => {
+              setIpErrors([]);
               setSettings({
                 ...settings,
                 ipAllowlist: e.target.value
                   .split('\n')
                   .map((s) => s.trim())
                   .filter(Boolean),
-              })
-            }
+              });
+            }}
           />
+          {ipErrors.length > 0 && (
+            <ul className="text-xs text-destructive mt-1">
+              {ipErrors.map((e) => (
+                <li key={e}>
+                  Invalid IP/CIDR: <code>{e}</code>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
