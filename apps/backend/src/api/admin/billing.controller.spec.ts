@@ -7,6 +7,7 @@ function buildController() {
   const listSubs = fn();
   const getOrgBilling = fn();
   const listInvoices = fn();
+  const listZohoSaasInvoices = fn();
   const getMetrics = fn();
   const waiveInvoice = fn();
   const grantCredit = fn();
@@ -18,6 +19,7 @@ function buildController() {
     listSubs as never,
     getOrgBilling as never,
     listInvoices as never,
+    listZohoSaasInvoices as never,
     getMetrics as never,
     waiveInvoice as never,
     grantCredit as never,
@@ -27,7 +29,7 @@ function buildController() {
     cancelScheduled as never,
   );
   return {
-    controller, listSubs, getOrgBilling, listInvoices, getMetrics,
+    controller, listSubs, getOrgBilling, listInvoices, listZohoSaasInvoices, getMetrics,
     waiveInvoice, grantCredit, changePlanForOrg, refundInvoice,
     forceCharge, cancelScheduled,
   };

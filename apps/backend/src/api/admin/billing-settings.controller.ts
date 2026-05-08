@@ -5,6 +5,7 @@ import { ApiStandardResponses } from '../../common/swagger';
 import { AdminHostGuard } from '../../common/guards/admin-host.guard';
 import { JwtGuard } from '../../common/guards/jwt.guard';
 import { SuperAdminGuard } from '../../common/guards/super-admin.guard';
+import { OwnerOnlyGuard } from '../../common/guards/owner-only.guard';
 import { SuperAdminContextInterceptor } from '../../common/interceptors/super-admin-context.interceptor';
 import { CurrentUser, JwtUser } from '../../common/auth/current-user.decorator';
 import { PlatformSettingsService } from '../../modules/platform/settings/platform-settings.service';
@@ -29,7 +30,7 @@ const ALL_BILLING_KEYS = [
 @ApiBearerAuth()
 @ApiStandardResponses()
 @Controller('admin/settings/billing')
-@UseGuards(AdminHostGuard, JwtGuard, SuperAdminGuard)
+@UseGuards(AdminHostGuard, JwtGuard, SuperAdminGuard, OwnerOnlyGuard)
 @UseInterceptors(SuperAdminContextInterceptor)
 export class BillingSettingsController {
   constructor(

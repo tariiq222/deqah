@@ -20,7 +20,8 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
-import { AdminHostGuard, JwtGuard, SuperAdminGuard } from '../../common/guards';
+import { Throttle } from '@nestjs/throttler';
+import { AdminHostGuard, JwtGuard, OwnerOnlyGuard, SuperAdminGuard } from '../../common/guards';
 import { SuperAdminContextInterceptor } from '../../common/interceptors';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { ApiStandardResponses } from '../../common/swagger';
@@ -175,6 +176,8 @@ export class AdminBillingController {
   }
 
   @Post('invoices/:id/waive')
+  @UseGuards(OwnerOnlyGuard)
+  @Throttle({ 'admin-mutation-slow': { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: 'Waive a DUE or FAILED invoice (sets status=VOID; audited)' })
   @ApiParam({ name: 'id', description: 'Invoice ID', format: 'uuid' })
   @ApiOkResponse({ type: AdminWaiveInvoiceResultDto, description: 'Voided invoice' })
@@ -194,6 +197,8 @@ export class AdminBillingController {
   }
 
   @Post('credits')
+  @UseGuards(OwnerOnlyGuard)
+  @Throttle({ 'admin-mutation-slow': { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: 'Grant a billing credit to an organization (audited)' })
   @ApiOkResponse({ type: BillingCreditDto, description: 'Created billing credit' })
   grant(
@@ -213,6 +218,8 @@ export class AdminBillingController {
   }
 
   @Post('invoices/:id/refund')
+  @UseGuards(OwnerOnlyGuard)
+  @Throttle({ 'admin-mutation-slow': { limit: 5, ttl: 60_000 } })
   @ApiOperation({
     summary: 'Refund a PAID invoice via Moyasar (full or partial; idempotent; audited)',
   })
@@ -235,6 +242,8 @@ export class AdminBillingController {
   }
 
   @Post('subscriptions/:orgId/force-charge')
+  @UseGuards(OwnerOnlyGuard)
+  @Throttle({ 'admin-mutation-slow': { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: 'Force an immediate payment retry for a PAST_DUE subscription (audited)' })
   @ApiParam({ name: 'orgId', description: 'Organization ID', format: 'uuid' })
   @ApiOkResponse({ type: AdminForceChargeResultDto, description: 'Result of the force-charge attempt' })
@@ -252,6 +261,8 @@ export class AdminBillingController {
   }
 
   @Post('subscriptions/:orgId/cancel-scheduled')
+  @UseGuards(OwnerOnlyGuard)
+  @Throttle({ 'admin-mutation-slow': { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: 'Cancel a scheduled end-of-period cancellation (audited)' })
   @ApiParam({ name: 'orgId', description: 'Organization ID', format: 'uuid' })
   @ApiOkResponse({ type: AdminCancelScheduledDto, description: 'Updated subscription with cancelAtPeriodEnd=false' })
@@ -269,6 +280,8 @@ export class AdminBillingController {
   }
 
   @Patch('subscriptions/:orgId/plan')
+  @UseGuards(OwnerOnlyGuard)
+  @Throttle({ 'admin-mutation-slow': { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: 'Change an organization plan immediately (no proration; audited)' })
   @ApiParam({ name: 'orgId', description: 'Organization ID', format: 'uuid' })
   @ApiOkResponse({ type: AdminChangePlanResultDto, description: 'Subscription with updated plan' })

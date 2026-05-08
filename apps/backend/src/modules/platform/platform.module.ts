@@ -13,7 +13,7 @@ import { AdminMetricsController } from '../../api/admin/metrics.controller';
 import { AdminAuditLogController } from '../../api/admin/audit-log.controller';
 import { AdminImpersonationController } from '../../api/admin/impersonation.controller';
 import { SuperAdminContextInterceptor } from '../../common/interceptors';
-import { AdminHostGuard, SuperAdminGuard } from '../../common/guards';
+import { AdminHostGuard, OwnerOnlyGuard, SuperAdminGuard } from '../../common/guards';
 import { DatabaseModule } from '../../infrastructure/database';
 import { RedisService } from '../../infrastructure/cache/redis.service';
 import { TenantModule } from '../../common/tenant';
@@ -165,6 +165,7 @@ const ADMIN_HANDLERS = [
     SuperAdminContextInterceptor,
     AdminHostGuard,
     SuperAdminGuard,
+    OwnerOnlyGuard,
     RedisService,
     PasswordService,
     CreateProblemReportHandler,
