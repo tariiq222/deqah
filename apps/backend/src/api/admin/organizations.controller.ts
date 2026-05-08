@@ -25,6 +25,7 @@ import {
 } from '@nestjs/swagger';
 import { OrganizationStatus } from '@prisma/client';
 import type { Request } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import {
   AdminHostGuard,
   JwtGuard,
@@ -121,6 +122,7 @@ export class AdminOrganizationsController {
   }
 
   @Post()
+  @Throttle({ 'admin-mutation': { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: 'Create tenant organization and owner membership' })
   @ApiCreatedResponse({ type: OrganizationCreatedDto })
   create(
@@ -137,6 +139,7 @@ export class AdminOrganizationsController {
   }
 
   @Patch(':id')
+  @Throttle({ 'admin-mutation': { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: 'Update organization tenant metadata' })
   @ApiOkResponse({ type: OrganizationUpdatedDto })
   @ApiParam({ name: 'id', description: 'Organization UUID', format: 'uuid', example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
@@ -157,6 +160,7 @@ export class AdminOrganizationsController {
 
   @Post(':id/archive')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ 'admin-mutation': { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: 'Archive an organization without deleting tenant data' })
   @ApiNoContentResponse({ description: 'Organization archived' })
   @ApiParam({ name: 'id', description: 'Organization UUID', format: 'uuid', example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
@@ -177,6 +181,7 @@ export class AdminOrganizationsController {
 
   @Post(':id/suspend')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ 'admin-mutation': { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: 'Suspend an organization (logs audit entry)' })
   @ApiNoContentResponse({ description: 'Organization suspended' })
   @ApiParam({ name: 'id', description: 'Organization UUID', format: 'uuid', example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
@@ -197,6 +202,7 @@ export class AdminOrganizationsController {
 
   @Post(':id/reinstate')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ 'admin-mutation': { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: 'Reinstate a suspended organization' })
   @ApiNoContentResponse({ description: 'Organization reinstated' })
   @ApiParam({ name: 'id', description: 'Organization UUID', format: 'uuid', example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })

@@ -22,6 +22,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import { AdminHostGuard, JwtGuard, SuperAdminGuard } from '../../common/guards';
 import { SuperAdminContextInterceptor } from '../../common/interceptors';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
@@ -66,6 +67,7 @@ export class AdminUsersController {
 
   @Post(':id/reset-password')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ 'admin-mutation': { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: 'Issue a temporary password for a user' })
   @ApiNoContentResponse({ description: 'Password reset email sent' })
   @ApiParam({ name: 'id', description: 'User UUID', format: 'uuid', example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })

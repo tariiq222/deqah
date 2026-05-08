@@ -1,5 +1,6 @@
 import { BadRequestException, Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Req, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiOkResponse, ApiParam } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
 import { ApiStandardResponses } from '../../common/swagger';
 import { AdminHostGuard } from '../../common/guards/admin-host.guard';
@@ -74,6 +75,7 @@ export class BillingSettingsController {
 
   @Patch(':key')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ 'admin-mutation': { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: 'Update a billing setting value' })
   @ApiParam({ name: 'key', type: String })
   @ApiOkResponse({ schema: { type: 'object', properties: { updated: { type: 'boolean' } } } })
@@ -110,6 +112,7 @@ export class BillingSettingsController {
 
   @Post('test-connection')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ 'admin-mutation': { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: 'Test Moyasar connection with current credentials' })
   @ApiOkResponse({
     schema: {

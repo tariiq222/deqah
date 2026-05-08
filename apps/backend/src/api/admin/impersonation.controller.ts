@@ -22,6 +22,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import { AdminHostGuard, JwtGuard, SuperAdminGuard } from '../../common/guards';
 import { SuperAdminContextInterceptor } from '../../common/interceptors';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
@@ -49,6 +50,7 @@ export class AdminImpersonationController {
   ) {}
 
   @Post()
+  @Throttle({ 'admin-mutation': { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: 'Start an impersonation session (15-min shadow JWT)' })
   @ApiCreatedResponse({ type: ImpersonationStartResultDto })
   start(
@@ -68,6 +70,7 @@ export class AdminImpersonationController {
 
   @Post(':id/end')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ 'admin-mutation': { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: 'End an active impersonation session manually' })
   @ApiNoContentResponse({ description: 'Impersonation session ended' })
   @ApiParam({ name: 'id', description: 'Impersonation session UUID', format: 'uuid', example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })

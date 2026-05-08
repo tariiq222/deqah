@@ -58,7 +58,11 @@ import { PublicModule } from "./api/public/public.module";
       // THROTTLER_DISABLED=true disables throttling globally — use for automated test suites
       useFactory: (config: ConfigService) => ({
         skipIf: () => config.get('THROTTLER_DISABLED') === 'true',
-        throttlers: [{ ttl: 60_000, limit: 300 }],
+        throttlers: [
+          { ttl: 60_000, limit: 300 },
+          { name: 'admin-mutation', ttl: 60_000, limit: 30 },
+          { name: 'admin-mutation-slow', ttl: 60_000, limit: 5 },
+        ],
         storage: new ThrottlerStorageRedisService({
           host: config.getOrThrow<string>('REDIS_HOST'),
           port: config.getOrThrow<number>('REDIS_PORT'),

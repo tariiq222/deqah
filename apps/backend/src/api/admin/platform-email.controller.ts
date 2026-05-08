@@ -20,6 +20,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import { AdminHostGuard } from '../../common/guards/admin-host.guard';
 import { JwtGuard } from '../../common/guards/jwt.guard';
 import { SuperAdminGuard } from '../../common/guards/super-admin.guard';
@@ -74,6 +75,7 @@ export class PlatformEmailController {
   }
 
   @Patch('templates/:slug')
+  @Throttle({ 'admin-mutation': { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: 'Update a platform email template' })
   @ApiOkResponse({ type: PlatformEmailTemplateDetailDto })
   @ApiParam({ name: 'slug', description: 'Template slug', example: 'tenant-welcome' })
@@ -93,6 +95,7 @@ export class PlatformEmailController {
   }
 
   @Post('templates/:slug/preview')
+  @Throttle({ 'admin-mutation': { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: 'Preview a platform email template with interpolated vars' })
   @ApiCreatedResponse({ type: EmailPreviewDto })
   @ApiParam({ name: 'slug', description: 'Template slug', example: 'tenant-welcome' })
@@ -104,6 +107,7 @@ export class PlatformEmailController {
   }
 
   @Post('test-send')
+  @Throttle({ 'admin-mutation': { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: 'Send a test email from a platform template' })
   @ApiCreatedResponse({ description: 'Test email dispatched', schema: { type: 'object', properties: { ok: { type: 'boolean' }, reason: { type: 'string' } } } })
   testSend(@Body() dto: SendTestEmailDto) {

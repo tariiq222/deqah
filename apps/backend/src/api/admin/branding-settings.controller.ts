@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Put, Req, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
 import { ApiStandardResponses } from '../../common/swagger';
 import { AdminHostGuard } from '../../common/guards/admin-host.guard';
@@ -62,6 +63,7 @@ export class BrandingSettingsController {
 
   @Put()
   @HttpCode(HttpStatus.OK)
+  @Throttle({ 'admin-mutation': { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: 'Update platform branding configuration' })
   @ApiOkResponse({ schema: { type: 'object', properties: { updated: { type: 'boolean' } } } })
   async updateBrand(
