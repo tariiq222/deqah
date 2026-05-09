@@ -1,0 +1,17 @@
+{
+  "name": "@deqah/launch-readiness",
+  "version": "1.0.0",
+  "description": "Pre-launch validation and error detection for Deqah",
+  "type": "module",
+  "scripts": {
+    "launch:check": "node scripts/launch-readiness/index.js",
+    "error:check": "node scripts/error-detection/index.js",
+    "error:check:auth": "node scripts/error-detection/index.js --flow=auth",
+    "error:check:bookings": "node scripts/error-detection/index.js --flow=bookings",
+    "error:check:payments": "node scripts/error-detection/index.js --flow=payments",
+    "error:check:tenant": "node scripts/error-detection/index.js --flow=tenant",
+    "prelaunch": "node scripts/launch-readiness/index.js && node scripts/error-detection/index.js"
+  },
+  "keywords": ["deqah", "launch", "validation", "error-detection"],
+  "author": "Deqah Team"
+}
