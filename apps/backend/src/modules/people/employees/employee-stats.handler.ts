@@ -22,7 +22,7 @@ export class EmployeeStatsHandler {
       this.prisma.employee.count({ where: { organizationId } }),
       this.prisma.employee.count({ where: { organizationId, isActive: true } }),
       this.prisma.rating.aggregate({
-        where: { employee: { organizationId } },
+        where: { organizationId },
         _avg: { score: true },
       }),
     ]);
@@ -31,7 +31,7 @@ export class EmployeeStatsHandler {
       total,
       active,
       inactive: total - active,
-      avgRating: ratingAgg._avg.score,
+      avgRating: ratingAgg._avg.score ?? null,
     };
   }
 }

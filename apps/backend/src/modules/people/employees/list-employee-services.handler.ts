@@ -28,4 +28,3 @@ export class ListEmployeeServicesHandler {
     return links.map((l) => ({ ...l, service: byId.get(l.serviceId) ?? null }));
   }
 }
-}

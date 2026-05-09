@@ -1,6 +1,7 @@
 import { testPrisma, cleanTables } from '../setup/db.setup';
 import { seedUser } from '../setup/seed.helper';
 import { UsageMetric } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 describe('Subscription Logic (integration)', () => {
   beforeEach(async () => {
@@ -25,7 +26,7 @@ describe('Subscription Logic (integration)', () => {
 
       const plan = await testPrisma.plan.create({
         data: {
-          slug: 'TRIAL-PLAN',
+          slug: 'TRIALPLAN',
           nameAr: 'خطة تجريبية',
           nameEn: 'Trial Plan',
           priceMonthly: 0,
@@ -52,16 +53,13 @@ describe('Subscription Logic (integration)', () => {
     it('enforces plan limits', async () => {
       const plan = await testPrisma.plan.create({
         data: {
-          slug: 'LIMITED-PLAN',
+          slug: 'LIMITEDPLAN',
           nameAr: 'خطة محدودة',
           nameEn: 'Limited Plan',
           priceMonthly: 100,
           priceAnnual: 1000,
           currency: 'SAR',
-          limits: {
-            employees: 5,
-            clients: 100,
-          } as Record<string, unknown>,
+          limits: { employees: 5, clients: 100 } as Prisma.InputJsonValue,
         },
       });
 
@@ -85,7 +83,7 @@ describe('Subscription Logic (integration)', () => {
 
       const plan = await testPrisma.plan.create({
         data: {
-          slug: 'USAGE-PLAN',
+          slug: 'USAGEPLAN',
           nameAr: 'خطة معلقة',
           nameEn: 'Usage Plan',
           priceMonthly: 50,
@@ -107,8 +105,9 @@ describe('Subscription Logic (integration)', () => {
 
       const usageRecord = await testPrisma.usageRecord.create({
         data: {
+          organizationId: org.id,
           subscriptionId: subscription.id,
-          metric: 'BOOKINGS' as UsageMetric,
+          metric: UsageMetric.BOOKINGS_PER_MONTH,
           count: 0,
           periodStart: new Date(),
           periodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),

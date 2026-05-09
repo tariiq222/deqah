@@ -97,6 +97,8 @@ describe('Service Pricing & Duration in Booking (e2e)', () => {
       data: {
         organizationId: '00000000-0000-0000-0000-000000000001',
         serviceId,
+        label: 'Extended Session',
+        labelAr: 'جلسة ممتدة',
         durationMins: 90,
         price: 250,
         currency: 'SAR',
