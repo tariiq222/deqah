@@ -1,6 +1,7 @@
 'use client';
 
 import { Mail, MessageSquare, Bell } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   Table,
   TableBody,
@@ -28,6 +29,7 @@ const STATUS_DOT: Record<DeliveryStatus, string> = {
   SKIPPED: 'bg-muted-foreground/40',
 };
 
+// TODO i18n: status enum labels Sent / Failed / Pending / Skipped — no matching keys
 const STATUS_LABEL: Record<DeliveryStatus, string> = {
   SENT: 'Sent',
   FAILED: 'Failed',
@@ -75,16 +77,19 @@ function ChannelBadge({ channel }: { channel: DeliveryChannel }) {
 const COLUMN_COUNT = 7;
 
 export function DeliveryLogTable({ items, isLoading }: DeliveryLogTableProps) {
+  const t = useTranslations('notifications');
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Type</TableHead>
-          <TableHead>Channel</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Recipient</TableHead>
-          <TableHead>Organization</TableHead>
-          <TableHead>Error</TableHead>
+          <TableHead>{t('table.type')}</TableHead>
+          <TableHead>{t('table.channel')}</TableHead>
+          <TableHead>{t('table.status')}</TableHead>
+          <TableHead>{t('table.recipient')}</TableHead>
+          <TableHead>{t('table.organization')}</TableHead>
+          <TableHead>{t('table.error')}</TableHead>
+          {/* TODO i18n: "Time" — no matching key (closest: table.sentAt = "Sent At") */}
           <TableHead className="text-right tabular-nums">Time</TableHead>
         </TableRow>
       </TableHeader>
@@ -104,7 +109,7 @@ export function DeliveryLogTable({ items, isLoading }: DeliveryLogTableProps) {
               colSpan={COLUMN_COUNT}
               className="py-10 text-center text-sm text-muted-foreground"
             >
-              No delivery log entries match the current filters.
+              {t('table.empty')}
             </TableCell>
           </TableRow>
         )}

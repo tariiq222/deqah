@@ -7,6 +7,7 @@ import type { CatalogEntry } from './filter';
 import type { PlanLimits } from '../plan-limits';
 import { QUANT_FIELD_MAP } from '../plan-limits';
 
+// TODO i18n: QUOTA_TOOLTIP string — no key in plans.* namespace
 const QUOTA_TOOLTIP =
   'Set to -1 for unlimited. Set 0 to disable this feature entirely.';
 

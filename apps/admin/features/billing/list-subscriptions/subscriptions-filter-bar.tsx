@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import {
   Select,
@@ -27,23 +28,25 @@ const STATUSES: SubscriptionStatus[] = [
 ];
 
 export function SubscriptionsFilterBar({ status, onStatusChange, onReset }: Props) {
+  const t = useTranslations('billing');
+  const tc = useTranslations('common');
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card/50 px-4 py-3">
       <Select value={status} onValueChange={(v) => onStatusChange(v as StatusFilter)}>
         <SelectTrigger className="w-[200px]">
-          <SelectValue placeholder="Status" />
+          <SelectValue placeholder={tc('status')} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All statuses</SelectItem>
+          <SelectItem value="all">{t('filters.allStatuses')}</SelectItem>
           {STATUSES.map((s) => (
             <SelectItem key={s} value={s}>
-              {s.replace('_', ' ')}
+              {t(`subscriptionStatus.${s}`)}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
       <Button variant="ghost" size="sm" onClick={onReset}>
-        Reset
+        {tc('reset')}
       </Button>
     </div>
   );

@@ -8,8 +8,10 @@ export function FeatureSearch({ value, onChange }: Props) {
   return (
     <div className="space-y-1">
       <Label htmlFor="feature-search" className="text-sm text-muted-foreground">
+        {/* TODO i18n: "Search features" — no key in plans.* namespace */}
         Search features
       </Label>
+      {/* TODO i18n: placeholder "Filter by name or description..." — no key in plans.* namespace */}
       <Input
         id="feature-search"
         type="search"

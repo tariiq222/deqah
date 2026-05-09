@@ -1,6 +1,7 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
+import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { LogOut } from 'lucide-react';
 import { Button } from '@deqah/ui/primitives/button';
 import { Skeleton } from '@deqah/ui/primitives/skeleton';
@@ -21,17 +22,13 @@ interface Props {
   isLoading: boolean;
 }
 
-function subscribeToMinute(callback: () => void): () => void {
-  const id = setInterval(callback, 60_000);
-  return () => clearInterval(id);
-}
-
 function useNow(): number {
-  return useSyncExternalStore(
-    subscribeToMinute,
-    () => Date.now(),
-    () => 0,
-  );
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
 }
 
 function monoTimestamp(iso: string | null): string {
@@ -57,6 +54,8 @@ interface SessionRowProps {
 }
 
 function SessionRow({ session: s, active, endMutation }: SessionRowProps) {
+  const t = useTranslations('impersonation');
+
   return (
     <TableRow key={s.id}>
       {/* Status dot */}
@@ -64,7 +63,7 @@ function SessionRow({ session: s, active, endMutation }: SessionRowProps) {
         {active ? (
           <span
             className="inline-block size-1.5 rounded-full bg-primary animate-pulse"
-            aria-label="Active"
+            aria-label={t('table.activeDot')}
           />
         ) : (
           <span className="inline-block size-1.5 rounded-full bg-muted-foreground/30" />
@@ -119,12 +118,12 @@ function SessionRow({ session: s, active, endMutation }: SessionRowProps) {
                   className="size-9 rounded-sm text-destructive hover:bg-destructive/10 hover:text-destructive"
                   disabled={endMutation.isPending}
                   onClick={() => endMutation.mutate(s.id)}
-                  aria-label="End impersonation session"
+                  aria-label={t('table.endSessionAriaLabel')}
                 >
                   <LogOut size={14} strokeWidth={1.75} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="left">End session</TooltipContent>
+              <TooltipContent side="left">{t('table.endSession')}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         ) : null}
@@ -149,15 +148,17 @@ export function SessionsTable({ items, isLoading }: Props) {
     return s.endedAt !== null || expired;
   }) ?? [];
 
+  const t = useTranslations('impersonation');
+
   const colHeaders = (
     <TableRow>
       <TableHead className="w-6" />
-      <TableHead>Actor</TableHead>
-      <TableHead>Target user</TableHead>
-      <TableHead>Organization</TableHead>
-      <TableHead>Started</TableHead>
-      <TableHead>Ended</TableHead>
-      <TableHead>Duration</TableHead>
+      <TableHead>{t('table.actor')}</TableHead>
+      <TableHead>{t('table.targetUser')}</TableHead>
+      <TableHead>{t('table.organization')}</TableHead>
+      <TableHead>{t('table.started')}</TableHead>
+      <TableHead>{t('table.ended')}</TableHead>
+      <TableHead>{t('table.duration')}</TableHead>
       <TableHead className="text-right w-16" />
     </TableRow>
   );
@@ -184,7 +185,7 @@ export function SessionsTable({ items, isLoading }: Props) {
       {/* Active now section */}
       <div>
         <p className="mb-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-          Active now
+          {t('sections.activeNow')}
         </p>
         <div className="border-t border-border">
           <Table>
@@ -193,7 +194,7 @@ export function SessionsTable({ items, isLoading }: Props) {
               {activeSessions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={TABLE_COLS} className="py-6 text-center text-sm text-muted-foreground">
-                    No active sessions.
+                    {t('empty.noActiveSessions')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -209,7 +210,7 @@ export function SessionsTable({ items, isLoading }: Props) {
       {/* Past sessions section */}
       <div>
         <p className="mb-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-          Past sessions
+          {t('sections.pastSessions')}
         </p>
         <div className="border-t border-border">
           <Table>
@@ -218,7 +219,7 @@ export function SessionsTable({ items, isLoading }: Props) {
               {pastSessions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={TABLE_COLS} className="py-6 text-center text-sm text-muted-foreground">
-                    No past sessions.
+                    {t('empty.noPastSessions')}
                   </TableCell>
                 </TableRow>
               ) : (

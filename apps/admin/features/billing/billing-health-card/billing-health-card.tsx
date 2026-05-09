@@ -30,6 +30,10 @@ interface Props {
 }
 
 export function BillingHealthCard({ orgId, subscription, dunningLogs }: Props) {
+  // TODO i18n: strings below have no billing.* JSON keys yet:
+  // 'Billing Health', 'Cancels at period end', 'Attempts', 'Last attempt',
+  // 'Last result', 'Scheduled for', 'Charging…', 'Force charge now',
+  // 'Reversing…', 'Cancel scheduled cancellation'
   const forceCharge = useForceCharge(orgId);
   const cancelScheduled = useCancelScheduled(orgId);
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import {
   Dialog,
@@ -65,6 +66,7 @@ function UpdateVerticalForm({
   vertical: VerticalRow;
   onClose: () => void;
 }) {
+  const t = useTranslations('verticals.update');
   const mutation = useUpdateVertical();
   const [form, setForm] = useState<FormState>(() => ({
     nameAr: vertical.nameAr,
@@ -99,15 +101,15 @@ function UpdateVerticalForm({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Edit vertical — {vertical.slug}</DialogTitle>
+        <DialogTitle>{t('title', { slug: vertical.slug })}</DialogTitle>
         <DialogDescription>
-          Update vertical details. Slug cannot be changed after creation.
+          {t('description')}
         </DialogDescription>
       </DialogHeader>
 
       <div className="space-y-4">
         <div className="space-y-1.5">
-          <Label htmlFor="uv-nameAr">Name (Arabic)</Label>
+          <Label htmlFor="uv-nameAr">{t('nameAr')}</Label>
           <Input
             id="uv-nameAr"
             value={form.nameAr}
@@ -116,7 +118,7 @@ function UpdateVerticalForm({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="uv-nameEn">Name (English)</Label>
+          <Label htmlFor="uv-nameEn">{t('nameEn')}</Label>
           <Input
             id="uv-nameEn"
             value={form.nameEn}
@@ -125,7 +127,7 @@ function UpdateVerticalForm({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="uv-family">Template family</Label>
+          <Label htmlFor="uv-family">{t('templateFamily')}</Label>
           <Select
             value={form.templateFamily}
             onValueChange={(v) => set('templateFamily')(v as TemplateFamily)}
@@ -143,7 +145,7 @@ function UpdateVerticalForm({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="uv-descAr">Description (Arabic, optional)</Label>
+          <Label htmlFor="uv-descAr">{t('descriptionAr')}</Label>
           <Textarea
             id="uv-descAr"
             rows={2}
@@ -153,7 +155,7 @@ function UpdateVerticalForm({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="uv-descEn">Description (English, optional)</Label>
+          <Label htmlFor="uv-descEn">{t('descriptionEn')}</Label>
           <Textarea
             id="uv-descEn"
             rows={2}
@@ -165,10 +167,10 @@ function UpdateVerticalForm({
 
       <DialogFooter>
         <Button variant="outline" onClick={onClose} disabled={mutation.isPending}>
-          Cancel
+          {t('cancel')}
         </Button>
         <Button onClick={submit} disabled={mutation.isPending || !isValid}>
-          {mutation.isPending ? 'Saving…' : 'Save changes'}
+          {mutation.isPending ? t('submitting') : t('submit')}
         </Button>
       </DialogFooter>
     </>

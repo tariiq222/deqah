@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import {
   Dialog,
@@ -21,6 +22,8 @@ interface Props {
 }
 
 export function ImpersonateDialog({ organizationId, organizationName }: Props) {
+  const t = useTranslations('organizations.impersonate');
+  const tc = useTranslations('common');
   const [open, setOpen] = useState(false);
   const [targetUserId, setTargetUserId] = useState('');
   const mutation = useStartImpersonation();
@@ -45,38 +48,36 @@ export function ImpersonateDialog({ organizationId, organizationName }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="secondary">Impersonate user</Button>
+        <Button variant="secondary">{t('button')}</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Impersonate a user in {organizationName}</DialogTitle>
+          <DialogTitle>{t('title', { orgName: organizationName })}</DialogTitle>
           <DialogDescription>
-            Issues a 15-minute shadow session. Every request you make under it is logged
-            with your super-admin id. End the session manually from the sessions page or it
-            auto-expires.
+            {t('description')}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="target-user">Target user ID (UUID)</Label>
+            <Label htmlFor="target-user">{t('targetUserId')}</Label>
             <Input
               id="target-user"
               className="font-mono text-xs"
-              placeholder="00000000-0000-0000-0000-000000000000"
+              placeholder={t('targetUserIdPlaceholder')}
               value={targetUserId}
               onChange={(e) => setTargetUserId(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              Paste the user&apos;s UUID from the Users page. Impersonating another super-admin is rejected.
+              {t('targetUserIdHint')}
             </p>
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>
-            Cancel
+            {t('cancel')}
           </Button>
           <Button onClick={submit} disabled={!valid || mutation.isPending}>
-            {mutation.isPending ? 'Starting…' : 'Start session + redirect'}
+            {mutation.isPending ? t('submitting') : t('submit')}
           </Button>
         </DialogFooter>
       </DialogContent>

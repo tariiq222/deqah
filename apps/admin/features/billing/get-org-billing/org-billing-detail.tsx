@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Badge } from '@deqah/ui/primitives/badge';
 import { Button } from '@deqah/ui/primitives/button';
 import { Skeleton } from '@deqah/ui/primitives/skeleton';
@@ -54,6 +55,8 @@ interface Props {
 }
 
 export function OrgBillingDetail({ orgId }: Props) {
+  const t = useTranslations('billing');
+  const tc = useTranslations('common');
   const { data, isLoading, error } = useGetOrgBilling(orgId);
   const [waiveTarget, setWaiveTarget] = useState<SubscriptionInvoiceRow | null>(null);
   const [refundTarget, setRefundTarget] = useState<SubscriptionInvoiceRow | null>(null);
@@ -63,6 +66,7 @@ export function OrgBillingDetail({ orgId }: Props) {
   if (error) {
     return (
       <p className="text-sm text-destructive">
+        {/* TODO i18n: Failed to load */}
         Failed to load: {(error as Error).message}
       </p>
     );
@@ -81,46 +85,46 @@ export function OrgBillingDetail({ orgId }: Props) {
           <BillingHealthCard orgId={orgId} subscription={sub} dunningLogs={dunningLogs} />
 
           <div className="mt-8 grid grid-cols-2 gap-x-8 gap-y-4 text-sm md:grid-cols-3">
-            <SummaryField label="Plan">
+            <SummaryField label={t('detail.plan')}>
               <span className="font-mono text-xs uppercase tracking-wide">{sub.plan.slug}</span>
               {' — '}
               {sub.plan.nameEn}
             </SummaryField>
-            <SummaryField label="Status">
+            <SummaryField label={t('detail.status')}>
               <Badge variant="outline" className={SUB_TONE[sub.status]}>
                 {sub.status.replace('_', ' ')}
               </Badge>
             </SummaryField>
-            <SummaryField label="Cycle">{sub.billingCycle}</SummaryField>
-            <SummaryField label="Period">
+            <SummaryField label={t('detail.cycle')}>{sub.billingCycle}</SummaryField>
+            <SummaryField label={t('detail.period')}>
               <span className="font-mono text-xs">
                 {formatAdminDate(sub.currentPeriodStart, 'en')} →{' '}
                 {formatAdminDate(sub.currentPeriodEnd, 'en')}
               </span>
             </SummaryField>
-            <SummaryField label="MRR">
+            <SummaryField label={t('detail.mrr')}>
               <span className="tabular-nums font-mono">
                 {Number(sub.plan.priceMonthly).toFixed(2)}{' '}
                 <span className="text-xs text-muted-foreground">SAR/mo</span>
               </span>
             </SummaryField>
-            <SummaryField label="Last payment">
+            <SummaryField label={t('detail.lastPayment')}>
               <span className="font-mono text-xs">{formatAdminDate(sub.lastPaymentAt, 'en')}</span>
             </SummaryField>
             {sub.trialEndsAt ? (
-              <SummaryField label="Trial ends">
+              <SummaryField label={t('detail.trialEnds')}>
                 <span className="font-mono text-xs">{formatAdminDate(sub.trialEndsAt, 'en')}</span>
               </SummaryField>
             ) : null}
             {sub.pastDueSince ? (
-              <SummaryField label="Past due since">
+              <SummaryField label={t('detail.pastDueSince')}>
                 <span className="font-mono text-xs text-warning">
                   {formatAdminDate(sub.pastDueSince, 'en')}
                 </span>
               </SummaryField>
             ) : null}
             {sub.lastFailureReason ? (
-              <SummaryField label="Last failure">
+              <SummaryField label={t('detail.lastFailure')}>
                 <span className="text-destructive">{sub.lastFailureReason}</span>
               </SummaryField>
             ) : null}
@@ -128,36 +132,36 @@ export function OrgBillingDetail({ orgId }: Props) {
         </section>
       ) : (
         <section className="pb-12">
-          <p className="text-sm text-muted-foreground">No subscription on file for this organization.</p>
+          <p className="text-sm text-muted-foreground">{t('detail.noSubscription')}</p>
         </section>
       )}
 
       {/* Recent invoices */}
       <section className="border-t border-border pt-12 pb-12">
-        <SectionHeader title="Recent invoices" count={data.invoices.length}>
+        <SectionHeader title={t('detail.recentInvoices')} count={data.invoices.length}>
           {sub ? (
             <Button variant="ghost" size="sm" onClick={() => setChangePlanOpen(true)}>
-              Change plan…
+              {t('detail.changePlanButton')}
             </Button>
           ) : null}
         </SectionHeader>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Invoice</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Refunded</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Period</TableHead>
-              <TableHead>Due</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t('tables.invoice')}</TableHead>
+              <TableHead>{t('tables.amountSar')}</TableHead>
+              <TableHead>{t('tables.refunded')}</TableHead>
+              <TableHead>{t('tables.status')}</TableHead>
+              <TableHead>{t('tables.period')}</TableHead>
+              <TableHead>{t('tables.due')}</TableHead>
+              <TableHead className="text-right">{tc('actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.invoices.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
-                  No invoices.
+                  {t('detail.noInvoices')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -190,7 +194,7 @@ export function OrgBillingDetail({ orgId }: Props) {
                         className="text-destructive hover:text-destructive"
                         onClick={() => setWaiveTarget(inv)}
                       >
-                        Waive
+                        {t('detail.waiveButton')}
                       </Button>
                     ) : inv.status === 'PAID' && !isFullyRefunded(inv) ? (
                       <Button
@@ -199,7 +203,7 @@ export function OrgBillingDetail({ orgId }: Props) {
                         className="text-destructive hover:text-destructive"
                         onClick={() => setRefundTarget(inv)}
                       >
-                        Refund
+                        {t('detail.refundButton')}
                       </Button>
                     ) : null}
                   </TableCell>
@@ -212,25 +216,25 @@ export function OrgBillingDetail({ orgId }: Props) {
 
       {/* Credits */}
       <section className="border-t border-border pt-12 pb-12">
-        <SectionHeader title="Credits" count={data.credits.length}>
+        <SectionHeader title={t('detail.credits')} count={data.credits.length}>
           <Button variant="ghost" size="sm" onClick={() => setGrantCreditOpen(true)}>
-            Grant credit…
+            {t('detail.grantCreditButton')}
           </Button>
         </SectionHeader>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Amount</TableHead>
-              <TableHead>Reason</TableHead>
-              <TableHead>Granted</TableHead>
-              <TableHead>Consumed</TableHead>
+              <TableHead>{t('tables.amountSar')}</TableHead>
+              <TableHead>{t('detail.creditReason')}</TableHead>
+              <TableHead>{t('detail.creditGranted')}</TableHead>
+              <TableHead>{t('detail.creditConsumed')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.credits.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                  No credits granted.
+                  {t('detail.noCredits')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -245,7 +249,7 @@ export function OrgBillingDetail({ orgId }: Props) {
                     {formatAdminDate(c.grantedAt, 'en')}
                   </TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">
-                    {c.consumedAt ? formatAdminDate(c.consumedAt, 'en') : 'unused'}
+                    {c.consumedAt ? formatAdminDate(c.consumedAt, 'en') : t('detail.creditUnused')}
                   </TableCell>
                 </TableRow>
               ))
@@ -256,9 +260,9 @@ export function OrgBillingDetail({ orgId }: Props) {
 
       {/* Usage */}
       <section className="border-t border-border pt-12 pb-12">
-        <SectionHeader title="Usage" count={data.usage.length} />
+        <SectionHeader title={t('detail.usage')} count={data.usage.length} />
         {data.usage.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No usage records for the current billing period.</p>
+          <p className="text-sm text-muted-foreground">{t('detail.noUsage')}</p>
         ) : (
           <table className="w-full text-sm">
             <tbody>
@@ -276,7 +280,7 @@ export function OrgBillingDetail({ orgId }: Props) {
       {/* Dunning audit trail */}
       {dunningLogs.length > 0 ? (
         <section className="border-t border-border pt-12 pb-12">
-          <SectionHeader title="Dunning attempts" count={dunningLogs.length} />
+          <SectionHeader title={t('detail.dunningAttempts')} count={dunningLogs.length} />
           <ol className="space-y-3">
             {dunningLogs.map((log) => (
               <li key={log.id} className="flex items-start gap-4 text-sm">

@@ -13,6 +13,7 @@ type Props = {
   onLimitsChange: (next: PlanLimits) => void;
 };
 
+// TODO i18n: PRESET_META label/desc strings — no keys in plans.* namespace
 const PRESET_META: Array<{ kind: CardPreset; label: string; desc: string }> = [
   { kind: 'STARTER', label: 'Starter', desc: 'Essential features for new clinics' },
   { kind: 'PRO', label: 'Pro', desc: 'Common features for growing clinics' },
@@ -69,6 +70,7 @@ export function PresetCards({ limits, onLimitsChange }: Props) {
 
   return (
     <div className="space-y-3">
+      {/* TODO i18n: "Apply a preset" — no key in plans.* namespace */}
       <p className="text-sm font-medium text-foreground">Apply a preset</p>
       <div className="grid grid-cols-3 gap-3">
         {PRESET_META.map((p) => {
@@ -88,7 +90,9 @@ export function PresetCards({ limits, onLimitsChange }: Props) {
               aria-pressed={isActive}
             >
               <span className="text-sm font-semibold text-foreground">{p.label}</span>
+              {/* TODO i18n: preset desc "{p.desc}" — no key in plans.* namespace */}
               <span className="text-xs text-muted-foreground">{p.desc}</span>
+              {/* TODO i18n: "{count} features" — no key in plans.* namespace */}
               <span className="text-xs font-medium text-primary mt-1">{count} features</span>
             </button>
           );
@@ -101,6 +105,7 @@ export function PresetCards({ limits, onLimitsChange }: Props) {
         onClick={handleDisableAll}
         className="text-muted-foreground"
       >
+        {/* TODO i18n: "Disable all" — no key in plans.* namespace */}
         Disable all
       </Button>
     </div>

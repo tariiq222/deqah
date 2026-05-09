@@ -2,6 +2,7 @@
 
 import { useState, useCallback, Fragment } from 'react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { Badge } from '@deqah/ui/primitives/badge';
 import { Button } from '@deqah/ui/primitives/button';
 import { Input } from '@deqah/ui/primitives/input';
@@ -38,6 +39,8 @@ function initLimits(plans: PlanRow[]): Record<string, PlanLimits> {
 }
 
 export function ComparePlansMatrix({ plans }: Props) {
+  const t = useTranslations('plans');
+  const tc = useTranslations('common');
   const sorted = [...plans].sort((a, b) => a.sortOrder - b.sortOrder);
 
   const [currentLimits, setCurrentLimits] = useState<Record<string, PlanLimits>>(() =>
@@ -87,7 +90,8 @@ export function ComparePlansMatrix({ plans }: Props) {
 
   const handleCancel = () => {
     if (dirtyCount > 0) {
-      if (!window.confirm('Discard all unsaved changes?')) return;
+      // TODO i18n: "Discard all unsaved changes?" — no key in plans.* namespace
+    if (!window.confirm('Discard all unsaved changes?')) return;
     }
     setCurrentLimits(initLimits(sorted));
   };
@@ -153,6 +157,7 @@ export function ComparePlansMatrix({ plans }: Props) {
             className="shrink-0 px-4 py-3 text-left font-medium text-muted-foreground uppercase tracking-wide text-xs"
             style={{ width: featureColWidth, minWidth: featureColWidth, boxShadow: 'inset -1px 0 0 hsl(var(--border))' }}
           >
+            {/* TODO i18n: "Feature" — no key in plans.* namespace */}
             Feature
           </div>
           {sorted.map((plan) => {
@@ -272,11 +277,13 @@ export function ComparePlansMatrix({ plans }: Props) {
           <div className="flex-1 space-y-2">
             {dirtyCount === 0 ? (
               <p className="text-sm text-muted-foreground">
+                {/* TODO i18n: "No pending changes — edit any cell to enable saving." — no key in plans.* namespace */}
                 No pending changes — edit any cell to enable saving.
               </p>
             ) : (
               <p className="text-sm">
                 <span className="font-medium">
+                  {/* TODO i18n: "{dirtyCount} plan(s) pending" — no key in plans.* namespace */}
                   {dirtyCount} plan{dirtyCount === 1 ? '' : 's'} pending
                 </span>
               </p>
@@ -284,13 +291,13 @@ export function ComparePlansMatrix({ plans }: Props) {
           </div>
           <div className="flex items-end gap-2 pt-7">
             <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
-              Cancel
+              {tc('cancel')}
             </Button>
             <Button
               onClick={() => void handleSave()}
               disabled={saveDisabled}
             >
-              {isSaving ? 'Saving…' : 'Save changes'}
+              {isSaving ? tc('saving') : t('wizard.editSubmit')}
             </Button>
           </div>
         </div>

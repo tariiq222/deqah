@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Receipt, UserMinus, Eye, Layers, KeyRound, CreditCard, Trash2, RefreshCcw } from 'lucide-react';
 import { Skeleton } from '@deqah/ui/primitives/skeleton';
 import {
@@ -98,15 +99,17 @@ function monoTimestamp(iso: string): string {
 }
 
 export function AuditLogTable({ items, isLoading }: Props) {
+  const t = useTranslations('auditLog');
+
   return (
     <TooltipProvider delayDuration={200}>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="w-8" />
-            <TableHead>Actor</TableHead>
-            <TableHead>Action</TableHead>
-            <TableHead className="text-right tabular-nums">When</TableHead>
+            <TableHead>{t('table.actor')}</TableHead>
+            <TableHead>{t('table.action')}</TableHead>
+            <TableHead className="text-right tabular-nums">{t('table.when')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -157,7 +160,7 @@ export function AuditLogTable({ items, isLoading }: Props) {
           {!isLoading && items?.length === 0 ? (
             <TableRow>
               <TableCell colSpan={4} className="py-10 text-center text-sm text-muted-foreground">
-                No audit entries match the current filters.
+                {t('table.empty')}
               </TableCell>
             </TableRow>
           ) : null}

@@ -1,6 +1,7 @@
 'use client';
 
 import { Search } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import { Input } from '@deqah/ui/primitives/input';
 
@@ -19,6 +20,7 @@ export function UsersFilterBar({
   onOrganizationIdChange,
   onReset,
 }: Props) {
+  const t = useTranslations('users');
   const isFiltered = search !== '' || organizationId !== '';
 
   return (
@@ -31,7 +33,7 @@ export function UsersFilterBar({
           strokeWidth={1.75}
         />
         <Input
-          placeholder="email@…"
+          placeholder={t('search.placeholder')}
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className="h-8 pl-8 font-mono text-[13px] placeholder:text-muted-foreground/60"
@@ -40,7 +42,7 @@ export function UsersFilterBar({
 
       {/* Org ID filter */}
       <Input
-        placeholder="Organization ID"
+        placeholder={t('search.orgIdPlaceholder')}
         value={organizationId}
         onChange={(e) => onOrganizationIdChange(e.target.value)}
         className="h-8 w-52 font-mono text-[13px]"
@@ -48,7 +50,7 @@ export function UsersFilterBar({
 
       {isFiltered && (
         <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={onReset}>
-          Reset
+          {t('search.reset')}
         </Button>
       )}
     </div>

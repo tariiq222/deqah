@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import {
   Dialog,
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function DeleteVerticalDialog({ open, onOpenChange, vertical }: Props) {
+  const t = useTranslations('verticals.delete');
   const mutation = useDeleteVertical();
 
   const submit = () => {
@@ -36,13 +38,9 @@ export function DeleteVerticalDialog({ open, onOpenChange, vertical }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Delete vertical</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
-            You are about to delete{' '}
-            <span className="font-semibold">
-              {vertical.nameEn} ({vertical.slug})
-            </span>
-            . This action cannot be undone and is written to the audit log.
+            {t('description', { name: vertical.nameEn, slug: vertical.slug })}
           </DialogDescription>
         </DialogHeader>
 
@@ -52,14 +50,14 @@ export function DeleteVerticalDialog({ open, onOpenChange, vertical }: Props) {
             onClick={() => onOpenChange(false)}
             disabled={mutation.isPending}
           >
-            Cancel
+            {t('cancel')}
           </Button>
           <Button
             variant="destructive"
             onClick={submit}
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? 'Deleting…' : 'Delete vertical'}
+            {mutation.isPending ? t('submitting') : t('submit')}
           </Button>
         </DialogFooter>
       </DialogContent>

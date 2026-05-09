@@ -12,6 +12,7 @@ type Props = {
   ariaLabel?: string;
 };
 
+// TODO i18n: default ariaLabel "More info" — no key in plans.* namespace
 export function InfoTooltip({ content, ariaLabel = 'More info' }: Props) {
   return (
     <TooltipProvider>

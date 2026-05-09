@@ -1,6 +1,7 @@
 'use client';
 
 import { Pencil, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Badge } from '@deqah/ui/primitives/badge';
 import { Button } from '@deqah/ui/primitives/button';
 import { Skeleton } from '@deqah/ui/primitives/skeleton';
@@ -25,14 +26,16 @@ interface Props {
 }
 
 export function VerticalsTable({ items, isLoading, selectedId, onSelect, onEdit, onDelete }: Props) {
+  const t = useTranslations('verticals');
+  const tc = useTranslations('common');
   return (
     <TooltipProvider delayDuration={200}>
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Slug</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead>{t('table.slug')}</TableHead>
+            <TableHead>{t('table.name')}</TableHead>
+            <TableHead>{t('table.status')}</TableHead>
             <TableHead className="text-right w-20" />
           </TableRow>
         </TableHeader>
@@ -61,11 +64,11 @@ export function VerticalsTable({ items, isLoading, selectedId, onSelect, onEdit,
                   <TableCell>
                     {v.isActive ? (
                       <Badge variant="outline" className="border-success/40 bg-success/10 text-success text-[11px]">
-                        Active
+                        {t('status.active')}
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="text-muted-foreground text-[11px]">
-                        Inactive
+                        {t('status.inactive')}
                       </Badge>
                     )}
                   </TableCell>
@@ -78,12 +81,12 @@ export function VerticalsTable({ items, isLoading, selectedId, onSelect, onEdit,
                             size="icon"
                             className="size-9 rounded-sm"
                             onClick={() => onEdit(v)}
-                            aria-label={`Edit ${v.slug}`}
+                            aria-label={`${tc('edit')} ${v.slug}`}
                           >
                             <Pencil size={14} strokeWidth={1.75} />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Edit</TooltipContent>
+                        <TooltipContent>{t('table.editTooltip')}</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -92,12 +95,12 @@ export function VerticalsTable({ items, isLoading, selectedId, onSelect, onEdit,
                             size="icon"
                             className="size-9 rounded-sm text-destructive hover:bg-destructive/10 hover:text-destructive"
                             onClick={() => onDelete(v)}
-                            aria-label={`Delete ${v.slug}`}
+                            aria-label={`${tc('delete')} ${v.slug}`}
                           >
                             <Trash2 size={14} strokeWidth={1.75} />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Delete</TooltipContent>
+                        <TooltipContent>{t('table.deleteTooltip')}</TooltipContent>
                       </Tooltip>
                     </div>
                   </TableCell>
@@ -106,7 +109,7 @@ export function VerticalsTable({ items, isLoading, selectedId, onSelect, onEdit,
           {!isLoading && items?.length === 0 ? (
             <TableRow>
               <TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
-                No verticals defined. Create one using the button above.
+                {t('table.empty')}
               </TableCell>
             </TableRow>
           ) : null}

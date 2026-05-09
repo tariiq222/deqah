@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import { Input } from '@deqah/ui/primitives/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@deqah/ui/primitives/select';
@@ -33,26 +34,28 @@ export function AuditLogFilterBar({
   onOrganizationIdChange,
   onReset,
 }: Props) {
+  const t = useTranslations('auditLog');
+  const tc = useTranslations('common');
   const isFiltered = actionType !== 'all' || organizationId !== '';
 
   return (
     <div className="flex flex-wrap items-center gap-2 border-y border-border py-2">
       <Select value={actionType} onValueChange={onActionTypeChange}>
         <SelectTrigger className="h-8 w-[200px] text-[13px]">
-          <SelectValue placeholder="Action type" />
+          <SelectValue placeholder={t('filters.actionType')} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All action types</SelectItem>
-          {ACTION_TYPES.map((t) => (
-            <SelectItem key={t} value={t} className="font-mono text-xs">
-              {t}
+          <SelectItem value="all">{t('filters.allActionTypes')}</SelectItem>
+          {ACTION_TYPES.map((type) => (
+            <SelectItem key={type} value={type} className="font-mono text-xs">
+              {type}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
 
       <Input
-        placeholder="Organization ID"
+        placeholder={t('filters.organizationId')}
         value={organizationId}
         onChange={(e) => onOrganizationIdChange(e.target.value)}
         className="h-8 w-56 font-mono text-[13px]"
@@ -60,7 +63,7 @@ export function AuditLogFilterBar({
 
       {isFiltered && (
         <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={onReset}>
-          Reset
+          {t('filters.reset')}
         </Button>
       )}
     </div>

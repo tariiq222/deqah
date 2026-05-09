@@ -36,9 +36,10 @@ export function PlanStep({ form, set }: Props) {
           onValueChange={(v) => set('planId')(v === '__none__' ? '' : v)}
         >
           <SelectTrigger id="tenant-plan">
-            <SelectValue placeholder="Select plan…" />
+            <SelectValue placeholder={t('planId')} />
           </SelectTrigger>
           <SelectContent>
+            {/* TODO i18n: — None — */}
             <SelectItem value="__none__">— None —</SelectItem>
             {plans?.filter((p) => p.isActive).map((p) => (
               <SelectItem key={p.id} value={p.id}>

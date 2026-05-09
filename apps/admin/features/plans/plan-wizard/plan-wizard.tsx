@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import { FeaturesTab } from '../features-tab/features-tab';
 import type { PlanLimits } from '../plan-limits';
@@ -9,12 +10,6 @@ import type { BasicsForm } from './step-basics';
 import { StepReview } from './step-review';
 
 type Step = 'basics' | 'features' | 'review';
-
-const STEPS: Array<{ id: Step; label: string }> = [
-  { id: 'basics', label: 'Basics' },
-  { id: 'features', label: 'Features' },
-  { id: 'review', label: 'Review' },
-];
 
 export interface PlanWizardProps {
   mode: 'create' | 'edit';
@@ -39,10 +34,17 @@ export function PlanWizard({
   onCancel,
   onSubmit,
 }: PlanWizardProps) {
+  const t = useTranslations('plans');
   const [step, setStep] = useState<Step>('basics');
   const [basics, setBasics] = useState<BasicsForm>(initialBasics);
   const [limits, setLimits] = useState<PlanLimits>(initialLimits);
   const [showBasicsErrors, setShowBasicsErrors] = useState(false);
+
+  const STEPS: Array<{ id: Step; label: string }> = [
+    { id: 'basics', label: t('wizard.steps.basics') },
+    { id: 'features', label: t('wizard.steps.features') },
+    { id: 'review', label: t('wizard.steps.review') },
+  ];
 
   const stepIndex = STEPS.findIndex((s) => s.id === step);
 
@@ -72,7 +74,7 @@ export function PlanWizard({
     }
   };
 
-  const submitLabel = mode === 'create' ? 'Create plan' : 'Save changes';
+  const submitLabel = mode === 'create' ? t('wizard.createSubmit') : t('wizard.editSubmit');
 
   const idPrefix = mode === 'create' ? 'wiz-cp' : 'wiz-ep';
 
@@ -184,7 +186,7 @@ export function PlanWizard({
               onClick={handleBack}
               disabled={isSubmitting}
             >
-              Back
+              {t('wizard.back')}
             </Button>
           )}
         </div>
@@ -195,14 +197,14 @@ export function PlanWizard({
             onClick={onCancel}
             disabled={isSubmitting}
           >
-            Cancel
+            {t('wizard.cancel')}
           </Button>
           {step !== 'review' ? (
             <Button
               type="button"
               onClick={handleNext}
             >
-              Next
+              {t('wizard.next')}
             </Button>
           ) : (
             <Button
@@ -210,7 +212,7 @@ export function PlanWizard({
               onClick={() => onSubmit({ basics, limits })}
               disabled={isSubmitting}
             >
-              {isSubmitting ? (mode === 'create' ? 'Creating…' : 'Saving…') : submitLabel}
+              {isSubmitting ? (mode === 'create' ? t('wizard.creating') : t('wizard.saving')) : submitLabel}
             </Button>
           )}
         </div>

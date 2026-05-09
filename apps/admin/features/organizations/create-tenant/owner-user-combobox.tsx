@@ -49,14 +49,16 @@ export function OwnerUserCombobox({ value, onSelect }: Props) {
         onChange={handleChange}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        placeholder="Search by email or name…"
+        placeholder="Search by email or name…" /* TODO i18n: no key */
         autoComplete="off"
       />
       {open && (search.length > 0 || isFetching) && (
         <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md">
           {isFetching ? (
+            // TODO i18n: Searching…
             <div className="px-3 py-2 text-sm text-muted-foreground">Searching…</div>
           ) : data?.items.length === 0 ? (
+            // TODO i18n: No users found.
             <div className="px-3 py-2 text-sm text-muted-foreground">No users found.</div>
           ) : (
             <ul className="max-h-48 overflow-auto py-1">
