@@ -23,6 +23,9 @@ export function changePlanForOrg({
   });
 }
 
-export function listPlanOptions(): Promise<PlanOption[]> {
-  return adminRequest<PlanOption[]>('/plans');
+export async function listPlanOptions(): Promise<PlanOption[]> {
+  const res = await adminRequest<{ items: PlanOption[] } | PlanOption[]>(
+    '/plans?perPage=100',
+  );
+  return Array.isArray(res) ? res : (res?.items ?? []);
 }
