@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { OnboardingStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { TenantContextService } from '../../../common/tenant/tenant-context.service';
 import { RlsHelper } from '../../../common/tenant/rls.helper';
 import { EmployeeOnboardingDto } from './employee-onboarding.dto';
 
@@ -27,12 +28,14 @@ const RELATION_CONFIG = {
 export class EmployeeOnboardingHandler {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly tenant: TenantContextService,
     private readonly rls: RlsHelper,
   ) {}
 
   async execute(cmd: EmployeeOnboardingCommand) {
+    const organizationId = this.tenant.requireOrganizationId();
     const employee = await this.prisma.employee.findFirst({
-      where: { id: cmd.employeeId },
+      where: { id: cmd.employeeId, organizationId },
     });
 
     if (!employee) {

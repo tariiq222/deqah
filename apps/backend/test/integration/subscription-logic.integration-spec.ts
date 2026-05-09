@@ -1,5 +1,6 @@
 import { testPrisma, cleanTables } from '../setup/db.setup';
 import { seedUser } from '../setup/seed.helper';
+import { UsageMetric } from '@prisma/client';
 
 describe('Subscription Logic (integration)', () => {
   beforeEach(async () => {
@@ -24,13 +25,13 @@ describe('Subscription Logic (integration)', () => {
 
       const plan = await testPrisma.plan.create({
         data: {
+          slug: 'TRIAL-PLAN',
           nameAr: 'خطة تجريبية',
           nameEn: 'Trial Plan',
-          billingInterval: 'MONTHLY',
-          price: 0,
-          status: 'ACTIVE',
-          isTrial: true,
-          trialDays: 14,
+          priceMonthly: 0,
+          priceAnnual: 0,
+          currency: 'SAR',
+          limits: {},
         },
       });
 
@@ -41,7 +42,7 @@ describe('Subscription Logic (integration)', () => {
           status: 'TRIALING',
           currentPeriodStart: new Date(),
           currentPeriodEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-          trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+          trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
         },
       });
 
@@ -51,20 +52,22 @@ describe('Subscription Logic (integration)', () => {
     it('enforces plan limits', async () => {
       const plan = await testPrisma.plan.create({
         data: {
+          slug: 'LIMITED-PLAN',
           nameAr: 'خطة محدودة',
           nameEn: 'Limited Plan',
-          billingInterval: 'MONTHLY',
-          price: 100,
-          status: 'ACTIVE',
+          priceMonthly: 100,
+          priceAnnual: 1000,
+          currency: 'SAR',
           limits: {
             employees: 5,
             clients: 100,
-          },
+          } as Record<string, unknown>,
         },
       });
 
       expect(plan.limits).toBeDefined();
-      expect(plan.limits.employees).toBe(5);
+      const limits = plan.limits as { employees?: number };
+      expect(limits.employees).toBe(5);
     });
   });
 
@@ -82,11 +85,13 @@ describe('Subscription Logic (integration)', () => {
 
       const plan = await testPrisma.plan.create({
         data: {
+          slug: 'USAGE-PLAN',
           nameAr: 'خطة معلقة',
           nameEn: 'Usage Plan',
-          billingInterval: 'MONTHLY',
-          price: 50,
-          status: 'ACTIVE',
+          priceMonthly: 50,
+          priceAnnual: 500,
+          currency: 'SAR',
+          limits: {},
         },
       });
 
@@ -103,7 +108,7 @@ describe('Subscription Logic (integration)', () => {
       const usageRecord = await testPrisma.usageRecord.create({
         data: {
           subscriptionId: subscription.id,
-          metric: 'api_calls',
+          metric: 'BOOKINGS' as UsageMetric,
           count: 0,
           periodStart: new Date(),
           periodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
