@@ -11,6 +11,5 @@ export function useListImpersonationSessions(p: ListImpersonationSessionsParams)
   return useQuery({
     queryKey: impersonationSessionsKey(p),
     queryFn: () => listImpersonationSessions(p),
-    placeholderData: (prev) => prev,
   });
 }

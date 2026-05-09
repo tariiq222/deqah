@@ -305,8 +305,11 @@ export class AdminBillingMetricsByPlanDto {
 }
 
 export class AdminBillingMetricsDto {
-  @ApiProperty({ description: 'Monthly Recurring Revenue in SAR (string decimal)', example: '12500.00' })
+  @ApiProperty({ description: 'Monthly Recurring Revenue in SAR (string decimal) — based on plan prices', example: '12500.00' })
   mrr!: string;
+
+  @ApiProperty({ description: 'Realized MRR in SAR — actual revenue from PAID invoices this month', example: '11800.00' })
+  realizedMrr!: string;
 
   @ApiProperty({ description: 'Annual Recurring Revenue in SAR (string decimal)', example: '150000.00' })
   arr!: string;
@@ -316,6 +319,12 @@ export class AdminBillingMetricsDto {
 
   @ApiProperty({ description: 'Subscriptions canceled in the last 30 days', type: Number })
   churn30d!: number;
+
+  @ApiProperty({ description: 'MRR at risk from SUSPENDED subscriptions in SAR', example: '500.00' })
+  atRiskMrr!: string;
+
+  @ApiProperty({ description: 'Count of ACTIVE subscriptions with a scheduled downgrade pending', type: Number })
+  scheduledDowngrades!: number;
 
   @ApiProperty({
     description: 'Count per subscription status',

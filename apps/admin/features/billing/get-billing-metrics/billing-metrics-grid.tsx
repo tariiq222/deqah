@@ -18,8 +18,15 @@ export function BillingMetricsGrid() {
     );
   }
 
+  const isEmpty = data && Number(data.mrr) === 0 && data.counts.ACTIVE === 0 && data.counts.TRIALING === 0;
+
   return (
     <div className="space-y-6">
+      {isEmpty && !isLoading && (
+        <div className="rounded-lg border border-muted bg-muted/10 p-4 text-center text-sm text-muted-foreground">
+          No subscriptions yet — MRR will appear once organizations subscribe to a plan.
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         {isLoading || !data ? (
           <>
@@ -30,10 +37,27 @@ export function BillingMetricsGrid() {
           </>
         ) : (
           <>
-            <MetricCard label="MRR (⃁)" value={formatSar(data.mrr)} tone="success" />
-            <MetricCard label="ARR (⃁)" value={formatSar(data.arr)} tone="success" />
+            <MetricCard label="Committed MRR (⃁)" value={formatSar(data.mrr)} tone="success" />
+            <MetricCard label="Realized MRR (⃁)" value={formatSar(data.realizedMrr)} />
             <MetricCard label="Active subs" value={data.counts.ACTIVE} />
             <MetricCard label="Past due" value={data.counts.PAST_DUE} tone="warning" />
+          </>
+        )}
+      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        {isLoading || !data ? (
+          <>
+            <Skeleton className="h-[100px]" />
+            <Skeleton className="h-[100px]" />
+            <Skeleton className="h-[100px]" />
+            <Skeleton className="h-[100px]" />
+          </>
+        ) : (
+          <>
+            <MetricCard label="ARR (⃁)" value={formatSar(data.arr)} tone="success" />
+            <MetricCard label="Trialing" value={data.counts.TRIALING} />
+            <MetricCard label="Suspended" value={data.counts.SUSPENDED} tone="warning" />
+            <MetricCard label="At-risk MRR (⃁)" value={formatSar(data.atRiskMrr)} tone="warning" />
           </>
         )}
       </div>
@@ -46,9 +70,9 @@ export function BillingMetricsGrid() {
           </>
         ) : (
           <>
-            <MetricCard label="Trialing" value={data.counts.TRIALING} />
-            <MetricCard label="Suspended" value={data.counts.SUSPENDED} tone="warning" />
             <MetricCard label="Churn (30d)" value={data.churn30d} tone="warning" />
+            <MetricCard label="Scheduled downgrades" value={data.scheduledDowngrades} tone="warning" />
+            <MetricCard label="Canceled" value={data.counts.CANCELED} tone="warning" />
           </>
         )}
       </div>

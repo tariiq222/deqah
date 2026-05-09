@@ -21,6 +21,5 @@ export function useListSubscriptionInvoices(p: ListSubscriptionInvoicesParams) {
   return useQuery({
     queryKey: subscriptionInvoicesListKey(p),
     queryFn: () => listSubscriptionInvoices(p),
-    placeholderData: (prev) => prev,
   });
 }

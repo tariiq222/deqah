@@ -52,7 +52,15 @@ export async function buildRevenueReport(
         createdAt: { gte: from, lte: to },
         status: PaymentStatus.COMPLETED,
       },
-      select: { amount: true, createdAt: true },
+      select: {
+        amount: true,
+        createdAt: true,
+        invoice: {
+          select: {
+            bookingId: true,
+          },
+        },
+      },
     }),
   ]);
 
@@ -60,22 +68,34 @@ export async function buildRevenueReport(
   const cancelledBookings = bookings.filter((b) => b.status === BookingStatus.CANCELLED);
   const totalRevenue = payments.reduce((sum, p) => sum + Number(p.amount), 0);
 
-  // By branch
+  const completedBookingIds = new Set(completedBookings.map((b) => b.id));
+
+  // By branch — use actual payment amount linked to booking, not booking.price
   const branchMap = new Map<string, { revenue: number; count: number }>();
-  for (const b of completedBookings) {
-    const existing = branchMap.get(b.branchId) ?? { revenue: 0, count: 0 };
-    branchMap.set(b.branchId, {
-      revenue: existing.revenue + Number(b.price),
+  for (const p of payments) {
+    const bookingId = p.invoice?.bookingId;
+    if (!bookingId || !completedBookingIds.has(bookingId)) continue;
+    const booking = bookings.find((b) => b.id === bookingId);
+    if (!booking) continue;
+    if (branchId && booking.branchId !== branchId) continue;
+    const existing = branchMap.get(booking.branchId) ?? { revenue: 0, count: 0 };
+    branchMap.set(booking.branchId, {
+      revenue: existing.revenue + Number(p.amount),
       count: existing.count + 1,
     });
   }
 
-  // By employee
+  // By employee — use actual payment amount linked to booking
   const employeeMap = new Map<string, { revenue: number; count: number }>();
-  for (const b of completedBookings) {
-    const existing = employeeMap.get(b.employeeId) ?? { revenue: 0, count: 0 };
-    employeeMap.set(b.employeeId, {
-      revenue: existing.revenue + Number(b.price),
+  for (const p of payments) {
+    const bookingId = p.invoice?.bookingId;
+    if (!bookingId || !completedBookingIds.has(bookingId)) continue;
+    const booking = bookings.find((b) => b.id === bookingId);
+    if (!booking) continue;
+    if (employeeId && booking.employeeId !== employeeId) continue;
+    const existing = employeeMap.get(booking.employeeId) ?? { revenue: 0, count: 0 };
+    employeeMap.set(booking.employeeId, {
+      revenue: existing.revenue + Number(p.amount),
       count: existing.count + 1,
     });
   }

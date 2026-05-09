@@ -19,8 +19,9 @@ export class UpdateEmployeeHandler {
   ) {}
 
   async execute(cmd: UpdateEmployeeCommand) {
+    const organizationId = this.tenant.requireOrganizationId();
     const employee = await this.prisma.employee.findFirst({
-      where: { id: cmd.employeeId },
+      where: { id: cmd.employeeId, organizationId },
     });
     if (!employee) throw new NotFoundException('Employee not found');
 

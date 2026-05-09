@@ -11,6 +11,5 @@ export function useListZohoSaasInvoices(p: ListZohoSaasInvoicesParams) {
   return useQuery({
     queryKey: zohoSaasInvoicesListKey(p),
     queryFn: () => listZohoSaasInvoices(p),
-    placeholderData: (prev) => prev,
   });
 }

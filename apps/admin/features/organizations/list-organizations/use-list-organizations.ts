@@ -17,6 +17,5 @@ export function useListOrganizations(p: ListOrganizationsParams) {
   return useQuery({
     queryKey: organizationsListKey(p),
     queryFn: () => listOrganizations(p),
-    placeholderData: (prev) => prev,
   });
 }

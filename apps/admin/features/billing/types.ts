@@ -76,10 +76,13 @@ export interface SubscriptionInvoiceRow {
 
 export interface BillingMetrics {
   mrr: string;
+  realizedMrr: string;
   arr: string;
   currency: string;
   counts: Record<SubscriptionStatus, number>;
   churn30d: number;
+  atRiskMrr: string;
+  scheduledDowngrades: number;
   byPlan: Array<{ planId: string; planSlug: string; activeCount: number; mrr: string }>;
 }
 

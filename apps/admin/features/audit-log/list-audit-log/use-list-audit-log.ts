@@ -17,6 +17,5 @@ export function useListAuditLog(p: ListAuditLogParams) {
   return useQuery({
     queryKey: auditLogListKey(p),
     queryFn: () => listAuditLog(p),
-    placeholderData: (prev) => prev,
   });
 }

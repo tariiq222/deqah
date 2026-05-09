@@ -8,6 +8,5 @@ export function useListSubscriptions(p: ListSubscriptionsParams) {
   return useQuery({
     queryKey: subscriptionsListKey(p),
     queryFn: () => listSubscriptions(p),
-    placeholderData: (prev) => prev,
   });
 }

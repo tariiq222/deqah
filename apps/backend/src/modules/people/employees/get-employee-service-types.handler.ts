@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database';
+import { TenantContextService } from '../../../common/tenant/tenant-context.service';
 
 export interface GetEmployeeServiceTypesQuery {
   employeeId: string;
@@ -20,17 +21,21 @@ export interface GetEmployeeServiceTypesQuery {
  */
 @Injectable()
 export class GetEmployeeServiceTypesHandler {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tenant: TenantContextService,
+  ) {}
 
   async execute(query: GetEmployeeServiceTypesQuery) {
+    const organizationId = this.tenant.requireOrganizationId();
     const link = await this.prisma.employeeService.findFirst({
-      where: { employeeId: query.employeeId, serviceId: query.serviceId },
+      where: { employeeId: query.employeeId, serviceId: query.serviceId, organizationId },
     });
     if (!link) throw new NotFoundException('Employee-service link not found');
 
     const [configs, durationOptions, employeeOverrides] = await Promise.all([
       this.prisma.serviceBookingConfig.findMany({
-        where: { serviceId: query.serviceId, isActive: true },
+        where: { serviceId: query.serviceId, isActive: true, organizationId },
         orderBy: { bookingType: 'asc' },
       }),
       this.prisma.serviceDurationOption.findMany({

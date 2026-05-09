@@ -7,5 +7,7 @@ export function useGetBillingMetrics() {
   return useQuery({
     queryKey: billingMetricsKey,
     queryFn: getBillingMetrics,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   });
 }

@@ -8,6 +8,5 @@ export function useSearchUsers(p: SearchUsersParams) {
   return useQuery({
     queryKey: usersSearchKey(p),
     queryFn: () => searchUsers(p),
-    placeholderData: (prev) => prev,
   });
 }
