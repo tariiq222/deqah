@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database';
+import { TenantContextService } from '../../../common/tenant/tenant-context.service';
 
 export interface DeleteClientCommand {
   clientId: string;
@@ -7,11 +8,15 @@ export interface DeleteClientCommand {
 
 @Injectable()
 export class DeleteClientHandler {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tenant: TenantContextService,
+  ) {}
 
   async execute(cmd: DeleteClientCommand) {
+    const organizationId = this.tenant.requireOrganizationId();
     const client = await this.prisma.client.findFirst({
-      where: { id: cmd.clientId, deletedAt: null },
+      where: { id: cmd.clientId, organizationId, deletedAt: null },
     });
     if (!client) throw new NotFoundException('Client not found');
 

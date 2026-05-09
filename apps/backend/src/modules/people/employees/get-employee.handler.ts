@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database';
+import { TenantContextService } from '../../../common/tenant/tenant-context.service';
 import { mapEmployeeRow } from './employee-row.mapper';
 
 export interface GetEmployeeQuery {
@@ -8,12 +9,16 @@ export interface GetEmployeeQuery {
 
 @Injectable()
 export class GetEmployeeHandler {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tenant: TenantContextService,
+  ) {}
 
   async execute(query: GetEmployeeQuery) {
+    const organizationId = this.tenant.requireOrganizationId();
     const [employee, ratingAgg, bookingCount] = await Promise.all([
       this.prisma.employee.findFirst({
-        where: { id: query.employeeId },
+        where: { id: query.employeeId, organizationId },
         include: {
           branches: true,
           services: true,
@@ -26,7 +31,7 @@ export class GetEmployeeHandler {
         _avg: { score: true },
         _count: { _all: true },
       }),
-      this.prisma.booking.count({ where: { employeeId: query.employeeId } }),
+      this.prisma.booking.count({ where: { employeeId: query.employeeId, organizationId } }),
     ]);
 
     if (!employee) {
