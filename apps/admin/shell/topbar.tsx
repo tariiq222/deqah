@@ -2,17 +2,19 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { ThemeToggle } from '@/shell/theme-toggle';
 
 function SignOutButton() {
   const router = useRouter();
+  const t = useTranslations('common');
   return (
     <Button
       variant="ghost"
       size="sm"
-      aria-label="Sign out"
+      aria-label={t('signOut')}
       onClick={() => {
         window.localStorage.removeItem('admin.accessToken');
         const secureFlag =
@@ -25,7 +27,7 @@ function SignOutButton() {
       className="h-7 gap-1.5 px-2 text-muted-foreground hover:text-foreground"
     >
       <LogOut size={14} strokeWidth={1.75} aria-hidden />
-      <span className="text-xs">Sign out</span>
+      <span className="text-xs">{t('signOut')}</span>
     </Button>
   );
 }

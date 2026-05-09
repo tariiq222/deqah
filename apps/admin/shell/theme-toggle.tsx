@@ -2,14 +2,15 @@
 
 import { Sun, Monitor, Moon } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@deqah/ui/lib/cn';
 import type { Theme } from '@/lib/theme';
 import { THEME_COOKIE } from '@/lib/theme';
 
-const SEGMENTS: { value: Theme; icon: React.ElementType; label: string }[] = [
-  { value: 'light', icon: Sun, label: 'Light' },
-  { value: 'system', icon: Monitor, label: 'System' },
-  { value: 'dark', icon: Moon, label: 'Dark' },
+const SEGMENTS: { value: Theme; icon: React.ElementType; labelKey: string }[] = [
+  { value: 'light', icon: Sun, labelKey: 'light' },
+  { value: 'system', icon: Monitor, labelKey: 'system' },
+  { value: 'dark', icon: Moon, labelKey: 'dark' },
 ];
 
 function applyTheme(theme: Theme) {
@@ -40,6 +41,7 @@ function writeCookie(theme: Theme) {
 export function ThemeToggle() {
   // Lazy initializer — reads cookie synchronously on first render (client only).
   const [active, setActive] = useState<Theme>(() => readCurrentTheme());
+  const t = useTranslations('theme');
 
   // When system is active, keep in sync with OS changes
   useEffect(() => {
@@ -61,14 +63,14 @@ export function ThemeToggle() {
   return (
     <div
       role="group"
-      aria-label="Theme"
+      aria-label={t('toggle')}
       className="flex h-7 items-center gap-0.5 rounded-md border border-border bg-surface-muted p-0.5"
     >
-      {SEGMENTS.map(({ value, icon: Icon, label }) => (
+      {SEGMENTS.map(({ value, icon: Icon, labelKey }) => (
         <button
           key={value}
           type="button"
-          aria-label={label}
+          aria-label={t(labelKey)}
           aria-pressed={active === value}
           onClick={() => select(value)}
           className={cn(
