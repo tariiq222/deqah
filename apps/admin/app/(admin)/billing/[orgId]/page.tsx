@@ -17,6 +17,7 @@ export default function OrgBillingPage({
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
+            {/* TODO i18n: Tenant billing */}
             Tenant billing
           </p>
           <h2 className="text-xl font-semibold">
@@ -27,7 +28,7 @@ export default function OrgBillingPage({
           href="/billing"
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          ← Subscriptions
+          {/* TODO i18n: ← Subscriptions */}← Subscriptions
         </Link>
       </div>
 

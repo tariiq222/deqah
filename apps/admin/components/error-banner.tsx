@@ -1,6 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { AlertOctagon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import * as Sentry from '@sentry/nextjs';
 
 export function ErrorBanner({
@@ -12,6 +13,9 @@ export function ErrorBanner({
   onRetry?: () => void;
   context?: string;
 }) {
+  const t = useTranslations('common');
+  const tErrors = useTranslations('errors');
+
   useEffect(() => {
     if (error instanceof Error) {
       Sentry.captureException(error, { tags: { context: context ?? 'unknown' } });
@@ -23,7 +27,7 @@ export function ErrorBanner({
       ? error.message
       : typeof error === 'string'
         ? error
-        : 'Unknown error';
+        : tErrors('somethingWentWrong');
 
   return (
     <div
@@ -45,7 +49,7 @@ export function ErrorBanner({
           onClick={onRetry}
           className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors shrink-0"
         >
-          Retry
+          {t('retry')}
         </button>
       )}
     </div>

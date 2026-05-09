@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Skeleton } from '@deqah/ui/primitives/skeleton';
 import { Badge } from '@deqah/ui/primitives/badge';
 import {
@@ -39,30 +40,31 @@ function Avatar({ name, email }: { name: string; email: string }) {
   );
 }
 
-function relativeTime(iso: string): string {
+function relativeTime(iso: string, t: (key: string, values?: Record<string, string | number>) => string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const s = Math.floor(diff / 1000);
-  if (s < 60) return 'just now';
+  if (s < 60) return t('table.justNow');
   const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
+  if (m < 60) return t('table.timeAgo', { value: m, unit: 'm' });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
+  if (h < 24) return t('table.timeAgo', { value: h, unit: 'h' });
   const d = Math.floor(h / 24);
-  if (d < 30) return `${d}d ago`;
+  if (d < 30) return t('table.timeAgo', { value: d, unit: 'd' });
   return new Date(iso).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
 }
 
 export function UsersTable({ items, isLoading }: Props) {
+  const t = useTranslations('users');
   return (
     <TooltipProvider delayDuration={200}>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="w-8" />
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Primary org</TableHead>
-            <TableHead className="text-right tabular-nums">Last seen</TableHead>
+            <TableHead>{t('table.name')}</TableHead>
+            <TableHead>{t('table.email')}</TableHead>
+            <TableHead>{t('table.primaryOrg')}</TableHead>
+            <TableHead className="text-right tabular-nums">{t('table.lastSeen')}</TableHead>
             <TableHead className="text-right w-16" />
           </TableRow>
         </TableHeader>
@@ -93,7 +95,7 @@ export function UsersTable({ items, isLoading }: Props) {
                             variant="outline"
                             className="border-primary/40 bg-primary/10 text-primary text-[10px] px-1 py-0"
                           >
-                            admin
+                            {t('table.superAdmin')}
                           </Badge>
                         ) : null}
                       </div>
@@ -125,7 +127,7 @@ export function UsersTable({ items, isLoading }: Props) {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <span className="tabular-nums text-[12px] text-muted-foreground cursor-default">
-                            {relativeTime(u.createdAt)}
+                            {relativeTime(u.createdAt, t)}
                           </span>
                         </TooltipTrigger>
                         <TooltipContent side="left">
@@ -146,7 +148,7 @@ export function UsersTable({ items, isLoading }: Props) {
           {!isLoading && items?.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
-                No users match the current filters.
+                {t('table.empty')}
               </TableCell>
             </TableRow>
           ) : null}

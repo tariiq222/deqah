@@ -69,6 +69,7 @@ export function ReviewStep({ form, onEditStep, errorMessage }: Props) {
           <p className="text-xs text-muted-foreground">
             {form.billingCycle === 'MONTHLY' ? t('monthly') : t('annual')}
           </p>
+          {/* TODO i18n: days trial */}
           <p className="text-xs text-muted-foreground">{form.trialDays} days trial</p>
         </div>
       </div>

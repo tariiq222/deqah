@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import { MetricsGrid } from '@/features/platform-metrics/get-platform-metrics/metrics-grid';
 import { Breadcrumbs } from '@/components/breadcrumbs';
@@ -11,6 +12,7 @@ const RANGES: Range[] = ['24h', '7d', '30d', '90d'];
 
 export default function MetricsPage() {
   const pathname = usePathname();
+  const t = useTranslations('metrics');
   // Range toggle — UI-only; wire to API when BE supports it
   const [range, setRange] = useState<Range>('30d');
 
@@ -20,9 +22,9 @@ export default function MetricsPage() {
 
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">Platform metrics</h2>
+          <h2 className="text-xl font-semibold tracking-tight">{t('title')}</h2>
           <p className="mt-0.5 text-[13px] text-muted-foreground">
-            Cross-tenant snapshot — organizations, users, bookings, revenue.
+            {t('description')}
           </p>
         </div>
 
@@ -40,7 +42,7 @@ export default function MetricsPage() {
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              {r}
+              {t(`ranges.${r}`)}
             </Button>
           ))}
         </div>

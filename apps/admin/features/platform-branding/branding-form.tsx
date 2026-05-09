@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { getPlatformBrand, updatePlatformBrand, type PlatformBrand } from './platform-branding.api';
 import { ApiError } from '@/lib/api-client';
 
@@ -17,6 +18,8 @@ const DEFAULT_BRAND: PlatformBrand = {
 };
 
 export function BrandingForm() {
+  const t = useTranslations('settings.branding');
+
   const [form, setForm] = useState<PlatformBrand>(DEFAULT_BRAND);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -26,9 +29,9 @@ export function BrandingForm() {
     getPlatformBrand()
       .then(setForm)
       .catch((err) => {
-        setLoadError(err instanceof ApiError ? err.message : 'Failed to load branding settings.');
+        setLoadError(err instanceof ApiError ? err.message : t('loadError'));
       });
-  }, []);
+  }, [t]);
 
   function setField<K extends keyof PlatformBrand>(key: K, value: PlatformBrand[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -45,9 +48,9 @@ export function BrandingForm() {
     setSaveMsg(null);
     try {
       await updatePlatformBrand(form);
-      setSaveMsg({ ok: true, text: 'Branding settings saved.' });
+      setSaveMsg({ ok: true, text: t('saveSuccess') });
     } catch (err) {
-      setSaveMsg({ ok: false, text: err instanceof ApiError ? err.message : 'Save failed.' });
+      setSaveMsg({ ok: false, text: err instanceof ApiError ? err.message : t('saveFailed') });
     } finally {
       setSaving(false);
     }
@@ -66,27 +69,27 @@ export function BrandingForm() {
       {/* Brand Colors + Logo */}
       <div className="rounded-lg border border-border p-6 space-y-4">
         <div>
-          <h3 className="font-medium">Brand Identity</h3>
+          <h3 className="font-medium">{t('brandIdentity.title')}</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Platform logo URL and default brand colors shown in admin and email templates.
+            {t('brandIdentity.description')}
           </p>
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="logoUrl" className="text-sm font-medium">Logo URL</label>
+          <label htmlFor="logoUrl" className="text-sm font-medium">{t('brandIdentity.logoUrl')}</label>
           <input
             id="logoUrl"
             type="url"
             value={form.logoUrl}
             onChange={(e) => setField('logoUrl', e.target.value)}
-            placeholder="https://cdn.example.com/logo.svg"
+            placeholder={t('brandIdentity.logoUrlPlaceholder')}
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <label htmlFor="primaryColor" className="text-sm font-medium">Primary Color</label>
+            <label htmlFor="primaryColor" className="text-sm font-medium">{t('brandIdentity.primaryColor')}</label>
             <div className="flex items-center gap-2">
               <input
                 id="primaryColor"
@@ -105,7 +108,7 @@ export function BrandingForm() {
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="accentColor" className="text-sm font-medium">Accent Color</label>
+            <label htmlFor="accentColor" className="text-sm font-medium">{t('brandIdentity.accentColor')}</label>
             <div className="flex items-center gap-2">
               <input
                 id="accentColor"
@@ -128,15 +131,15 @@ export function BrandingForm() {
       {/* Locale Defaults */}
       <div className="rounded-lg border border-border p-6 space-y-4">
         <div>
-          <h3 className="font-medium">Locale Defaults</h3>
+          <h3 className="font-medium">{t('localeDefaults.title')}</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Default locale settings applied to new tenants and platform-level emails.
+            {t('localeDefaults.description')}
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <label htmlFor="localeDefault" className="text-sm font-medium">Default Locale</label>
+            <label htmlFor="localeDefault" className="text-sm font-medium">{t('localeDefaults.defaultLocale')}</label>
             <input
               id="localeDefault"
               type="text"
@@ -148,7 +151,7 @@ export function BrandingForm() {
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="currencyFormat" className="text-sm font-medium">Currency Format</label>
+            <label htmlFor="currencyFormat" className="text-sm font-medium">{t('localeDefaults.currencyFormat')}</label>
             <input
               id="currencyFormat"
               type="text"
@@ -160,7 +163,7 @@ export function BrandingForm() {
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="dateFormat" className="text-sm font-medium">Date Format</label>
+            <label htmlFor="dateFormat" className="text-sm font-medium">{t('localeDefaults.dateFormat')}</label>
             <input
               id="dateFormat"
               type="text"
@@ -179,7 +182,7 @@ export function BrandingForm() {
               onChange={(e) => setLocaleField('rtlDefault', e.target.checked)}
               className="h-4 w-4 rounded border-input"
             />
-            <label htmlFor="rtlDefault" className="text-sm font-medium">RTL by default</label>
+            <label htmlFor="rtlDefault" className="text-sm font-medium">{t('localeDefaults.rtlDefault')}</label>
           </div>
         </div>
       </div>
@@ -202,7 +205,7 @@ export function BrandingForm() {
         disabled={saving}
         className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
       >
-        {saving ? 'Saving...' : 'Save branding settings'}
+        {saving ? t('saving') : t('save')}
       </button>
     </div>
   );

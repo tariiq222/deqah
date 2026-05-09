@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCreatePlan } from '@/features/plans/create-plan/use-create-plan';
 import { DEFAULT_PLAN_LIMITS } from '@/features/plans/plan-limits';
 import { PlanWizard } from '@/features/plans/plan-wizard/plan-wizard';
@@ -17,6 +18,7 @@ const DEFAULT_BASICS: BasicsForm = {
 };
 
 export default function CreatePlanPage() {
+  const t = useTranslations('plans');
   const router = useRouter();
   const mutation = useCreatePlan();
 
@@ -27,11 +29,11 @@ export default function CreatePlanPage() {
           href="/plans"
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          ← back to plans
+          {t('backToPlans')}
         </Link>
-        <h2 className="mt-2 text-xl font-semibold">Create plan</h2>
+        <h2 className="mt-2 text-xl font-semibold">{t('create.title')}</h2>
         <p className="text-sm text-muted-foreground">
-          Add a new subscription plan for tenants.
+          {t('create.description')}
         </p>
       </div>
 

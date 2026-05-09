@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import { useListVerticals } from '@/features/verticals/list-verticals/use-list-verticals';
 import { VerticalsTable } from '@/features/verticals/list-verticals/verticals-table';
@@ -27,6 +28,7 @@ function DetailPanel({
   vertical: VerticalRow;
   onEdit: (v: VerticalRow) => void;
 }) {
+  const t = useTranslations('verticals');
   const verticalRecord = vertical as unknown as Record<string, string | null>;
   const rows = TERMINOLOGY_KEYS.map((k) => {
     const capKey = k.charAt(0).toUpperCase() + k.slice(1);
@@ -44,14 +46,14 @@ function DetailPanel({
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-            Selected
+            {t('detail.selected')}
           </p>
           <h3 className="mt-1 text-base font-semibold">{vertical.nameEn}</h3>
           <p className="text-[13px] text-muted-foreground">{vertical.nameAr}</p>
           <p className="mt-1 font-mono text-[11px] text-muted-foreground">{vertical.slug}</p>
         </div>
         <Button variant="outline" size="sm" className="h-8 shrink-0" onClick={() => onEdit(vertical)}>
-          Edit
+          {t('detail.edit')}
         </Button>
       </div>
 
@@ -61,15 +63,15 @@ function DetailPanel({
 
       <div>
         <p className="mb-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-          Terminology pack
+          {t('detail.terminologyPack')}
         </p>
         {hasTerminology ? (
           <table className="w-full text-[12px]">
             <thead>
               <tr className="border-b border-border">
-                <th className="pb-1 pr-4 text-left font-medium text-muted-foreground">Key</th>
-                <th className="pb-1 pr-4 text-left font-medium text-muted-foreground">AR</th>
-                <th className="pb-1 text-left font-medium text-muted-foreground">EN</th>
+                <th className="pb-1 pr-4 text-left font-medium text-muted-foreground">{t('detail.key')}</th>
+                <th className="pb-1 pr-4 text-left font-medium text-muted-foreground">{t('detail.ar')}</th>
+                <th className="pb-1 text-left font-medium text-muted-foreground">{t('detail.en')}</th>
               </tr>
             </thead>
             <tbody>
@@ -86,7 +88,7 @@ function DetailPanel({
           </table>
         ) : (
           <p className="text-[13px] text-muted-foreground">
-            No terminology overrides — using defaults.
+            {t('detail.noTerminology')}
           </p>
         )}
       </div>
@@ -97,6 +99,7 @@ function DetailPanel({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function VerticalsPage() {
+  const t = useTranslations('verticals');
   const pathname = usePathname();
   const { data, isLoading, error, refetch } = useListVerticals();
   const items = data?.items;
@@ -112,13 +115,13 @@ export default function VerticalsPage() {
 
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">Verticals</h2>
+          <h2 className="text-xl font-semibold tracking-tight">{t('title')}</h2>
           <p className="mt-0.5 text-[13px] text-muted-foreground">
-            Clinic archetypes that drive terminology and seed content.
+            {t('description')}
           </p>
         </div>
         <Button size="sm" className="h-8" onClick={() => setCreateOpen(true)}>
-          Create vertical
+          {t('createButton')}
         </Button>
       </div>
 

@@ -161,7 +161,7 @@ export default function SecuritySettingsPage() {
             <ul className="text-xs text-destructive mt-1">
               {ipErrors.map((e) => (
                 <li key={e}>
-                  Invalid IP/CIDR: <code>{e}</code>
+                  {t('ipAllowlist.invalidEntry', { entry: e })}
                 </li>
               ))}
             </ul>

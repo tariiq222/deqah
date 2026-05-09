@@ -1,9 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { WifiOff } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export function OfflineBanner() {
   const [offline, setOffline] = useState(false);
+  const t = useTranslations('offline');
   useEffect(() => {
     const update = () => setOffline(!navigator.onLine);
     update();
@@ -22,7 +24,7 @@ export function OfflineBanner() {
     >
       <WifiOff aria-hidden size={12} strokeWidth={1.75} className="shrink-0" />
       <span className="text-[12px] font-medium">
-        Offline · changes will sync when reconnected
+        {t('message')}
       </span>
     </div>
   );

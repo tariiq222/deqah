@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Input } from '@deqah/ui/primitives/input';
 import { Label } from '@deqah/ui/primitives/label';
 import { Switch } from '@deqah/ui/primitives/switch';
@@ -50,6 +51,7 @@ export function StepBasics({
   onIsActiveChange,
   showErrors = false,
 }: Props) {
+  const t = useTranslations('plans');
   const set = (field: keyof BasicsForm) => (value: string) =>
     onChange({ ...basics, [field]: value });
 
@@ -76,12 +78,12 @@ export function StepBasics({
           role="alert"
           className="bg-destructive/10 border border-destructive/30 text-destructive text-sm p-3 rounded-md"
         >
-          Fix the highlighted fields to continue.
+          {t('wizard.fixErrors')}
         </div>
       )}
 
       <div className="space-y-1.5">
-        <Label htmlFor="wiz-slug">Plan code</Label>
+        <Label htmlFor="wiz-slug">{t('basics.planCode')}</Label>
         {mode === 'create' ? (
           <>
             <Input
@@ -98,10 +100,10 @@ export function StepBasics({
               }
             />
             <p id="wiz-slug-hint" className="text-xs text-muted-foreground">
-              Uppercase letters, digits, underscores. 2–32 characters.
+              {t('basics.planCodeHint')}
             </p>
             <div className="flex items-center gap-1 flex-wrap">
-              <p className="text-xs text-muted-foreground">Examples:</p>
+              <p className="text-xs text-muted-foreground">{t('basics.planCodeExamples')}</p>
               {SLUG_CHIPS.map((chip) => (
                 <button
                   key={chip}
@@ -116,8 +118,8 @@ export function StepBasics({
             {(slugTypingInvalid || (showErrors && (slugMissing || slugInvalidFormat))) && (
               <p id="wiz-slug-error" className="text-xs text-destructive">
                 {slugMissing
-                  ? 'Plan code is required'
-                  : 'Invalid plan code. Use uppercase letters, digits, and underscores only.'}
+                  ? t('basics.errors.planCodeRequired')
+                  : t('basics.errors.planCodeInvalid')}
               </p>
             )}
           </>
@@ -130,14 +132,14 @@ export function StepBasics({
               readOnly
               aria-readonly="true"
             />
-            <p className="text-xs text-muted-foreground">Plan code is immutable and cannot be changed.</p>
+            <p className="text-xs text-muted-foreground">{t('basics.planCodeImmutable')}</p>
           </>
         )}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="wiz-nameAr">Name (Arabic)</Label>
+          <Label htmlFor="wiz-nameAr">{t('basics.nameAr')}</Label>
           <Input
             id="wiz-nameAr"
             value={basics.nameAr}
@@ -148,12 +150,12 @@ export function StepBasics({
           />
           {showErrors && nameArMissing && (
             <p id="wiz-nameAr-error" className="text-xs text-destructive">
-              Arabic name is required
+              {t('basics.errors.nameArRequired')}
             </p>
           )}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="wiz-nameEn">Name (English)</Label>
+          <Label htmlFor="wiz-nameEn">{t('basics.nameEn')}</Label>
           <Input
             id="wiz-nameEn"
             value={basics.nameEn}
@@ -164,7 +166,7 @@ export function StepBasics({
           />
           {showErrors && nameEnMissing && (
             <p id="wiz-nameEn-error" className="text-xs text-destructive">
-              English name is required
+              {t('basics.errors.nameEnRequired')}
             </p>
           )}
         </div>
@@ -172,7 +174,7 @@ export function StepBasics({
 
       <div className="grid grid-cols-3 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="wiz-monthly">Monthly price</Label>
+          <Label htmlFor="wiz-monthly">{t('basics.monthlyPrice')}</Label>
           <Input
             id="wiz-monthly"
             type="number"
@@ -185,12 +187,12 @@ export function StepBasics({
           />
           {showErrors && priceMonthlyMissing && (
             <p id="wiz-monthly-error" className="text-xs text-destructive">
-              Monthly price is required
+              {t('basics.errors.monthlyRequired')}
             </p>
           )}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="wiz-annual">Annual price</Label>
+          <Label htmlFor="wiz-annual">{t('basics.annualPrice')}</Label>
           <Input
             id="wiz-annual"
             type="number"
@@ -203,12 +205,12 @@ export function StepBasics({
           />
           {showErrors && priceAnnualMissing && (
             <p id="wiz-annual-error" className="text-xs text-destructive">
-              Annual price is required
+              {t('basics.errors.annualRequired')}
             </p>
           )}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="wiz-currency">Currency</Label>
+          <Label htmlFor="wiz-currency">{t('basics.currency')}</Label>
           <Input
             id="wiz-currency"
             value={basics.currency}
@@ -225,7 +227,7 @@ export function StepBasics({
             checked={isActive ?? false}
             onCheckedChange={onIsActiveChange}
           />
-          <Label htmlFor="wiz-isActive">Active</Label>
+          <Label htmlFor="wiz-isActive">{t('basics.isActive')}</Label>
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import {
   Dialog,
@@ -37,6 +38,7 @@ const DEFAULT_FORM = {
 };
 
 export function CreateVerticalDialog({ open, onOpenChange }: Props) {
+  const t = useTranslations('verticals.create');
   const [form, setForm] = useState(DEFAULT_FORM);
   const mutation = useCreateVertical();
 
@@ -75,45 +77,45 @@ export function CreateVerticalDialog({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Create vertical</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
-            Add a new clinic archetype. This action is written to the audit log.
+            {t('description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="cv-slug">Slug (kebab-case)</Label>
+            <Label htmlFor="cv-slug">{t('slug')}</Label>
             <Input
               id="cv-slug"
               value={form.slug}
               onChange={(e) => set('slug')(e.target.value)}
-              placeholder="e.g. general-medicine"
+              placeholder={t('slugPlaceholder')}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="cv-nameAr">Name (Arabic)</Label>
+            <Label htmlFor="cv-nameAr">{t('nameAr')}</Label>
             <Input
               id="cv-nameAr"
               value={form.nameAr}
               onChange={(e) => set('nameAr')(e.target.value)}
-              placeholder="اسم التخصص"
+              placeholder={t('nameArPlaceholder')}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="cv-nameEn">Name (English)</Label>
+            <Label htmlFor="cv-nameEn">{t('nameEn')}</Label>
             <Input
               id="cv-nameEn"
               value={form.nameEn}
               onChange={(e) => set('nameEn')(e.target.value)}
-              placeholder="Vertical name"
+              placeholder={t('nameEnPlaceholder')}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="cv-family">Template family</Label>
+            <Label htmlFor="cv-family">{t('templateFamily')}</Label>
             <Select
               value={form.templateFamily}
               onValueChange={(v) =>
@@ -121,7 +123,7 @@ export function CreateVerticalDialog({ open, onOpenChange }: Props) {
               }
             >
               <SelectTrigger id="cv-family">
-                <SelectValue placeholder="Select family…" />
+                <SelectValue placeholder={t('templateFamilyPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="MEDICAL">MEDICAL</SelectItem>
@@ -133,7 +135,7 @@ export function CreateVerticalDialog({ open, onOpenChange }: Props) {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="cv-descAr">Description (Arabic, optional)</Label>
+            <Label htmlFor="cv-descAr">{t('descriptionAr')}</Label>
             <Textarea
               id="cv-descAr"
               rows={2}
@@ -143,7 +145,7 @@ export function CreateVerticalDialog({ open, onOpenChange }: Props) {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="cv-descEn">Description (English, optional)</Label>
+            <Label htmlFor="cv-descEn">{t('descriptionEn')}</Label>
             <Textarea
               id="cv-descEn"
               rows={2}
@@ -162,10 +164,10 @@ export function CreateVerticalDialog({ open, onOpenChange }: Props) {
             }}
             disabled={mutation.isPending}
           >
-            Cancel
+            {t('cancel')}
           </Button>
           <Button onClick={submit} disabled={mutation.isPending || !isValid}>
-            {mutation.isPending ? 'Creating…' : 'Create vertical'}
+            {mutation.isPending ? t('submitting') : t('submit')}
           </Button>
         </DialogFooter>
       </DialogContent>

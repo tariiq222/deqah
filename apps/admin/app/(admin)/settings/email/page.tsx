@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { testSend } from '@/features/platform-email/platform-email.api';
 import { ApiError } from '@/lib/api-client';
 
 export default function EmailSettingsPage() {
+  const t = useTranslations('settings.email');
+
   const [testTo, setTestTo] = useState('');
   const [testSlug, setTestSlug] = useState('');
   const [testResult, setTestResult] = useState<{ ok: boolean; reason?: string } | null>(null);
@@ -21,7 +24,7 @@ export default function EmailSettingsPage() {
     } catch (err) {
       setTestResult({
         ok: false,
-        reason: err instanceof ApiError ? err.message : 'Unexpected error',
+        reason: err instanceof ApiError ? err.message : 'Unexpected error', // TODO i18n: Unexpected error
       });
     } finally {
       setIsSending(false);
@@ -31,23 +34,23 @@ export default function EmailSettingsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-semibold">Email Settings</h2>
+        <h2 className="text-lg font-semibold">{t('title')}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Configure platform email delivery via Resend.
-          API keys are managed via environment variables (RESEND_API_KEY, RESEND_FROM, RESEND_REPLY_TO).
+          {t('description')}
         </p>
       </div>
 
       <div className="rounded-lg border border-border p-6 space-y-4">
-        <h3 className="font-medium">Test Email Send</h3>
+        <h3 className="font-medium">{t('testSend.title')}</h3>
         <p className="text-sm text-muted-foreground">
+          {/* TODO i18n: Send a test email using any platform template. Useful to verify Resend configuration is working. */}
           Send a test email using any platform template. Useful to verify Resend configuration is working.
         </p>
         <form onSubmit={handleTestSend} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <label htmlFor="test-slug" className="text-sm font-medium">
-                Template Slug
+                {t('testSend.slug')}
               </label>
               <input
                 id="test-slug"
@@ -61,7 +64,7 @@ export default function EmailSettingsPage() {
             </div>
             <div className="space-y-1">
               <label htmlFor="test-to" className="text-sm font-medium">
-                Recipient Email
+                {t('testSend.to')}
               </label>
               <input
                 id="test-to"
@@ -79,7 +82,7 @@ export default function EmailSettingsPage() {
             disabled={isSending}
             className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
           >
-            {isSending ? 'Sending...' : 'Send test email'}
+            {isSending ? t('testSend.submitting') : t('testSend.submit')}
           </button>
         </form>
 
@@ -91,34 +94,35 @@ export default function EmailSettingsPage() {
                 : 'bg-destructive/10 text-destructive border border-destructive/30'
             }`}
           >
-            {testResult.ok ? 'Email sent successfully.' : `Failed: ${testResult.reason ?? 'Unknown error'}`}
+            {/* TODO i18n: 'Unknown error' fallback has no JSON key */}
+            {testResult.ok ? t('testSend.success') : `${t('testSend.failedPrefix')}${testResult.reason ?? 'Unknown error'}`}
           </div>
         )}
       </div>
 
       <div className="rounded-lg border border-border p-6 space-y-4">
-        <h3 className="font-medium">Email Templates</h3>
+        <h3 className="font-medium">{t('templates.title')}</h3>
         <p className="text-sm text-muted-foreground">
-          Manage bilingual platform email templates (AR/EN).
+          {t('templates.description')}
         </p>
         <Link
           href="/settings/email/templates"
           className="inline-flex items-center rounded-md border border-border px-4 py-2 text-sm hover:bg-muted"
         >
-          View all templates →
+          {t('templates.viewAll')}
         </Link>
       </div>
 
       <div className="rounded-lg border border-border p-6 space-y-4">
-        <h3 className="font-medium">Delivery Logs</h3>
+        <h3 className="font-medium">{t('logs.title')}</h3>
         <p className="text-sm text-muted-foreground">
-          Inspect recent platform email delivery events.
+          {t('logs.description')}
         </p>
         <Link
           href="/settings/email/logs"
           className="inline-flex items-center rounded-md border border-border px-4 py-2 text-sm hover:bg-muted"
         >
-          View logs →
+          {t('logs.viewLogs')}
         </Link>
       </div>
     </div>

@@ -21,7 +21,7 @@ export function Providers({ children }: ProvidersProps) {
   );
 
   return (
-    <DirectionProvider dir="ltr">
+    <DirectionProvider dir="rtl">
       <QueryClientProvider client={client}>
         {children}
         <Toaster richColors position="top-right" />

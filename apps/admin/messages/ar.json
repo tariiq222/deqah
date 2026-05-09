@@ -1,6 +1,6 @@
 {
   "nav": {
-    "title": "Deqah - لوحة التحكم",
+    "title": "دقّة",
     "overview": "نظرة عامة",
     "organizations": "المنظمات",
     "users": "المستخدمين",
@@ -12,7 +12,120 @@
     "auditLog": "سجل التدقيق",
     "impersonation": "جلسات الانتحال",
     "notifications": "سجل الإشعارات",
-    "settings": "الإعدادات"
+    "settings": "الإعدادات",
+    "sections": {
+      "operate": "التشغيل",
+      "money": "المالية",
+      "configure": "الضبط",
+      "inspect": "المراجعة"
+    },
+    "aria": {
+      "mainNavigation": "التنقّل الرئيسي"
+    },
+    "subtitle": "منصّة التحكم"
+  },
+  "common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "close": "إغلاق",
+    "confirm": "تأكيد",
+    "loading": "جارٍ التحميل…",
+    "error": "خطأ",
+    "success": "نجح",
+    "retry": "إعادة المحاولة",
+    "search": "بحث",
+    "filter": "تصفية",
+    "reset": "إعادة ضبط",
+    "export": "تصدير",
+    "refresh": "تحديث",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق",
+    "yes": "نعم",
+    "no": "لا",
+    "all": "الكل",
+    "none": "لا شيء",
+    "optional": "اختياري",
+    "required": "مطلوب",
+    "copy": "نسخ",
+    "copied": "تم النسخ",
+    "view": "عرض",
+    "viewAll": "عرض الكل",
+    "actions": "الإجراءات",
+    "status": "الحالة",
+    "name": "الاسم",
+    "email": "البريد الإلكتروني",
+    "createdAt": "تاريخ الإنشاء",
+    "updatedAt": "تاريخ التحديث",
+    "page": "الصفحة",
+    "of": "من",
+    "total": "الإجمالي",
+    "noResults": "لا توجد نتائج.",
+    "signOut": "تسجيل الخروج",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "unlimited": "غير محدود",
+    "saving": "جارٍ الحفظ…",
+    "creating": "جارٍ الإنشاء…",
+    "deleting": "جارٍ الحذف…"
+  },
+  "theme": {
+    "light": "فاتح",
+    "dark": "داكن",
+    "system": "النظام",
+    "toggle": "تبديل المظهر"
+  },
+  "breadcrumbs": {
+    "home": "الرئيسية",
+    "organizations": "المنظمات",
+    "detail": "التفاصيل",
+    "plans": "الخطط",
+    "new": "جديد",
+    "edit": "تعديل",
+    "verticals": "القطاعات",
+    "billing": "الفوترة",
+    "invoices": "الفواتير",
+    "metrics": "المقاييس",
+    "zoho": "زوهو",
+    "auditLog": "سجل التدقيق",
+    "impersonation": "الانتحال",
+    "users": "المستخدمون",
+    "notifications": "الإشعارات",
+    "settings": "الإعدادات",
+    "email": "البريد الإلكتروني",
+    "templates": "القوالب",
+    "logs": "السجلات",
+    "branding": "العلامة التجارية",
+    "health": "الصحة",
+    "security": "الأمان",
+    "organization": "المنظمة",
+    "compare": "المقارنة"
+  },
+  "errors": {
+    "somethingWentWrong": "حدث خطأ ما.",
+    "networkError": "خطأ في الشبكة. تحقق من اتصالك.",
+    "unauthorized": "غير مصرّح. يرجى تسجيل الدخول.",
+    "forbidden": "ليس لديك صلاحية لتنفيذ هذا الإجراء.",
+    "notFound": "المورد المطلوب غير موجود.",
+    "serverError": "حدث خطأ غير متوقع في الخادم.",
+    "validationFailed": "فشل التحقق. راجع الحقول المميّزة.",
+    "sessionExpired": "انتهت جلستك. يرجى تسجيل الدخول مجدداً.",
+    "retry": "حاول مجدداً"
+  },
+  "overview": {
+    "title": "نظرة عامة",
+    "description": "لقطة شاملة للمنصة",
+    "stats": {
+      "totalOrgs": "المنظمات",
+      "activeOrgs": "نشطة",
+      "suspendedOrgs": "معلّقة",
+      "newThisMonth": "جديدة هذا الشهر",
+      "totalUsers": "المستخدمون",
+      "bookings30d": "الحجوزات (30 يوم)",
+      "lifetimeRevenue": "إجمالي الإيراد"
+    }
   },
   "notifications": {
     "title": "سجل توصيل الإشعارات",
@@ -147,6 +260,24 @@
       "monthlyPrice": "السعر الشهري",
       "priceSar": "{amount} SAR"
     },
+    "suspend": {
+      "title": "تعليق المنظمة",
+      "description": "تعليق {name}. سيتم إنهاء الجلسات النشطة وإلغاء رموز الوصول.",
+      "cancel": "إلغاء",
+      "submit": "تعليق",
+      "submitting": "جارٍ التعليق...",
+      "success": "تم تعليق المنظمة.",
+      "errorFallback": "فشل تعليق المنظمة"
+    },
+    "reinstate": {
+      "title": "إعادة تفعيل المنظمة",
+      "description": "إعادة تفعيل {name}. ستستعيد المنظمة صلاحية الوصول إلى المنصة.",
+      "cancel": "إلغاء",
+      "submit": "إعادة تفعيل",
+      "submitting": "جارٍ إعادة التفعيل...",
+      "success": "تمت إعادة تفعيل المنظمة.",
+      "errorFallback": "فشل إعادة تفعيل المنظمة"
+    },
     "update": {
       "title": "تعديل بيانات المنظمة",
       "description": "حدّث أسماء التاننت أو القطاع أو تاريخ التجربة. كل تغيير يحتاج سبب تدقيق.",
@@ -171,11 +302,270 @@
       "success": "تمت أرشفة المنظمة.",
       "errorFallback": "فشل أرشفة المنظمة"
     },
+    "changePlan": {
+      "title": "تغيير الخطة",
+      "description": "نقل هذه المنظمة إلى خطة اشتراك مختلفة.",
+      "currentPlan": "الخطة الحالية",
+      "newPlan": "الخطة الجديدة",
+      "newPlanPlaceholder": "اختر خطة",
+      "reason": "السبب",
+      "reasonPlaceholder": "اشرح سبب تغيير الخطة (10 أحرف على الأقل)",
+      "reasonError": "يجب أن يكون السبب 10 أحرف على الأقل ({count}/10).",
+      "cancel": "إلغاء",
+      "submit": "تغيير الخطة",
+      "submitting": "جارٍ التغيير…",
+      "success": "تم تغيير الخطة.",
+      "errorFallback": "فشل تغيير الخطة"
+    },
+    "impersonate": {
+      "button": "انتحال هوية مستخدم",
+      "title": "انتحال هوية مستخدم في {orgName}",
+      "description": "تُصدر جلسة ظل لمدة 15 دقيقة. كل طلب تُرسله في ظلها يُسجَّل بمعرّف مدير المنصة. أنهِ الجلسة يدوياً من صفحة الجلسات أو ستنتهي تلقائياً.",
+      "targetUserId": "معرّف المستخدم المستهدف (UUID)",
+      "targetUserIdPlaceholder": "00000000-0000-0000-0000-000000000000",
+      "targetUserIdHint": "الصق UUID المستخدم من صفحة المستخدمين. انتحال هوية مدير آخر مرفوض.",
+      "cancel": "إلغاء",
+      "submit": "بدء الجلسة والانتقال",
+      "submitting": "جارٍ البدء…"
+    },
     "error": {
       "loadFailed": "فشل التحميل: {message}"
     }
   },
+  "users": {
+    "title": "المستخدمون",
+    "description": "بحث شامل عن المستخدمين عبر جميع التانانت. أصدر كلمات مرور مؤقتة عند الحاجة.",
+    "totalCount": "الإجمالي {count}",
+    "search": {
+      "placeholder": "email@…",
+      "orgIdPlaceholder": "معرّف المنظمة",
+      "reset": "إعادة ضبط"
+    },
+    "table": {
+      "name": "الاسم",
+      "email": "البريد الإلكتروني",
+      "primaryOrg": "المنظمة الرئيسية",
+      "lastSeen": "آخر ظهور",
+      "actions": "الإجراءات",
+      "superAdmin": "مدير",
+      "empty": "لا يوجد مستخدمون يطابقون الفلاتر الحالية.",
+      "justNow": "الآن",
+      "timeAgo": "منذ {value}{unit}"
+    },
+    "resetPassword": {
+      "button": "إعادة تعيين كلمة المرور",
+      "title": "إعادة تعيين كلمة مرور {email}",
+      "description": "تُصدر كلمة مرور مؤقتة آمنة وترسلها للمستخدم بالبريد. يُسجَّل هذا الإجراء في سجل التدقيق.",
+      "cancel": "إلغاء",
+      "submit": "تأكيد إعادة التعيين",
+      "submitting": "جارٍ إعادة التعيين…",
+      "success": "تم إرسال كلمة المرور المؤقتة إلى {email}.",
+      "errorFallback": "فشل إعادة تعيين كلمة المرور"
+    }
+  },
+  "plans": {
+    "title": "الخطط",
+    "description": "خطط الاشتراك المتاحة للتانانت.",
+    "createButton": "إنشاء خطة",
+    "compareButton": "مقارنة الخطط",
+    "backToPlans": "← العودة إلى الخطط",
+    "backToPlansShort": "← الخطط",
+    "create": {
+      "title": "إنشاء خطة",
+      "description": "أضف خطة اشتراك جديدة للتانانت."
+    },
+    "edit": {
+      "title": "تعديل الخطة",
+      "description": "تحديث خطة الاشتراك. يُسجَّل في سجل التدقيق.",
+      "notFound": "الخطة غير موجودة."
+    },
+    "compare": {
+      "title": "مقارنة الخطط",
+      "description": "حدود الميزات عبر جميع الخطط جنباً إلى جنب. عدّل أي خلية لتأجيل التغيير."
+    },
+    "table": {
+      "slug": "المعرّف",
+      "name": "الاسم",
+      "subscribers": "المشتركون",
+      "monthly": "شهري",
+      "annual": "سنوي",
+      "status": "الحالة",
+      "actions": "الإجراءات",
+      "empty": "لا توجد خطط. أنشئ واحدة باستخدام الزر أعلاه.",
+      "subscriberTitle": "{count} مشترك نشط",
+      "subscribersTitlePlural": "{count} مشتركين نشطين"
+    },
+    "wizard": {
+      "steps": {
+        "basics": "الأساسيات",
+        "features": "الميزات",
+        "review": "المراجعة"
+      },
+      "back": "رجوع",
+      "cancel": "إلغاء",
+      "next": "التالي",
+      "createSubmit": "إنشاء الخطة",
+      "editSubmit": "حفظ التغييرات",
+      "creating": "جارٍ الإنشاء…",
+      "saving": "جارٍ الحفظ…",
+      "fixErrors": "أصلح الحقول المميّزة للمتابعة.",
+      "reviewConfirm": "راجع التفاصيل أعلاه، ثم اضغط الزر أدناه للتأكيد."
+    },
+    "basics": {
+      "planCode": "رمز الخطة",
+      "planCodeHint": "أحرف كبيرة وأرقام وشرطات سفلية. 2–32 حرفاً.",
+      "planCodeExamples": "أمثلة:",
+      "planCodeImmutable": "رمز الخطة ثابت ولا يمكن تغييره.",
+      "nameAr": "الاسم (عربي)",
+      "nameEn": "الاسم (إنجليزي)",
+      "monthlyPrice": "السعر الشهري",
+      "annualPrice": "السعر السنوي",
+      "currency": "العملة",
+      "isActive": "نشط",
+      "errors": {
+        "planCodeRequired": "رمز الخطة مطلوب",
+        "planCodeInvalid": "رمز الخطة غير صالح. استخدم أحرفاً كبيرة وأرقاماً وشرطات سفلية فقط.",
+        "nameArRequired": "الاسم العربي مطلوب",
+        "nameEnRequired": "الاسم الإنجليزي مطلوب",
+        "monthlyRequired": "السعر الشهري مطلوب",
+        "annualRequired": "السعر السنوي مطلوب"
+      }
+    },
+    "review": {
+      "planBasics": "أساسيات الخطة",
+      "limitsAndFeatures": "الحدود والميزات",
+      "planCode": "رمز الخطة",
+      "nameAr": "الاسم (عربي)",
+      "nameEn": "الاسم (إنجليزي)",
+      "monthlyPrice": "السعر الشهري",
+      "annualPrice": "السعر السنوي",
+      "statusLabel": "الحالة",
+      "featuresEnabled": "{enabled} / {total} ميزة مفعّلة",
+      "overageRates": "معدلات الزيادة",
+      "unlimited": "غير محدود"
+    },
+    "delete": {
+      "title": "حذف الخطة",
+      "description": "أنت على وشك حذف {name} ({slug}). لا يمكن التراجع عن هذا الإجراء ويُسجَّل في سجل التدقيق.",
+      "cancel": "إلغاء",
+      "submit": "حذف الخطة",
+      "submitting": "جارٍ الحذف…",
+      "success": "تم حذف الخطة.",
+      "errorFallback": "فشل حذف الخطة"
+    }
+  },
+  "verticals": {
+    "title": "القطاعات",
+    "description": "نماذج العيادات التي تحدد المصطلحات والمحتوى الافتراضي.",
+    "createButton": "إنشاء قطاع",
+    "detail": {
+      "selected": "المحدد",
+      "terminologyPack": "حزمة المصطلحات",
+      "noTerminology": "لا توجد مصطلحات مخصصة — يستخدم الافتراضي.",
+      "key": "المفتاح",
+      "ar": "عربي",
+      "en": "إنجليزي",
+      "edit": "تعديل"
+    },
+    "table": {
+      "slug": "المعرّف",
+      "name": "الاسم",
+      "status": "الحالة",
+      "actions": "الإجراءات",
+      "empty": "لا توجد قطاعات. أنشئ واحداً باستخدام الزر أعلاه.",
+      "editTooltip": "تعديل",
+      "deleteTooltip": "حذف"
+    },
+    "status": {
+      "active": "نشط",
+      "inactive": "غير نشط"
+    },
+    "create": {
+      "title": "إنشاء قطاع",
+      "description": "أضف نموذج عيادة جديداً. يُسجَّل هذا الإجراء في سجل التدقيق.",
+      "slug": "المعرّف (kebab-case)",
+      "slugPlaceholder": "مثال: general-medicine",
+      "nameAr": "الاسم (عربي)",
+      "nameArPlaceholder": "اسم التخصص",
+      "nameEn": "الاسم (إنجليزي)",
+      "nameEnPlaceholder": "Vertical name",
+      "templateFamily": "عائلة القالب",
+      "templateFamilyPlaceholder": "اختر العائلة…",
+      "descriptionAr": "الوصف (عربي، اختياري)",
+      "descriptionEn": "الوصف (إنجليزي، اختياري)",
+      "cancel": "إلغاء",
+      "submit": "إنشاء قطاع",
+      "submitting": "جارٍ الإنشاء…",
+      "success": "تم إنشاء القطاع.",
+      "errorFallback": "فشل إنشاء القطاع"
+    },
+    "update": {
+      "title": "تعديل القطاع — {slug}",
+      "description": "تحديث تفاصيل القطاع. لا يمكن تغيير المعرّف بعد الإنشاء.",
+      "nameAr": "الاسم (عربي)",
+      "nameEn": "الاسم (إنجليزي)",
+      "templateFamily": "عائلة القالب",
+      "descriptionAr": "الوصف (عربي، اختياري)",
+      "descriptionEn": "الوصف (إنجليزي، اختياري)",
+      "cancel": "إلغاء",
+      "submit": "حفظ التغييرات",
+      "submitting": "جارٍ الحفظ…",
+      "success": "تم تحديث القطاع.",
+      "errorFallback": "فشل تحديث القطاع"
+    },
+    "delete": {
+      "title": "حذف القطاع",
+      "description": "أنت على وشك حذف {name} ({slug}). لا يمكن التراجع عن هذا الإجراء ويُسجَّل في سجل التدقيق.",
+      "cancel": "إلغاء",
+      "submit": "حذف القطاع",
+      "submitting": "جارٍ الحذف…",
+      "success": "تم حذف القطاع.",
+      "errorFallback": "فشل حذف القطاع"
+    }
+  },
   "billing": {
+    "title": "الفوترة",
+    "description": "اشتراكات SaaS عبر جميع التانانت.",
+    "invoicesLink": "الفواتير",
+    "metricsLink": "المقاييس",
+    "zohoLink": "جدولة زوهو",
+    "metrics": {
+      "title": "المقاييس",
+      "description": "MRR وARR ومعدل التراجع وإيرادات كل خطة عبر جميع التانانت.",
+      "mrr": "MRR",
+      "arr": "ARR",
+      "activeSubscriptions": "الاشتراكات النشطة",
+      "trialingSubscriptions": "قيد التجربة",
+      "pastDueSubscriptions": "متأخرة الدفع",
+      "loadError": "فشل تحميل مقاييس الفوترة: {message}"
+    },
+    "detail": {
+      "plan": "الخطة",
+      "status": "الحالة",
+      "cycle": "الدورة",
+      "period": "الفترة",
+      "mrr": "MRR",
+      "lastPayment": "آخر دفعة",
+      "trialEnds": "تنتهي التجربة",
+      "pastDueSince": "متأخر منذ",
+      "lastFailure": "آخر فشل",
+      "noSubscription": "لا يوجد اشتراك لهذه المنظمة.",
+      "recentInvoices": "الفواتير الأخيرة",
+      "credits": "الرصيد",
+      "usage": "الاستخدام",
+      "dunningAttempts": "محاولات التحصيل",
+      "noInvoices": "لا توجد فواتير.",
+      "noCredits": "لم يُمنح أي رصيد.",
+      "noUsage": "لا توجد سجلات استخدام للفترة الحالية.",
+      "changePlanButton": "تغيير الخطة…",
+      "grantCreditButton": "منح رصيد…",
+      "waiveButton": "إعفاء",
+      "refundButton": "استرداد",
+      "creditUnused": "غير مُستخدم",
+      "creditGranted": "تاريخ المنح",
+      "creditConsumed": "تاريخ الاستخدام",
+      "creditReason": "السبب"
+    },
     "tables": {
       "invoice": "الفاتورة",
       "organization": "المنظمة",
@@ -194,6 +584,14 @@
       "emptyInvoices": "لا توجد فواتير تطابق الفلاتر الحالية.",
       "priceMonthly": "{amount} SAR/شهرياً"
     },
+    "filters": {
+      "status": "الحالة",
+      "allStatuses": "كل الحالات",
+      "organizationId": "معرّف المنظمة",
+      "fromDate": "من تاريخ",
+      "toDate": "إلى تاريخ",
+      "reset": "إعادة ضبط"
+    },
     "subscriptionStatus": {
       "TRIALING": "تجربة",
       "ACTIVE": "نشط",
@@ -207,9 +605,213 @@
       "PAID": "مدفوعة",
       "FAILED": "فشلت",
       "VOID": "ملغاة"
+    },
+    "dunningStatus": {
+      "succeeded": "نجح",
+      "failed": "فشل",
+      "pending": "معلّق"
+    },
+    "waive": {
+      "title": "إعفاء من الفاتورة",
+      "description": "إلغاء الفاتورة {invoiceId} بقيمة {amount} {currency}. لا تتحرك أموال. للفواتير DUE/FAILED فقط. الفواتير المدفوعة تتطلب استرداداً. يُسجَّل.",
+      "reasonLabel": "السبب",
+      "reasonPlaceholder": "اشرح سبب الإعفاء من هذه الفاتورة (10 أحرف على الأقل)",
+      "reasonError": "يجب أن يكون السبب 10 أحرف على الأقل ({count}/10).",
+      "cancel": "إلغاء",
+      "submit": "إعفاء من الفاتورة",
+      "submitting": "جارٍ الإعفاء…",
+      "success": "تم الإعفاء من الفاتورة.",
+      "errorFallback": "فشل الإعفاء من الفاتورة"
+    },
+    "grantCredit": {
+      "title": "منح رصيد",
+      "description": "يطبّق رصيداً على الفاتورة التالية لهذه المنظمة. النطاق: 1 – 100,000 SAR. يُسجَّل.",
+      "amountLabel": "المبلغ (SAR)",
+      "amountPlaceholder": "50",
+      "amountError": "يجب أن يكون المبلغ بين 1 و100,000 SAR.",
+      "reasonLabel": "السبب",
+      "reasonPlaceholder": "اشرح سبب منح هذا الرصيد (10 أحرف على الأقل)",
+      "reasonError": "يجب أن يكون السبب 10 أحرف على الأقل ({count}/10).",
+      "cancel": "إلغاء",
+      "submit": "منح الرصيد",
+      "submitting": "جارٍ المنح…",
+      "success": "تم منح الرصيد.",
+      "errorFallback": "فشل منح الرصيد"
+    },
+    "changePlan": {
+      "title": "تغيير الخطة",
+      "description": "نقل هذه المنظمة إلى خطة مختلفة. التغيير فوري بدون تسوية — تعكس الفاتورة التالية السعر الجديد. يُسجَّل.",
+      "currentPlan": "الخطة الحالية",
+      "newPlan": "الخطة الجديدة",
+      "newPlanPlaceholder": "اختر خطة",
+      "newPlanLoading": "جارٍ التحميل…",
+      "reasonLabel": "السبب",
+      "reasonPlaceholder": "اشرح سبب تغيير هذه الخطة (10 أحرف على الأقل)",
+      "reasonError": "يجب أن يكون السبب 10 أحرف على الأقل ({count}/10).",
+      "cancel": "إلغاء",
+      "submit": "تغيير الخطة",
+      "submitting": "جارٍ التغيير…",
+      "success": "تم تغيير الخطة.",
+      "errorFallback": "فشل تغيير الخطة"
+    },
+    "refund": {
+      "title": "استرداد الفاتورة",
+      "description": "يستدعي Moyasar لاسترداد الفاتورة {invoiceId}. تعود الأموال إلى بطاقة المنظمة. تحرّك مالي حقيقي. يُسجَّل.",
+      "invoiceTotal": "إجمالي الفاتورة",
+      "alreadyRefunded": "المسترد مسبقاً",
+      "refundable": "قابل للاسترداد",
+      "refundAmountLabel": "مبلغ الاسترداد",
+      "full": "كامل",
+      "partial": "جزئي",
+      "partialAmountLabel": "المبلغ الجزئي",
+      "partialAmountPlaceholder": "حتى {max}",
+      "partialAmountError": "يجب أن يكون المبلغ بين 0.01 و{max} {currency}.",
+      "reasonLabel": "السبب",
+      "reasonPlaceholder": "اشرح سبب إصدار هذا الاسترداد (10 أحرف على الأقل)",
+      "reasonError": "يجب أن يكون السبب 10 أحرف على الأقل ({count}/10).",
+      "cancel": "إلغاء",
+      "submit": "استرداد عبر Moyasar",
+      "submitting": "جارٍ المعالجة…",
+      "success": "تمت معالجة الاسترداد.",
+      "errorFallback": "فشل معالجة الاسترداد"
     }
   },
+  "auditLog": {
+    "title": "سجل التدقيق",
+    "description": "كل إجراء تدميري لمدير المنصة. للقراءة فقط.",
+    "totalEntries": "{count} إدخال",
+    "filters": {
+      "actionType": "نوع الإجراء",
+      "allActionTypes": "كل أنواع الإجراءات",
+      "organizationId": "معرّف المنظمة",
+      "reset": "إعادة ضبط"
+    },
+    "table": {
+      "actor": "المنفّذ",
+      "action": "الإجراء",
+      "when": "التوقيت",
+      "empty": "لا توجد إدخالات تدقيق تطابق الفلاتر الحالية."
+    },
+    "actionTypes": {
+      "SUSPEND_ORG": "SUSPEND_ORG",
+      "REINSTATE_ORG": "REINSTATE_ORG",
+      "IMPERSONATE_START": "IMPERSONATE_START",
+      "IMPERSONATE_END": "IMPERSONATE_END",
+      "RESET_PASSWORD": "RESET_PASSWORD",
+      "PLAN_CREATE": "PLAN_CREATE",
+      "PLAN_UPDATE": "PLAN_UPDATE",
+      "PLAN_DELETE": "PLAN_DELETE",
+      "VERTICAL_CREATE": "VERTICAL_CREATE",
+      "VERTICAL_UPDATE": "VERTICAL_UPDATE",
+      "VERTICAL_DELETE": "VERTICAL_DELETE",
+      "INVOICE_WAIVED": "INVOICE_WAIVED",
+      "INVOICE_REFUNDED": "INVOICE_REFUNDED",
+      "BILLING_CREDIT_GRANTED": "BILLING_CREDIT_GRANTED",
+      "PLAN_CHANGED": "PLAN_CHANGED",
+      "PLATFORM_SETTING_UPDATED": "PLATFORM_SETTING_UPDATED"
+    },
+    "pagination": {
+      "summary": "الصفحة {page} من {totalPages}",
+      "previous": "السابق",
+      "next": "التالي"
+    }
+  },
+  "impersonation": {
+    "title": "جلسات الانتحال",
+    "description": "جلسات الظل النشطة والتاريخية. أنهِ أي جلسة نشطة فوراً.",
+    "filters": {
+      "allSessions": "كل الجلسات",
+      "activeOnly": "النشطة فقط",
+      "endedOrExpired": "المنتهية / المنتهية الصلاحية"
+    },
+    "sections": {
+      "activeNow": "نشط الآن",
+      "pastSessions": "الجلسات السابقة"
+    },
+    "table": {
+      "actor": "المنفّذ",
+      "targetUser": "المستخدم المستهدف",
+      "organization": "المنظمة",
+      "started": "تاريخ البدء",
+      "ended": "تاريخ الانتهاء",
+      "duration": "المدة",
+      "endSession": "إنهاء الجلسة",
+      "endSessionAriaLabel": "إنهاء جلسة الانتحال",
+      "activeDot": "نشط"
+    },
+    "empty": {
+      "noActiveSessions": "لا توجد جلسات نشطة.",
+      "noPastSessions": "لا توجد جلسات سابقة."
+    },
+    "pagination": {
+      "summary": "الصفحة {page} من {totalPages}",
+      "previous": "السابق",
+      "next": "التالي"
+    },
+    "endSession": {
+      "success": "تم إنهاء جلسة الانتحال.",
+      "errorFallback": "فشل إنهاء الجلسة"
+    }
+  },
+  "metrics": {
+    "title": "مقاييس المنصة",
+    "description": "لقطة شاملة — المنظمات والمستخدمون والحجوزات والإيراد.",
+    "ranges": {
+      "24h": "24 ساعة",
+      "7d": "7 أيام",
+      "30d": "30 يوماً",
+      "90d": "90 يوماً"
+    },
+    "kpi": {
+      "orgs": "المنظمات",
+      "active": "نشطة",
+      "suspended": "معلّقة",
+      "newThisMonth": "جديدة هذا الشهر",
+      "users": "المستخدمون",
+      "bookings30d": "الحجوزات (30 يوم)",
+      "lifetimeRevenue": "إجمالي الإيراد"
+    },
+    "loadError": "فشل تحميل المقاييس: {message}"
+  },
   "settings": {
+    "hub": {
+      "title": "الإعدادات",
+      "description": "إعدادات المنصة — البريد الإلكتروني والإشعارات والفوترة والعلامة التجارية والأمان وصحة النظام.",
+      "cards": {
+        "email": {
+          "title": "البريد الإلكتروني",
+          "description": "تكوين مفتاح Resend API وعنوان المرسل وإعدادات التوصيل."
+        },
+        "emailTemplates": {
+          "title": "قوالب البريد الإلكتروني",
+          "description": "إدارة قوالب البريد الإلكتروني للمنصة بالعربية والإنجليزية."
+        },
+        "emailLogs": {
+          "title": "سجلات البريد الإلكتروني",
+          "description": "فحص أحداث توصيل البريد الإلكتروني للمنصة."
+        },
+        "notifications": {
+          "title": "الإشعارات",
+          "description": "القنوات الافتراضية وساعات الصمت وبيانات FCM."
+        },
+        "billing": {
+          "title": "الفوترة",
+          "description": "بيانات اعتماد Moyasar للمنصة والإعدادات الافتراضية."
+        },
+        "branding": {
+          "title": "العلامة التجارية",
+          "description": "شعار المنصة والألوان والإعدادات الافتراضية للغة."
+        },
+        "health": {
+          "title": "صحة النظام",
+          "description": "حالة Postgres وRedis وMinIO مباشرةً."
+        },
+        "security": {
+          "title": "الأمان",
+          "description": "مدة الجلسة وإلزام المصادقة الثنائية وقائمة IP المسموحة."
+        }
+      }
+    },
     "email": {
       "title": "إعدادات البريد الإلكتروني",
       "description": "تكوين إرسال البريد الإلكتروني للمنصة عبر Resend.",
@@ -229,7 +831,25 @@
         "empty": "لا توجد قوالب بريد.",
         "active": "نشط",
         "inactive": "غير نشط",
-        "locked": "مقفل"
+        "locked": "مقفل",
+        "table": {
+          "key": "المفتاح",
+          "locale": "اللغة",
+          "subject": "الموضوع",
+          "lastUpdated": "آخر تحديث",
+          "locked": "مقفل",
+          "status": "الحالة"
+        },
+        "editor": {
+          "subject": "الموضوع",
+          "htmlBody": "نص HTML",
+          "textBody": "النص العادي",
+          "variables": "المتغيرات المتاحة",
+          "preview": "معاينة",
+          "save": "حفظ القالب",
+          "revert": "العودة للافتراضي",
+          "saving": "جارٍ الحفظ…"
+        }
       },
       "logs": {
         "title": "سجلات التوصيل",
@@ -249,7 +869,16 @@
           "status": "الحالة",
           "org": "المنظمة",
           "created": "تاريخ الإنشاء",
-          "error": "الخطأ"
+          "error": "الخطأ",
+          "recipient": "المستلم",
+          "provider": "المزوّد",
+          "actor": "المنفّذ",
+          "timestamp": "التوقيت"
+        },
+        "statuses": {
+          "sent": "مُرسل",
+          "failed": "فشل",
+          "queued": "في الانتظار"
         }
       }
     },
@@ -265,7 +894,8 @@
         "description": "تعليق الإشعارات غير العاجلة خلال هذه الساعات.",
         "startHour": "ساعة البداية (0-23)",
         "endHour": "ساعة النهاية (0-23)",
-        "timezone": "المنطقة الزمنية"
+        "timezone": "المنطقة الزمنية",
+        "enabled": "تفعيل ساعات الصمت"
       },
       "fcm": {
         "title": "بيانات اعتماد FCM",
@@ -303,6 +933,7 @@
         "currency": "العملة",
         "taxPercent": "نسبة الضريبة",
         "trialDays": "أيام التجربة",
+        "overageModel": "نموذج الزيادة",
         "save": "حفظ الإعدادات الافتراضية",
         "saving": "جارٍ الحفظ..."
       },
@@ -312,6 +943,48 @@
         "failed": "فشل الحفظ"
       },
       "loadError": "فشل تحميل إعدادات الفوترة."
+    },
+    "branding": {
+      "title": "العلامة التجارية",
+      "description": "الإعدادات الافتراضية للعلامة التجارية — الشعار والألوان وإعدادات اللغة.",
+      "brandIdentity": {
+        "title": "هوية العلامة التجارية",
+        "description": "رابط شعار المنصة والألوان الافتراضية في لوحة الإدارة وقوالب البريد.",
+        "logoUrl": "رابط الشعار",
+        "logoUrlPlaceholder": "https://cdn.example.com/logo.svg",
+        "primaryColor": "اللون الرئيسي",
+        "accentColor": "لون التمييز"
+      },
+      "localeDefaults": {
+        "title": "الإعدادات الافتراضية للغة",
+        "description": "إعدادات اللغة الافتراضية المطبقة على التانانت الجديدة ورسائل المنصة.",
+        "defaultLocale": "اللغة الافتراضية",
+        "currencyFormat": "تنسيق العملة",
+        "dateFormat": "تنسيق التاريخ",
+        "rtlDefault": "RTL افتراضياً"
+      },
+      "save": "حفظ إعدادات العلامة التجارية",
+      "saving": "جارٍ الحفظ...",
+      "saveSuccess": "تم حفظ إعدادات العلامة التجارية.",
+      "loadError": "فشل تحميل إعدادات العلامة التجارية.",
+      "saveFailed": "فشل الحفظ."
+    },
+    "system": {
+      "title": "صحة النظام",
+      "description": "حالة الأنظمة الفرعية للمنصة",
+      "overall": "الحالة العامة:",
+      "subsystem": "النظام الفرعي",
+      "status": "الحالة",
+      "latency": "زمن الاستجابة",
+      "detail": "التفاصيل",
+      "checking": "جارٍ الفحص…",
+      "refresh": "تحديث",
+      "asOf": "كما في {time}",
+      "statusValues": {
+        "ok": "يعمل",
+        "degraded": "منخفض الأداء",
+        "down": "متوقف"
+      }
     },
     "security": {
       "title": "إعدادات الأمان",
@@ -327,7 +1000,8 @@
       },
       "ipAllowlist": {
         "title": "قائمة IP المسموحة",
-        "label": "قائمة IP المسموحة (CIDR واحد لكل سطر، فارغ = السماح للجميع)"
+        "label": "قائمة IP المسموحة (CIDR واحد لكل سطر، فارغ = السماح للجميع)",
+        "invalidEntry": "IP/CIDR غير صالح: {entry}"
       },
       "save": "حفظ إعدادات الأمان",
       "saving": "جارٍ الحفظ…",
@@ -376,5 +1050,8 @@
     "invalidToken": "الرابط غير صالح أو منتهي الصلاحية",
     "passwordMismatch": "كلمتا المرور غير متطابقتين",
     "weakPassword": "كلمة المرور يجب أن تكون 8 أحرف على الأقل"
+  },
+  "offline": {
+    "message": "غير متصل · ستتزامن التغييرات عند استعادة الاتصال"
   }
 }

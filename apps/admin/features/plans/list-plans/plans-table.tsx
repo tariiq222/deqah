@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Pencil, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Badge } from '@deqah/ui/primitives/badge';
 import { Button } from '@deqah/ui/primitives/button';
 import { Skeleton } from '@deqah/ui/primitives/skeleton';
@@ -29,17 +30,19 @@ interface Props {
 }
 
 export function PlansTable({ items, isLoading, onDelete }: Props) {
+  const t = useTranslations('plans');
+  const tc = useTranslations('common');
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Slug</TableHead>
-          <TableHead>Name</TableHead>
-          <TableHead className="text-right">Subscribers</TableHead>
-          <TableHead className="text-right">Monthly</TableHead>
-          <TableHead className="text-right">Annual</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead className="w-24">Actions</TableHead>
+          <TableHead>{t('table.slug')}</TableHead>
+          <TableHead>{t('table.name')}</TableHead>
+          <TableHead className="text-right">{t('table.subscribers')}</TableHead>
+          <TableHead className="text-right">{t('table.monthly')}</TableHead>
+          <TableHead className="text-right">{t('table.annual')}</TableHead>
+          <TableHead>{t('table.status')}</TableHead>
+          <TableHead className="w-24">{t('table.actions')}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -62,7 +65,7 @@ export function PlansTable({ items, isLoading, onDelete }: Props) {
                         <Badge
                           variant="outline"
                           className="border-primary/30 bg-primary/10 px-1.5 py-0 font-mono text-[10px] tabular-nums text-primary"
-                          title={`${subs} active subscriber${subs === 1 ? '' : 's'}`}
+                          title={subs === 1 ? t('table.subscriberTitle', { count: subs }) : t('table.subscribersTitlePlural', { count: subs })}
                         >
                           {subs}
                         </Badge>
@@ -89,11 +92,11 @@ export function PlansTable({ items, isLoading, onDelete }: Props) {
                   <TableCell>
                     {plan.isActive ? (
                       <Badge variant="outline" className="border-success/40 bg-success/10 text-success">
-                        Active
+                        {tc('active')}
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="text-muted-foreground">
-                        Inactive
+                        {tc('inactive')}
                       </Badge>
                     )}
                   </TableCell>
@@ -107,14 +110,14 @@ export function PlansTable({ items, isLoading, onDelete }: Props) {
                               size="icon"
                               className="size-9 rounded-sm"
                               asChild
-                              aria-label="Edit plan"
+                              aria-label={tc('edit')}
                             >
                               <Link href={`/plans/${plan.id}/edit`}>
                                 <Pencil className="size-4" />
                               </Link>
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Edit</TooltipContent>
+                          <TooltipContent>{tc('edit')}</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                       <TooltipProvider>
@@ -125,12 +128,12 @@ export function PlansTable({ items, isLoading, onDelete }: Props) {
                               size="icon"
                               className="size-9 rounded-sm text-destructive hover:text-destructive"
                               onClick={() => onDelete(plan)}
-                              aria-label="Delete plan"
+                              aria-label={tc('delete')}
                             >
                               <Trash2 className="size-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Delete</TooltipContent>
+                          <TooltipContent>{tc('delete')}</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     </div>
@@ -141,7 +144,7 @@ export function PlansTable({ items, isLoading, onDelete }: Props) {
         {!isLoading && items?.length === 0 ? (
           <TableRow>
             <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
-              No plans defined. Create one using the button above.
+              {t('table.empty')}
             </TableCell>
           </TableRow>
         ) : null}

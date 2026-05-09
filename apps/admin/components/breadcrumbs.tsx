@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { BREADCRUMB_TRAILS } from './breadcrumbs.config';
 
 function matchTrail(pathname: string) {
@@ -16,6 +17,7 @@ function matchTrail(pathname: string) {
 }
 
 export function Breadcrumbs({ pathname }: { pathname: string }) {
+  const t = useTranslations('breadcrumbs');
   const trail = matchTrail(pathname);
   if (!trail) return null;
   return (
@@ -23,21 +25,22 @@ export function Breadcrumbs({ pathname }: { pathname: string }) {
       <ol className="flex items-center gap-1">
         {trail.map((seg, idx) => {
           const isLast = idx === trail.length - 1;
+          const label = t(seg.key);
           return (
-            <li key={seg.href ?? seg.label} className="flex items-center gap-1">
+            <li key={seg.href ?? seg.key} className="flex items-center gap-1">
               {seg.href ? (
                 <Link
                   href={seg.href}
                   className="text-[13px] font-normal text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {seg.label}
+                  {label}
                 </Link>
               ) : (
                 <span
                   aria-current="page"
                   className="text-[13px] font-medium text-foreground"
                 >
-                  {seg.label}
+                  {label}
                 </span>
               )}
               {!isLast && (

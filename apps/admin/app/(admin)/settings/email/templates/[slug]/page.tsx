@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   getTemplate,
   updateTemplate,
@@ -12,6 +13,7 @@ import {
 import { ApiError } from '@/lib/api-client';
 
 export default function EmailTemplateEditorPage() {
+  const t = useTranslations('settings.email.templates');
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
 
@@ -43,7 +45,7 @@ export default function EmailTemplateEditorPage() {
         setHtmlBody(t.htmlBody);
         setIsActive(t.isActive);
       })
-      .catch((err) => setError(err instanceof ApiError ? err.message : 'Failed to load template'))
+      .catch((err) => setError(err instanceof ApiError ? err.message : 'Failed to load template')) // TODO i18n: Failed to load template
       .finally(() => setIsLoading(false));
   }, [slug]);
 
@@ -63,11 +65,11 @@ export default function EmailTemplateEditorPage() {
     try {
       const updated = await updateTemplate(slug, body);
       setTemplate(updated);
-      setSaveResult({ ok: true, message: 'Saved successfully.' });
+      setSaveResult({ ok: true, message: t('editor.save') });
     } catch (err) {
       setSaveResult({
         ok: false,
-        message: err instanceof ApiError ? err.message : 'Save failed',
+        message: err instanceof ApiError ? err.message : 'Save failed', // TODO i18n: Save failed
       });
     } finally {
       setIsSaving(false);
@@ -108,6 +110,7 @@ export default function EmailTemplateEditorPage() {
         <div className="flex items-center gap-2">
           {isLocked && (
             <span className="rounded bg-muted px-2 py-1 text-xs text-muted-foreground">
+              {/* TODO i18n: Locked — content read-only */}
               Locked — content read-only
             </span>
           )}
@@ -119,7 +122,7 @@ export default function EmailTemplateEditorPage() {
         {/* Editor form */}
         <form onSubmit={handleSave} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-sm font-medium">Name</label>
+            <label className="text-sm font-medium">{/* TODO i18n: Name */}Name</label>
             <input
               type="text"
               value={name}
@@ -130,7 +133,7 @@ export default function EmailTemplateEditorPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-medium">Subject (Arabic)</label>
+            <label className="text-sm font-medium">{/* TODO i18n: Subject (Arabic) */}Subject (Arabic)</label>
             <input
               type="text"
               value={subjectAr}
@@ -142,7 +145,7 @@ export default function EmailTemplateEditorPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-medium">Subject (English)</label>
+            <label className="text-sm font-medium">{/* TODO i18n: Subject (English) */}Subject (English)</label>
             <input
               type="text"
               value={subjectEn}
@@ -153,7 +156,7 @@ export default function EmailTemplateEditorPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-medium">HTML Body</label>
+            <label className="text-sm font-medium">{t('editor.htmlBody')}</label>
             <textarea
               value={htmlBody}
               onChange={(e) => setHtmlBody(e.target.value)}
@@ -171,7 +174,7 @@ export default function EmailTemplateEditorPage() {
               onChange={(e) => setIsActive(e.target.checked)}
               className="rounded border-input"
             />
-            <label htmlFor="is-active" className="text-sm font-medium">Active</label>
+            <label htmlFor="is-active" className="text-sm font-medium">{/* TODO i18n: Active */}Active</label>
           </div>
 
           <div className="flex items-center gap-3">
@@ -180,7 +183,7 @@ export default function EmailTemplateEditorPage() {
               disabled={isSaving}
               className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
             >
-              {isSaving ? 'Saving...' : 'Save'}
+              {isSaving ? t('editor.saving') : t('editor.save')}
             </button>
             <button
               type="button"
@@ -188,7 +191,8 @@ export default function EmailTemplateEditorPage() {
               disabled={isPreviewing}
               className="inline-flex items-center rounded-md border border-border px-4 py-2 text-sm disabled:opacity-50"
             >
-              {isPreviewing ? 'Loading...' : 'Preview'}
+              {/* TODO i18n: Loading... (no key in JSON) */}
+              {isPreviewing ? 'Loading...' : t('editor.preview')}
             </button>
           </div>
 
@@ -207,10 +211,10 @@ export default function EmailTemplateEditorPage() {
 
         {/* Preview iframe */}
         <div className="space-y-2">
-          <p className="text-sm font-medium">Preview</p>
+          <p className="text-sm font-medium">{t('editor.preview')}</p>
           {preview ? (
             <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Subject: {preview.subject}</p>
+              <p className="text-xs text-muted-foreground">{t('editor.subject')}: {preview.subject}</p>
               <iframe
                 srcDoc={preview.html}
                 className="w-full rounded-lg border border-border"
@@ -221,6 +225,7 @@ export default function EmailTemplateEditorPage() {
             </div>
           ) : (
             <div className="flex items-center justify-center rounded-lg border border-dashed border-border h-64 text-sm text-muted-foreground">
+              {/* TODO i18n: Click "Preview" to render the template */}
               Click &quot;Preview&quot; to render the template
             </div>
           )}

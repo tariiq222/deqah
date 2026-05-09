@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import { Label } from '@deqah/ui/primitives/label';
 import { Textarea } from '@deqah/ui/primitives/textarea';
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export function WaiveInvoiceDialog({ open, onOpenChange, invoice, orgId }: Props) {
+  const t = useTranslations('billing');
   const [reason, setReason] = useState('');
   const mutation = useWaiveInvoice(orgId);
 
@@ -54,32 +56,31 @@ export function WaiveInvoiceDialog({ open, onOpenChange, invoice, orgId }: Props
     >
       <SheetContent side="right">
         <SheetHeader>
-          <SheetTitle>Waive invoice</SheetTitle>
+          <SheetTitle>{t('waive.title')}</SheetTitle>
           <SheetDescription>
-            Voids invoice{' '}
-            <span className="font-mono text-xs">{invoice.id.slice(0, 8)}…</span> for{' '}
-            <span className="tabular-nums font-mono">
-              {Number(invoice.amount).toFixed(2)} {invoice.currency}
-            </span>
-            . No money moves. DUE/FAILED only. PAID invoices require a refund. Audited.
+            {t('waive.description', {
+              invoiceId: invoice.id.slice(0, 8) + '…',
+              amount: Number(invoice.amount).toFixed(2),
+              currency: invoice.currency,
+            })}
           </SheetDescription>
         </SheetHeader>
 
         <SheetBody className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="waive-reason" className="text-[11px] uppercase tracking-widest text-muted-foreground">
-              Reason <span className="text-destructive">*</span>
+              {t('waive.reasonLabel')} <span className="text-destructive">*</span>
             </Label>
             <Textarea
               id="waive-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Explain why this invoice is being waived (min 10 chars)"
+              placeholder={t('waive.reasonPlaceholder')}
               rows={4}
             />
             {reason.length > 0 && !canSubmit ? (
               <p className="text-xs text-destructive">
-                Reason must be at least 10 characters ({reason.length}/10).
+                {t('waive.reasonError', { count: reason.length })}
               </p>
             ) : null}
           </div>
@@ -94,7 +95,7 @@ export function WaiveInvoiceDialog({ open, onOpenChange, invoice, orgId }: Props
             }}
             disabled={mutation.isPending}
           >
-            Cancel
+            {t('waive.cancel')}
           </Button>
           <Button
             variant="outline"
@@ -102,7 +103,7 @@ export function WaiveInvoiceDialog({ open, onOpenChange, invoice, orgId }: Props
             onClick={submit}
             disabled={mutation.isPending || !canSubmit}
           >
-            {mutation.isPending ? 'Waiving…' : 'Waive invoice'}
+            {mutation.isPending ? t('waive.submitting') : t('waive.submit')}
           </Button>
         </SheetFooter>
       </SheetContent>

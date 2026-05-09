@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import { QUOTA_FIELDS, OVERAGE_FIELDS, FEATURE_FIELDS, type PlanLimits } from '../plan-limits';
 import type { BasicsForm } from './step-basics';
@@ -23,6 +24,8 @@ export function StepReview({
   onEditBasics,
   onEditFeatures,
 }: Props) {
+  const t = useTranslations('plans');
+  const tc = useTranslations('common');
   const slug = mode === 'edit' ? (initialSlug ?? '') : basics.slug;
 
   const enabledCount = FEATURE_FIELDS.filter((f) => {
@@ -41,7 +44,7 @@ export function StepReview({
         {/* Left panel — Plan basics */}
         <div className="rounded-md border border-border bg-muted/30 p-4">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm font-semibold text-foreground">Plan basics</p>
+            <p className="text-sm font-semibold text-foreground">{t('review.planBasics')}</p>
             <Button
               type="button"
               variant="ghost"
@@ -49,38 +52,38 @@ export function StepReview({
               onClick={onEditBasics}
               className="h-auto py-0.5 text-xs"
             >
-              Edit
+              {tc('edit')}
             </Button>
           </div>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between gap-2">
-              <dt className="text-muted-foreground">Plan code</dt>
+              <dt className="text-muted-foreground">{t('review.planCode')}</dt>
               <dd className="font-mono text-xs font-medium">{slug}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-muted-foreground">Name (Arabic)</dt>
+              <dt className="text-muted-foreground">{t('review.nameAr')}</dt>
               <dd className="text-right">{basics.nameAr || '—'}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-muted-foreground">Name (English)</dt>
+              <dt className="text-muted-foreground">{t('review.nameEn')}</dt>
               <dd className="text-right">{basics.nameEn || '—'}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-muted-foreground">Monthly price</dt>
+              <dt className="text-muted-foreground">{t('review.monthlyPrice')}</dt>
               <dd className="font-mono tabular-nums">
                 {basics.priceMonthly || '0'} {basics.currency}
               </dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-muted-foreground">Annual price</dt>
+              <dt className="text-muted-foreground">{t('review.annualPrice')}</dt>
               <dd className="font-mono tabular-nums">
                 {basics.priceAnnual || '0'} {basics.currency}
               </dd>
             </div>
             {mode === 'edit' && (
               <div className="flex justify-between gap-2">
-                <dt className="text-muted-foreground">Status</dt>
-                <dd>{isActive ? 'Active' : 'Inactive'}</dd>
+                <dt className="text-muted-foreground">{t('review.statusLabel')}</dt>
+                <dd>{isActive ? tc('active') : tc('inactive')}</dd>
               </div>
             )}
           </dl>
@@ -89,7 +92,7 @@ export function StepReview({
         {/* Right panel — Limits & features */}
         <div className="rounded-md border border-border bg-muted/30 p-4">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm font-semibold text-foreground">Limits &amp; features</p>
+            <p className="text-sm font-semibold text-foreground">{t('review.limitsAndFeatures')}</p>
             <Button
               type="button"
               variant="ghost"
@@ -97,7 +100,7 @@ export function StepReview({
               onClick={onEditFeatures}
               className="h-auto py-0.5 text-xs"
             >
-              Edit
+              {tc('edit')}
             </Button>
           </div>
           <div className="space-y-3">
@@ -106,7 +109,7 @@ export function StepReview({
                 {QUOTA_FIELDS.map((f) => {
                   const val = limits[f.key];
                   const display =
-                    typeof val === 'number' && val === -1 ? 'Unlimited' : String(val ?? '—');
+                    typeof val === 'number' && val === -1 ? t('review.unlimited') : String(val ?? '—');
                   return (
                     <tr key={f.key} className="border-b border-border/50 last:border-0">
                       <td className="py-1.5 text-muted-foreground">{f.label}</td>
@@ -120,14 +123,12 @@ export function StepReview({
             </table>
 
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{enabledCount}</span>
-              {' / '}
-              {FEATURE_FIELDS.length} features enabled
+              {t('review.featuresEnabled', { enabled: enabledCount, total: FEATURE_FIELDS.length })}
             </p>
 
             {nonZeroOverage.length > 0 && (
               <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground">Overage rates</p>
+                <p className="text-xs font-medium text-muted-foreground">{t('review.overageRates')}</p>
                 {nonZeroOverage.map((f) => (
                   <div key={f.key} className="flex justify-between text-xs">
                     <span className="text-muted-foreground">{f.label}</span>
@@ -141,7 +142,7 @@ export function StepReview({
       </div>
 
       <p className="text-center text-sm text-muted-foreground">
-        Review the details above, then click the button below to confirm.
+        {t('wizard.reviewConfirm')}
       </p>
     </div>
   );

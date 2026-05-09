@@ -15,61 +15,62 @@ import {
   LineChart,
   ScrollText,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@deqah/ui/lib/cn';
 
 interface NavChild {
   href: string;
-  label: string;
+  labelKey: string;
 }
 
 interface NavItem {
   href: string;
-  label: string;
+  labelKey: string;
   icon: React.ElementType;
   hint?: string;
   children?: NavChild[];
 }
 
 interface NavSection {
-  title: string;
+  titleKey: string;
   items: NavItem[];
 }
 
 const NAV: NavSection[] = [
   {
-    title: 'Operate',
+    titleKey: 'sections.operate',
     items: [
-      { href: '/', label: 'Overview', icon: LayoutDashboard, hint: 'g o' },
-      { href: '/organizations', label: 'Organizations', icon: Building2, hint: 'g r' },
-      { href: '/users', label: 'Users', icon: Users, hint: 'g u' },
-      { href: '/impersonation-sessions', label: 'Impersonation', icon: Eye },
+      { href: '/', labelKey: 'overview', icon: LayoutDashboard },
+      { href: '/organizations', labelKey: 'organizations', icon: Building2 },
+      { href: '/users', labelKey: 'users', icon: Users },
+      { href: '/impersonation-sessions', labelKey: 'impersonation', icon: Eye },
     ],
   },
   {
-    title: 'Money',
+    titleKey: 'sections.money',
     items: [
       {
         href: '/billing',
-        label: 'Billing',
+        labelKey: 'billing',
         icon: Receipt,
-        children: [{ href: '/billing/zoho', label: 'Zoho schedule' }],
+        children: [{ href: '/billing/zoho', labelKey: 'billingZoho' }],
       },
-      { href: '/plans', label: 'Plans', icon: Layers },
+      { href: '/plans', labelKey: 'plans', icon: Layers },
     ],
   },
   {
-    title: 'Configure',
+    titleKey: 'sections.configure',
     items: [
-      { href: '/verticals', label: 'Verticals', icon: Tags },
-      { href: '/notifications', label: 'Notifications', icon: Bell },
-      { href: '/settings', label: 'Settings', icon: Settings },
+      { href: '/verticals', labelKey: 'verticals', icon: Tags },
+      { href: '/notifications', labelKey: 'notifications', icon: Bell },
+      { href: '/settings', labelKey: 'settings', icon: Settings },
     ],
   },
   {
-    title: 'Inspect',
+    titleKey: 'sections.inspect',
     items: [
-      { href: '/metrics', label: 'Metrics', icon: LineChart },
-      { href: '/audit-log', label: 'Audit log', icon: ScrollText },
+      { href: '/metrics', labelKey: 'metrics', icon: LineChart },
+      { href: '/audit-log', labelKey: 'auditLog', icon: ScrollText },
     ],
   },
 ];
@@ -121,13 +122,14 @@ function NavLink({
 
 export function Sidebar() {
   const pathname = usePathname();
+  const t = useTranslations('nav');
 
   return (
-    <nav aria-label="Main navigation">
+    <nav aria-label={t('aria.mainNavigation')}>
       {NAV.map((section, sectionIdx) => (
-        <div key={section.title} className={cn('flex flex-col gap-0.5', sectionIdx > 0 && 'mt-4')}>
+        <div key={section.titleKey} className={cn('flex flex-col gap-0.5', sectionIdx > 0 && 'mt-4')}>
           <p className="mb-1 px-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70">
-            {section.title}
+            {t(section.titleKey)}
           </p>
           {section.items.map((item) => {
             const parentActive = isActive(item.href, pathname);
@@ -135,7 +137,7 @@ export function Sidebar() {
               <div key={item.href} className="flex flex-col gap-0.5">
                 <NavLink
                   href={item.href}
-                  label={item.label}
+                  label={t(item.labelKey)}
                   icon={item.icon}
                   hint={item.hint}
                   active={parentActive}
@@ -154,7 +156,7 @@ export function Sidebar() {
                               : 'text-muted-foreground hover:text-foreground',
                           )}
                         >
-                          {child.label}
+                          {t(child.labelKey)}
                         </Link>
                       );
                     })

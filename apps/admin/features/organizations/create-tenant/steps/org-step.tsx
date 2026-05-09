@@ -67,9 +67,10 @@ export function OrgStep({ form, set }: Props) {
           onValueChange={(v) => set('verticalSlug')(v === '__none__' ? '' : v)}
         >
           <SelectTrigger id="tenant-vertical">
-            <SelectValue placeholder="Select vertical…" />
+            <SelectValue placeholder={t('verticalSlug')} />
           </SelectTrigger>
           <SelectContent>
+            {/* TODO i18n: — None — */}
             <SelectItem value="__none__">— None —</SelectItem>
             {verticals?.filter((v) => v.isActive).map((v) => (
               <SelectItem key={v.slug} value={v.slug}>

@@ -17,7 +17,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               <img src="/logos/diqqa-logo.svg" alt="Deqah" className="h-6 w-auto" />
               <div className="flex flex-col leading-tight">
                 <span className="text-[13px] font-medium text-foreground">{t('title')}</span>
-                <span className="text-[11px] text-muted-foreground">Control plane</span>
+                <span className="text-[11px] text-muted-foreground">{t('subtitle')}</span>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto px-3 pb-4">

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Skeleton } from '@deqah/ui/primitives/skeleton';
 import { useListPlans } from '@/features/plans/list-plans/use-list-plans';
 import { DEFAULT_PLAN_LIMITS, type PlanLimits } from '@/features/plans/plan-limits';
@@ -11,6 +12,7 @@ import { PlanWizard } from '@/features/plans/plan-wizard/plan-wizard';
 import type { BasicsForm } from '@/features/plans/plan-wizard/step-basics';
 
 export default function EditPlanPage() {
+  const t = useTranslations('plans');
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { data: plans, isLoading } = useListPlans();
@@ -66,9 +68,9 @@ export default function EditPlanPage() {
           href="/plans"
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          ← back to plans
+          {t('backToPlans')}
         </Link>
-        <p className="text-sm text-muted-foreground">Plan not found.</p>
+        <p className="text-sm text-muted-foreground">{t('edit.notFound')}</p>
       </div>
     );
   }
@@ -80,11 +82,11 @@ export default function EditPlanPage() {
           href="/plans"
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          ← back to plans
+          {t('backToPlans')}
         </Link>
-        <h2 className="mt-2 text-xl font-semibold">Edit plan</h2>
+        <h2 className="mt-2 text-xl font-semibold">{t('edit.title')}</h2>
         <p className="text-sm text-muted-foreground">
-          Update this subscription plan. Audited.
+          {t('edit.description')}
         </p>
       </div>
 

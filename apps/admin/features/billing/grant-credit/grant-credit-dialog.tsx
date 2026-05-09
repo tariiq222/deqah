@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import { Input } from '@deqah/ui/primitives/input';
 import { Label } from '@deqah/ui/primitives/label';
@@ -23,6 +24,7 @@ interface Props {
 }
 
 export function GrantCreditDialog({ open, onOpenChange, organizationId }: Props) {
+  const t = useTranslations('billing');
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const mutation = useGrantCredit(organizationId);
@@ -61,19 +63,16 @@ export function GrantCreditDialog({ open, onOpenChange, organizationId }: Props)
     >
       <SheetContent side="right">
         <SheetHeader>
-          <SheetTitle>Grant credit</SheetTitle>
+          <SheetTitle>{t('grantCredit.title')}</SheetTitle>
           <SheetDescription>
-            Applies a billing credit to this organization&apos;s next invoice.
-            Range: 1 – 100,000{' '}
-            <span className="font-mono">SAR</span>. Audited.
+            {t('grantCredit.description')}
           </SheetDescription>
         </SheetHeader>
 
         <SheetBody className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="gc-amount" className="text-[11px] uppercase tracking-widest text-muted-foreground">
-              Amount <span className="font-mono text-xs">(SAR)</span>{' '}
-              <span className="text-destructive">*</span>
+              {t('grantCredit.amountLabel')} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="gc-amount"
@@ -83,30 +82,30 @@ export function GrantCreditDialog({ open, onOpenChange, organizationId }: Props)
               step={1}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder="50"
+              placeholder={t('grantCredit.amountPlaceholder')}
               className="tabular-nums font-mono"
             />
             {amount && !validAmount ? (
               <p className="text-xs text-destructive">
-                Amount must be between 1 and 100,000 SAR.
+                {t('grantCredit.amountError')}
               </p>
             ) : null}
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="gc-reason" className="text-[11px] uppercase tracking-widest text-muted-foreground">
-              Reason <span className="text-destructive">*</span>
+              {t('grantCredit.reasonLabel')} <span className="text-destructive">*</span>
             </Label>
             <Textarea
               id="gc-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Explain why this credit is being granted (min 10 chars)"
+              placeholder={t('grantCredit.reasonPlaceholder')}
               rows={4}
             />
             {reason.length > 0 && !validReason ? (
               <p className="text-xs text-destructive">
-                Reason must be at least 10 characters ({reason.length}/10).
+                {t('grantCredit.reasonError', { count: reason.length })}
               </p>
             ) : null}
           </div>
@@ -121,10 +120,10 @@ export function GrantCreditDialog({ open, onOpenChange, organizationId }: Props)
             }}
             disabled={mutation.isPending}
           >
-            Cancel
+            {t('grantCredit.cancel')}
           </Button>
           <Button onClick={submit} disabled={mutation.isPending || !canSubmit}>
-            {mutation.isPending ? 'Granting…' : 'Grant credit'}
+            {mutation.isPending ? t('grantCredit.submitting') : t('grantCredit.submit')}
           </Button>
         </SheetFooter>
       </SheetContent>

@@ -27,9 +27,11 @@ export function CopyFromPlanSelect({ onLimitsLoaded }: Props) {
 
   return (
     <div className="flex items-center gap-3">
+      {/* TODO i18n: "Start from existing plan:" — no key in plans.* namespace */}
       <p className="text-sm text-muted-foreground whitespace-nowrap">Start from existing plan:</p>
       <Select onValueChange={handleChange} disabled={isLoading}>
         <SelectTrigger className="w-56">
+          {/* TODO i18n: "Choose a plan" — no key in plans.* namespace */}
           <SelectValue placeholder={isLoading ? 'Loading…' : 'Choose a plan'} />
         </SelectTrigger>
         <SelectContent>

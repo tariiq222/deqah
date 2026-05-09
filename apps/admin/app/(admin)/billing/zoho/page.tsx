@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import { Input } from '@deqah/ui/primitives/input';
 import { Label } from '@deqah/ui/primitives/label';
@@ -18,6 +19,8 @@ type StatusFilter = 'all' | 'PAID' | 'DUE' | 'FAILED' | 'VOID';
 type MirroredFilter = 'all' | 'yes' | 'no';
 
 export default function BillingZohoSchedulePage() {
+  const t = useTranslations('billing');
+  const tc = useTranslations('common');
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<StatusFilter>('all');
   const [mirrored, setMirrored] = useState<MirroredFilter>('all');
@@ -34,8 +37,10 @@ export default function BillingZohoSchedulePage() {
   return (
     <div className="space-y-8">
       <div className="space-y-1">
+        {/* TODO i18n: Zoho — Invoice schedule (no billing.zoho* key) */}
         <h2 className="text-xl font-semibold">Zoho — Invoice schedule</h2>
         <p className="text-sm text-muted-foreground">
+          {/* TODO i18n: SaaS subscription invoices and their mirror status in the platform Zoho organization. */}
           SaaS subscription invoices and their mirror status in the platform Zoho organization.
         </p>
       </div>
@@ -50,7 +55,7 @@ export default function BillingZohoSchedulePage() {
       <div className="flex flex-wrap items-end gap-3 border-b border-border pb-4">
         <div className="space-y-1">
           <Label className="text-[11px] uppercase tracking-widest text-muted-foreground">
-            Status
+            {tc('status')}
           </Label>
           <Select
             value={status}
@@ -60,20 +65,21 @@ export default function BillingZohoSchedulePage() {
             }}
           >
             <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={tc('status')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="PAID">Paid</SelectItem>
-              <SelectItem value="DUE">Due</SelectItem>
-              <SelectItem value="FAILED">Failed</SelectItem>
-              <SelectItem value="VOID">Void</SelectItem>
+              <SelectItem value="all">{tc('all')}</SelectItem>
+              <SelectItem value="PAID">{t('invoiceStatus.PAID')}</SelectItem>
+              <SelectItem value="DUE">{t('invoiceStatus.DUE')}</SelectItem>
+              <SelectItem value="FAILED">{t('invoiceStatus.FAILED')}</SelectItem>
+              <SelectItem value="VOID">{t('invoiceStatus.VOID')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-1">
           <Label className="text-[11px] uppercase tracking-widest text-muted-foreground">
+            {/* TODO i18n: Zoho mirror */}
             Zoho mirror
           </Label>
           <Select
@@ -87,16 +93,16 @@ export default function BillingZohoSchedulePage() {
               <SelectValue placeholder="Mirror" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="yes">Mirrored only</SelectItem>
-              <SelectItem value="no">Not mirrored</SelectItem>
+              <SelectItem value="all">{tc('all')}</SelectItem>
+              <SelectItem value="yes">{/* TODO i18n: Mirrored only */}Mirrored only</SelectItem>
+              <SelectItem value="no">{/* TODO i18n: Not mirrored */}Not mirrored</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-1">
           <Label className="text-[11px] uppercase tracking-widest text-muted-foreground">
-            Organization ID
+            {t('filters.organizationId')}
           </Label>
           <Input
             value={organizationId}
@@ -119,7 +125,7 @@ export default function BillingZohoSchedulePage() {
             setPage(1);
           }}
         >
-          Reset
+          {tc('reset')}
         </Button>
       </div>
 
@@ -128,7 +134,7 @@ export default function BillingZohoSchedulePage() {
       {data && data.meta.totalPages > 1 ? (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span className="tabular-nums">
-            Page {data.meta.page} of {data.meta.totalPages} · {data.meta.total} total
+            {tc('page')} {data.meta.page} {tc('of')} {data.meta.totalPages} · {data.meta.total} {tc('total')}
           </span>
           <div className="flex gap-2">
             <Button
@@ -137,7 +143,7 @@ export default function BillingZohoSchedulePage() {
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
             >
-              Previous
+              {tc('previous')}
             </Button>
             <Button
               variant="outline"
@@ -145,7 +151,7 @@ export default function BillingZohoSchedulePage() {
               disabled={page >= data.meta.totalPages}
               onClick={() => setPage((p) => p + 1)}
             >
-              Next
+              {tc('next')}
             </Button>
           </div>
         </div>

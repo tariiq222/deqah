@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Skeleton } from '@deqah/ui/primitives/skeleton';
 import { useGetBillingMetrics } from './use-get-billing-metrics';
 import { formatSar } from '@/lib/currency';
@@ -12,12 +13,13 @@ interface KpiCell {
 }
 
 export function BillingMetricsGrid() {
+  const t = useTranslations('billing');
   const { data, isLoading, error } = useGetBillingMetrics();
 
   if (error) {
     return (
       <p className="text-sm text-destructive">
-        Failed to load billing metrics: {(error as Error).message}
+        {t('metrics.loadError', { message: (error as Error).message })}
       </p>
     );
   }
@@ -32,21 +34,22 @@ export function BillingMetricsGrid() {
     data.counts.TRIALING === 0;
 
   const cells: KpiCell[] = [
-    { label: 'Committed MRR', value: formatSar(data.mrr), tone: 'success', mono: true },
-    { label: 'Realized MRR', value: formatSar(data.realizedMrr), mono: true },
-    { label: 'ARR', value: formatSar(data.arr), tone: 'success', mono: true },
-    { label: 'Active', value: data.counts.ACTIVE },
-    { label: 'Trialing', value: data.counts.TRIALING },
-    { label: 'Past due', value: data.counts.PAST_DUE, tone: 'warning' },
-    { label: 'Suspended', value: data.counts.SUSPENDED, tone: 'warning' },
-    { label: 'At-risk MRR', value: formatSar(data.atRiskMrr), tone: 'warning', mono: true },
-    { label: 'Churn 30d', value: data.churn30d, tone: 'warning' },
+    { label: 'Committed MRR', value: formatSar(data.mrr), tone: 'success', mono: true }, // TODO i18n: Committed MRR
+    { label: 'Realized MRR', value: formatSar(data.realizedMrr), mono: true }, // TODO i18n: Realized MRR
+    { label: t('metrics.arr'), value: formatSar(data.arr), tone: 'success', mono: true },
+    { label: t('metrics.activeSubscriptions'), value: data.counts.ACTIVE },
+    { label: t('metrics.trialingSubscriptions'), value: data.counts.TRIALING },
+    { label: t('metrics.pastDueSubscriptions'), value: data.counts.PAST_DUE, tone: 'warning' },
+    { label: 'Suspended', value: data.counts.SUSPENDED, tone: 'warning' }, // TODO i18n: Suspended
+    { label: 'At-risk MRR', value: formatSar(data.atRiskMrr), tone: 'warning', mono: true }, // TODO i18n: At-risk MRR
+    { label: 'Churn 30d', value: data.churn30d, tone: 'warning' }, // TODO i18n: Churn 30d
   ];
 
   return (
     <div className="space-y-6">
       {isEmpty && (
         <p className="text-sm text-muted-foreground">
+          {/* TODO i18n: No subscriptions yet. MRR will appear once organizations subscribe to a plan. */}
           No subscriptions yet. MRR will appear once organizations subscribe to a plan.
         </p>
       )}

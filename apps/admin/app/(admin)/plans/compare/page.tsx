@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Skeleton } from '@deqah/ui/primitives/skeleton';
 import { useListPlans } from '@/features/plans/list-plans/use-list-plans';
 import { ComparePlansMatrix } from '@/features/plans/compare-plans/compare-plans-matrix';
 
 export default function ComparePlansPage() {
+  const t = useTranslations('plans');
   const { data, isLoading } = useListPlans();
 
   return (
@@ -15,11 +17,11 @@ export default function ComparePlansPage() {
           href="/plans"
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          ← Plans
+          {t('backToPlansShort')}
         </Link>
-        <h2 className="mt-2 text-xl font-semibold">Compare plans</h2>
+        <h2 className="mt-2 text-xl font-semibold">{t('compare.title')}</h2>
         <p className="text-sm text-muted-foreground">
-          Feature limits across all plans side by side. Edit any cell to stage a change.
+          {t('compare.description')}
         </p>
       </div>
 

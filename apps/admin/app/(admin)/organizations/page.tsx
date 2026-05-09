@@ -17,6 +17,7 @@ import { ErrorBanner } from '@/components/error-banner';
 
 export default function OrganizationsListPage() {
   const t = useTranslations('organizations');
+  const tc = useTranslations('common');
   const pathname = usePathname();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -48,7 +49,7 @@ export default function OrganizationsListPage() {
         <div className="flex items-center gap-2">
           {data ? (
             <span className="tabular text-sm text-muted-foreground">
-              {data.meta.total} total
+              {data.meta.total} {tc('total')}
             </span>
           ) : null}
           <Button size="sm" onClick={() => setCreateOpen(true)}>

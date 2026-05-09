@@ -2,6 +2,7 @@
 
 import * as Sentry from '@sentry/nextjs';
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 export default function GlobalError({
   error,
@@ -10,6 +11,8 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations('errors');
+
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
@@ -17,8 +20,8 @@ export default function GlobalError({
   return (
     <html>
       <body>
-        <h2>Something went wrong</h2>
-        <button onClick={() => reset()}>Try again</button>
+        <h2>{t('somethingWentWrong')}</h2>
+        <button onClick={() => reset()}>{t('retry')}</button>
       </body>
     </html>
   );

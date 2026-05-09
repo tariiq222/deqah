@@ -65,6 +65,7 @@ export default function OrganizationDetailPage({
   const t = useTranslations('organizations.detail');
   const statusT = useTranslations('organizations.status');
   const errorT = useTranslations('organizations.error');
+  const tc = useTranslations('common');
   const locale = useLocale();
   const dateLocale = locale === 'ar' ? 'ar-SA' : 'en-GB';
   const [updateOpen, setUpdateOpen] = useState(false);
@@ -119,11 +120,11 @@ export default function OrganizationDetailPage({
               <button
                 onClick={copyId}
                 className="rounded p-0.5 text-muted-foreground hover:text-foreground focus-visible:outline-2"
-                aria-label="Copy org id"
+                aria-label={tc('copy')}
               >
                 <Copy className="size-3" strokeWidth={1.75} />
               </button>
-              {copied ? <span className="mono text-[10px] text-success">copied</span> : null}
+              {copied ? <span className="mono text-[10px] text-success">{tc('copied')}</span> : null}
             </span>
             <StatusDot status={data.status} label={statusT(data.status)} />
           </div>
@@ -138,9 +139,9 @@ export default function OrganizationDetailPage({
             <ImpersonateDialog organizationId={id} organizationName={data.nameAr} />
           ) : null}
           {!archived && suspended ? (
-            <ReinstateDialog organizationId={id} />
+            <ReinstateDialog organizationId={id} organizationName={data.nameAr} />
           ) : !archived ? (
-            <SuspendDialog organizationId={id} />
+            <SuspendDialog organizationId={id} organizationName={data.nameAr} />
           ) : null}
           {!archived ? (
             <Button

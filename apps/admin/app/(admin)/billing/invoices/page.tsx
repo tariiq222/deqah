@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import { useListSubscriptionInvoices } from '@/features/billing/list-subscription-invoices/use-list-subscription-invoices';
 import {
@@ -10,6 +11,7 @@ import {
 import { InvoicesTable } from '@/features/billing/list-subscription-invoices/invoices-table';
 
 export default function BillingInvoicesPage() {
+  const tc = useTranslations('common');
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<InvoiceStatusFilter>('all');
   const [organizationId, setOrganizationId] = useState('');
@@ -28,8 +30,10 @@ export default function BillingInvoicesPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-1">
+        {/* TODO i18n: Invoices (no billing.invoicesTitle key; billing.invoicesLink exists for nav only) */}
         <h2 className="text-xl font-semibold">Invoices</h2>
         <p className="text-sm text-muted-foreground">
+          {/* TODO i18n: Cross-tenant SaaS invoices. Drafts hidden by default. */}
           Cross-tenant SaaS invoices. Drafts hidden by default.
         </p>
       </div>
@@ -75,7 +79,7 @@ export default function BillingInvoicesPage() {
       {data && data.meta.totalPages > 1 ? (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span className="tabular-nums">
-            Page {data.meta.page} of {data.meta.totalPages} · {data.meta.total} total
+            {tc('page')} {data.meta.page} {tc('of')} {data.meta.totalPages} · {data.meta.total} {tc('total')}
           </span>
           <div className="flex gap-2">
             <Button
@@ -84,7 +88,7 @@ export default function BillingInvoicesPage() {
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
             >
-              Previous
+              {tc('previous')}
             </Button>
             <Button
               variant="outline"
@@ -92,7 +96,7 @@ export default function BillingInvoicesPage() {
               disabled={page >= data.meta.totalPages}
               onClick={() => setPage((p) => p + 1)}
             >
-              Next
+              {tc('next')}
             </Button>
           </div>
         </div>

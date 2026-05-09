@@ -1,10 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 
 export function LogoutButton() {
   const router = useRouter();
+  const t = useTranslations('common');
   return (
     <Button
       variant="ghost"
@@ -17,7 +19,7 @@ export function LogoutButton() {
         router.push('/login');
       }}
     >
-      Sign out
+      {t('signOut')}
     </Button>
   );
 }

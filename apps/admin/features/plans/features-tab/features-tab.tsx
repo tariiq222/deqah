@@ -32,6 +32,7 @@ function parseInputNumber(s: string): number {
   return Number.isNaN(n) ? 0 : n;
 }
 
+// TODO i18n: OVERAGE_TOOLTIPS strings below — no keys in plans.* namespace
 const OVERAGE_TOOLTIPS: Partial<Record<keyof PlanLimits, string>> = {
   overageRateBookings:
     'Cost charged per booking beyond the monthly quota. Set 0 to block overage entirely.',
@@ -100,6 +101,7 @@ export function FeaturesTab({ flatLimits, onFlatLimitsChange, idPrefix }: Props)
 
       {/* 6. Overage pricing */}
       <div className="space-y-3 pt-2">
+        {/* TODO i18n: "Overage pricing" — no key in plans.* namespace */}
         <p className="text-sm font-medium text-foreground">Overage pricing</p>
         <div className="grid grid-cols-3 gap-3">
           {OVERAGE_FIELDS.map((f) => {

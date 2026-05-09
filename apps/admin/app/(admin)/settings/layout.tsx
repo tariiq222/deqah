@@ -1,16 +1,20 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-
-const TABS = [
-  { href: '/settings/email', label: 'Email' },
-  { href: '/settings/notifications', label: 'Notifications' },
-  { href: '/settings/billing', label: 'Billing' },
-  { href: '/settings/branding', label: 'Branding' },
-  { href: '/settings/health', label: 'System Health' },
-  { href: '/settings/security', label: 'Security' },
-];
+import { useTranslations } from 'next-intl';
 
 export default function SettingsLayout({ children }: { children: ReactNode }) {
+  const tb = useTranslations('breadcrumbs');
+  const sh = useTranslations('settings.hub.cards');
+
+  const TABS = [
+    { href: '/settings/email', label: tb('email') },
+    { href: '/settings/notifications', label: tb('notifications') },
+    { href: '/settings/billing', label: tb('billing') },
+    { href: '/settings/branding', label: tb('branding') },
+    { href: '/settings/health', label: sh('health.title') },
+    { href: '/settings/security', label: tb('security') },
+  ];
+
   return (
     <div>
       <nav className="mb-6 flex gap-2 border-b border-border pb-2">

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Badge } from '@deqah/ui/primitives/badge';
 import { Button } from '@deqah/ui/primitives/button';
 import { Skeleton } from '@deqah/ui/primitives/skeleton';
@@ -39,6 +39,8 @@ interface Props {
 
 export function ZohoInvoicesTable({ items, isLoading }: Props) {
   const locale = useLocale();
+  const t = useTranslations('billing');
+  const tc = useTranslations('common');
 
   if (isLoading) {
     return (
@@ -52,7 +54,7 @@ export function ZohoInvoicesTable({ items, isLoading }: Props) {
 
   if (!items?.length) {
     return (
-      <p className="py-6 text-center text-sm text-muted-foreground">No invoices found.</p>
+      <p className="py-6 text-center text-sm text-muted-foreground">{/* TODO i18n: No invoices found */}No invoices found.</p>
     );
   }
 
@@ -61,15 +63,15 @@ export function ZohoInvoicesTable({ items, isLoading }: Props) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Tenant</TableHead>
-            <TableHead>Invoice</TableHead>
-            <TableHead>Period</TableHead>
-            <TableHead>Cycle</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Zoho mirror</TableHead>
-            <TableHead>Next charge</TableHead>
-            <TableHead className="text-end">Actions</TableHead>
+            <TableHead>{/* TODO i18n: Tenant */}Tenant</TableHead>
+            <TableHead>{t('tables.invoice')}</TableHead>
+            <TableHead>{t('tables.period')}</TableHead>
+            <TableHead>{/* TODO i18n: Cycle */}Cycle</TableHead>
+            <TableHead className="text-right">{/* TODO i18n: Amount */}Amount</TableHead>
+            <TableHead>{tc('status')}</TableHead>
+            <TableHead>{/* TODO i18n: Zoho mirror */}Zoho mirror</TableHead>
+            <TableHead>{/* TODO i18n: Next charge */}Next charge</TableHead>
+            <TableHead className="text-end">{tc('actions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -105,7 +107,7 @@ export function ZohoInvoicesTable({ items, isLoading }: Props) {
               </TableCell>
               <TableCell>
                 <Badge variant="outline" className={INV_TONE[row.status]}>
-                  {row.status}
+                  {t(`invoiceStatus.${row.status}`)}
                 </Badge>
               </TableCell>
               <TableCell>

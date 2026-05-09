@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import {
   Dialog,
@@ -21,6 +22,7 @@ export function ResetPasswordDialog({
   userEmail: string;
 }) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations('users');
   const mutation = useResetUserPassword();
 
   const submit = () => {
@@ -38,25 +40,25 @@ export function ResetPasswordDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm">
-          Reset password
+          {t('resetPassword.button')}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Reset password for {userEmail}</DialogTitle>
+          <DialogTitle>{t('resetPassword.title', { email: userEmail })}</DialogTitle>
           <DialogDescription>
-            Issues a secure temporary password and emails it to the user. This action is logged to the audit trail.
+            {t('resetPassword.description')}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>
-            Cancel
+            {t('resetPassword.cancel')}
           </Button>
           <Button
             onClick={submit}
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? 'Resetting…' : 'Confirm reset'}
+            {mutation.isPending ? t('resetPassword.submitting') : t('resetPassword.submit')}
           </Button>
         </DialogFooter>
       </DialogContent>

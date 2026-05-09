@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useGetPlatformMetrics } from './use-get-platform-metrics';
 import { formatSar } from '@/lib/currency';
 
@@ -28,12 +29,13 @@ function KpiCell({ label, value, tone }: KpiCellProps) {
 }
 
 export function MetricsGrid() {
+  const t = useTranslations('metrics');
   const { data, isLoading, error } = useGetPlatformMetrics();
 
   if (error) {
     return (
       <p className="text-sm text-destructive">
-        Failed to load metrics: {(error as Error).message}
+        {t('loadError', { message: (error as Error).message })}
       </p>
     );
   }
@@ -44,13 +46,13 @@ export function MetricsGrid() {
 
   return (
     <div className="flex divide-x divide-border overflow-hidden rounded-md border border-border">
-      <KpiCell label="Orgs" value={data.organizations.total} />
-      <KpiCell label="Active" value={data.organizations.active} tone="success" />
-      <KpiCell label="Suspended" value={data.organizations.suspended} tone="warning" />
-      <KpiCell label="New this month" value={data.organizations.newThisMonth} />
-      <KpiCell label="Users" value={data.users.total} />
-      <KpiCell label="Bookings 30d" value={data.bookings.totalLast30Days} />
-      <KpiCell label="Lifetime revenue" value={formatSar(data.revenue.lifetimePaidSar)} />
+      <KpiCell label={t('kpi.orgs')} value={data.organizations.total} />
+      <KpiCell label={t('kpi.active')} value={data.organizations.active} tone="success" />
+      <KpiCell label={t('kpi.suspended')} value={data.organizations.suspended} tone="warning" />
+      <KpiCell label={t('kpi.newThisMonth')} value={data.organizations.newThisMonth} />
+      <KpiCell label={t('kpi.users')} value={data.users.total} />
+      <KpiCell label={t('kpi.bookings30d')} value={data.bookings.totalLast30Days} />
+      <KpiCell label={t('kpi.lifetimeRevenue')} value={formatSar(data.revenue.lifetimePaidSar)} />
     </div>
   );
 }

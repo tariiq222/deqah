@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import { Input } from '@deqah/ui/primitives/input';
 import { Label } from '@deqah/ui/primitives/label';
@@ -39,26 +40,28 @@ export function InvoicesFilterBar({
   onToDateChange,
   onReset,
 }: Props) {
+  const t = useTranslations('billing');
+  const tc = useTranslations('common');
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card/50 px-4 py-3">
       <div className="flex flex-col gap-1">
-        <Label className="text-xs text-muted-foreground">Status</Label>
+        <Label className="text-xs text-muted-foreground">{tc('status')}</Label>
         <Select value={status} onValueChange={(v) => onStatusChange(v as InvoiceStatusFilter)}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={tc('status')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All (no drafts)</SelectItem>
+            <SelectItem value="all">{/* TODO i18n: All (no drafts) */}All (no drafts)</SelectItem>
             {STATUSES.map((s) => (
               <SelectItem key={s} value={s}>
-                {s}
+                {t(`invoiceStatus.${s}`)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
       <div className="flex flex-col gap-1">
-        <Label className="text-xs text-muted-foreground">Organization ID</Label>
+        <Label className="text-xs text-muted-foreground">{t('filters.organizationId')}</Label>
         <Input
           placeholder="Filter by orgId"
           value={organizationId}
@@ -67,7 +70,7 @@ export function InvoicesFilterBar({
         />
       </div>
       <div className="flex flex-col gap-1">
-        <Label className="text-xs text-muted-foreground">From</Label>
+        <Label className="text-xs text-muted-foreground">{t('filters.fromDate')}</Label>
         <Input
           type="date"
           value={fromDate}
@@ -76,7 +79,7 @@ export function InvoicesFilterBar({
         />
       </div>
       <div className="flex flex-col gap-1">
-        <Label className="text-xs text-muted-foreground">To</Label>
+        <Label className="text-xs text-muted-foreground">{t('filters.toDate')}</Label>
         <Input
           type="date"
           value={toDate}
@@ -85,7 +88,7 @@ export function InvoicesFilterBar({
         />
       </div>
       <Button variant="ghost" size="sm" onClick={onReset}>
-        Reset
+        {tc('reset')}
       </Button>
     </div>
   );

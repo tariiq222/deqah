@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import {
   Dialog,
@@ -13,7 +14,14 @@ import {
 import { useState } from 'react';
 import { useSuspendOrganization } from './use-suspend-organization';
 
-export function SuspendDialog({ organizationId }: { organizationId: string }) {
+export function SuspendDialog({
+  organizationId,
+  organizationName,
+}: {
+  organizationId: string;
+  organizationName?: string;
+}) {
+  const t = useTranslations('organizations.suspend');
   const [open, setOpen] = useState(false);
   const mutation = useSuspendOrganization(organizationId);
 
@@ -28,25 +36,25 @@ export function SuspendDialog({ organizationId }: { organizationId: string }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="destructive">Suspend</Button>
+        <Button variant="destructive">{t('submit')}</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Suspend organization</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
-            Members will be signed out within 30 seconds. This action is written to the audit log.
+            {t('description', { name: organizationName ?? '' })}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>
-            Cancel
+            {t('cancel')}
           </Button>
           <Button
             variant="destructive"
             onClick={submit}
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? 'Suspending…' : 'Confirm suspend'}
+            {mutation.isPending ? t('submitting') : t('submit')}
           </Button>
         </DialogFooter>
       </DialogContent>

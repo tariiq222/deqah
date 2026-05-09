@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import { useListSubscriptions } from '@/features/billing/list-subscriptions/use-list-subscriptions';
 import {
@@ -13,6 +14,8 @@ import { BillingMetricsGrid } from '@/features/billing/get-billing-metrics/billi
 import { ErrorBanner } from '@/components/error-banner';
 
 export default function BillingSubscriptionsPage() {
+  const t = useTranslations('billing');
+  const tc = useTranslations('common');
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<StatusFilter>('all');
 
@@ -27,20 +30,20 @@ export default function BillingSubscriptionsPage() {
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
-          <h2 className="text-xl font-semibold">Billing</h2>
+          <h2 className="text-xl font-semibold">{t('title')}</h2>
           <p className="text-sm text-muted-foreground">
-            SaaS subscriptions across all tenants.
+            {t('description')}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button asChild variant="outline" size="sm">
-            <Link href="/billing/invoices">Invoices</Link>
+            <Link href="/billing/invoices">{t('invoicesLink')}</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link href="/billing/metrics">Metrics</Link>
+            <Link href="/billing/metrics">{t('metricsLink')}</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link href="/billing/zoho">Zoho schedule</Link>
+            <Link href="/billing/zoho">{t('zohoLink')}</Link>
           </Button>
         </div>
       </div>
@@ -70,7 +73,7 @@ export default function BillingSubscriptionsPage() {
       {data && data.meta.totalPages > 1 ? (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span className="tabular-nums">
-            Page {data.meta.page} of {data.meta.totalPages} · {data.meta.total} total
+            {tc('page')} {data.meta.page} {tc('of')} {data.meta.totalPages} · {data.meta.total} {tc('total')}
           </span>
           <div className="flex gap-2">
             <Button
@@ -79,7 +82,7 @@ export default function BillingSubscriptionsPage() {
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
             >
-              Previous
+              {tc('previous')}
             </Button>
             <Button
               variant="outline"
@@ -87,7 +90,7 @@ export default function BillingSubscriptionsPage() {
               disabled={page >= data.meta.totalPages}
               onClick={() => setPage((p) => p + 1)}
             >
-              Next
+              {tc('next')}
             </Button>
           </div>
         </div>
