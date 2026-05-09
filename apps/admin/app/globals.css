@@ -6,6 +6,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --font-sans: var(--font-geist), var(--font-plex-arabic), 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface-solid: var(--surface-solid);
@@ -54,17 +56,17 @@
   --muted:             oklch(0.96 0.004 255);
   --muted-foreground:  oklch(0.48 0.01 258);
 
-  /* Accent — electric blue. Higher chroma, true blue (~250-260 hue). */
-  --primary:           oklch(0.58 0.22 258);
+  /* Brand blue — matches Diqqa logo (#1E66FF) */
+  --primary:           oklch(0.59 0.24 264);
   --primary-foreground:oklch(0.99 0 0);
-  --ring:              oklch(0.58 0.22 258);
+  --ring:              oklch(0.59 0.24 264);
 
   /* Secondary surfaces stay neutral, no second accent */
   --secondary:           oklch(0.96 0.004 255);
   --secondary-foreground:oklch(0.22 0.02 260);
 
   /* Accent slot retained for downstream primitives but mapped to primary */
-  --accent:           oklch(0.58 0.22 258);
+  --accent:           oklch(0.59 0.24 264);
   --accent-foreground:oklch(0.99 0 0);
 
   /* Semantic only — never decorative */
@@ -78,7 +80,7 @@
   --input:            oklch(0.92 0.005 255);
 
   /* Typography stack vars — used by body/utility classes */
-  --font-sans:    var(--font-mona-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans:    var(--font-geist), var(--font-plex-arabic), 'IBM Plex Sans Arabic', system-ui, sans-serif;
   --font-mono:    var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -97,15 +99,15 @@
   --muted:             oklch(0.20 0.012 258);
   --muted-foreground:  oklch(0.66 0.01 258);
 
-  /* Brighter blue against black for the same perceived contrast */
-  --primary:           oklch(0.72 0.20 258);
+  /* Brighter brand blue against black — derived from #1E66FF */
+  --primary:           oklch(0.70 0.22 264);
   --primary-foreground:oklch(0.13 0.012 258);
-  --ring:              oklch(0.72 0.20 258);
+  --ring:              oklch(0.70 0.22 264);
 
   --secondary:           oklch(0.20 0.012 258);
   --secondary-foreground:oklch(0.96 0.004 255);
 
-  --accent:           oklch(0.72 0.20 258);
+  --accent:           oklch(0.70 0.22 264);
   --accent-foreground:oklch(0.13 0.012 258);
 
   --destructive:           oklch(0.66 0.22 27);

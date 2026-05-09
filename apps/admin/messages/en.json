@@ -1,6 +1,6 @@
 {
   "nav": {
-    "title": "Deqah Super-admin",
+    "title": "Deqah",
     "overview": "Overview",
     "organizations": "Organizations",
     "users": "Users",
@@ -12,7 +12,120 @@
     "auditLog": "Audit log",
     "impersonation": "Impersonation sessions",
     "notifications": "Notification Delivery",
-    "settings": "Settings"
+    "settings": "Settings",
+    "sections": {
+      "operate": "Operate",
+      "money": "Money",
+      "configure": "Configure",
+      "inspect": "Inspect"
+    },
+    "aria": {
+      "mainNavigation": "Main navigation"
+    },
+    "subtitle": "Control plane"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "close": "Close",
+    "confirm": "Confirm",
+    "loading": "Loading…",
+    "error": "Error",
+    "success": "Success",
+    "retry": "Retry",
+    "search": "Search",
+    "filter": "Filter",
+    "reset": "Reset",
+    "export": "Export",
+    "refresh": "Refresh",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "yes": "Yes",
+    "no": "No",
+    "all": "All",
+    "none": "None",
+    "optional": "optional",
+    "required": "required",
+    "copy": "Copy",
+    "copied": "Copied",
+    "view": "View",
+    "viewAll": "View all",
+    "actions": "Actions",
+    "status": "Status",
+    "name": "Name",
+    "email": "Email",
+    "createdAt": "Created",
+    "updatedAt": "Updated",
+    "page": "Page",
+    "of": "of",
+    "total": "total",
+    "noResults": "No results found.",
+    "signOut": "Sign out",
+    "active": "Active",
+    "inactive": "Inactive",
+    "unlimited": "Unlimited",
+    "saving": "Saving…",
+    "creating": "Creating…",
+    "deleting": "Deleting…"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "toggle": "Toggle theme"
+  },
+  "breadcrumbs": {
+    "home": "Home",
+    "organizations": "Organizations",
+    "detail": "Detail",
+    "plans": "Plans",
+    "new": "New",
+    "edit": "Edit",
+    "verticals": "Verticals",
+    "billing": "Billing",
+    "invoices": "Invoices",
+    "metrics": "Metrics",
+    "zoho": "Zoho",
+    "auditLog": "Audit Log",
+    "impersonation": "Impersonation",
+    "users": "Users",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "email": "Email",
+    "templates": "Templates",
+    "logs": "Logs",
+    "branding": "Branding",
+    "health": "Health",
+    "security": "Security",
+    "organization": "Organization",
+    "compare": "Compare"
+  },
+  "errors": {
+    "somethingWentWrong": "Something went wrong.",
+    "networkError": "Network error. Check your connection.",
+    "unauthorized": "Unauthorized. Please sign in.",
+    "forbidden": "You do not have permission to perform this action.",
+    "notFound": "The requested resource was not found.",
+    "serverError": "An unexpected server error occurred.",
+    "validationFailed": "Validation failed. Check the highlighted fields.",
+    "sessionExpired": "Your session has expired. Please sign in again.",
+    "retry": "Try again"
+  },
+  "overview": {
+    "title": "Overview",
+    "description": "Platform-wide snapshot",
+    "stats": {
+      "totalOrgs": "Orgs",
+      "activeOrgs": "Active",
+      "suspendedOrgs": "Suspended",
+      "newThisMonth": "New this month",
+      "totalUsers": "Users",
+      "bookings30d": "Bookings 30d",
+      "lifetimeRevenue": "Lifetime revenue"
+    }
   },
   "notifications": {
     "title": "Notification Delivery Log",
@@ -147,6 +260,24 @@
       "monthlyPrice": "Monthly price",
       "priceSar": "{amount} SAR"
     },
+    "suspend": {
+      "title": "Suspend organization",
+      "description": "Suspend {name}. Active sessions will be terminated and access tokens invalidated.",
+      "cancel": "Cancel",
+      "submit": "Suspend",
+      "submitting": "Suspending...",
+      "success": "Organization suspended.",
+      "errorFallback": "Failed to suspend organization"
+    },
+    "reinstate": {
+      "title": "Reinstate organization",
+      "description": "Reinstate {name}. The organization will regain access to the platform.",
+      "cancel": "Cancel",
+      "submit": "Reinstate",
+      "submitting": "Reinstating...",
+      "success": "Organization reinstated.",
+      "errorFallback": "Failed to reinstate organization"
+    },
     "update": {
       "title": "Edit organization metadata",
       "description": "Update tenant names, vertical, or trial date. Every change requires an audit reason.",
@@ -171,11 +302,270 @@
       "success": "Organization archived.",
       "errorFallback": "Failed to archive organization"
     },
+    "changePlan": {
+      "title": "Change plan",
+      "description": "Move this organization to a different subscription plan.",
+      "currentPlan": "Current plan",
+      "newPlan": "New plan",
+      "newPlanPlaceholder": "Select a plan",
+      "reason": "Reason",
+      "reasonPlaceholder": "Explain why this plan change is being made (min 10 chars)",
+      "reasonError": "Reason must be at least 10 characters ({count}/10).",
+      "cancel": "Cancel",
+      "submit": "Change plan",
+      "submitting": "Changing…",
+      "success": "Plan changed.",
+      "errorFallback": "Failed to change plan"
+    },
+    "impersonate": {
+      "button": "Impersonate user",
+      "title": "Impersonate a user in {orgName}",
+      "description": "Issues a 15-minute shadow session. Every request you make under it is logged with your super-admin id. End the session manually from the sessions page or it auto-expires.",
+      "targetUserId": "Target user ID (UUID)",
+      "targetUserIdPlaceholder": "00000000-0000-0000-0000-000000000000",
+      "targetUserIdHint": "Paste the user's UUID from the Users page. Impersonating another super-admin is rejected.",
+      "cancel": "Cancel",
+      "submit": "Start session + redirect",
+      "submitting": "Starting…"
+    },
     "error": {
       "loadFailed": "Failed to load: {message}"
     }
   },
+  "users": {
+    "title": "Users",
+    "description": "Cross-tenant user search. Issue temporary passwords when support requires it.",
+    "totalCount": "{count} total",
+    "search": {
+      "placeholder": "email@…",
+      "orgIdPlaceholder": "Organization ID",
+      "reset": "Reset"
+    },
+    "table": {
+      "name": "Name",
+      "email": "Email",
+      "primaryOrg": "Primary org",
+      "lastSeen": "Last seen",
+      "actions": "Actions",
+      "superAdmin": "admin",
+      "empty": "No users match the current filters.",
+      "justNow": "just now",
+      "timeAgo": "{value}{unit} ago"
+    },
+    "resetPassword": {
+      "button": "Reset password",
+      "title": "Reset password for {email}",
+      "description": "Issues a secure temporary password and emails it to the user. This action is logged to the audit trail.",
+      "cancel": "Cancel",
+      "submit": "Confirm reset",
+      "submitting": "Resetting…",
+      "success": "Temporary password sent to {email}.",
+      "errorFallback": "Failed to reset password"
+    }
+  },
+  "plans": {
+    "title": "Plans",
+    "description": "Subscription plans available to tenants.",
+    "createButton": "Create plan",
+    "compareButton": "Compare plans",
+    "backToPlans": "← back to plans",
+    "backToPlansShort": "← Plans",
+    "create": {
+      "title": "Create plan",
+      "description": "Add a new subscription plan for tenants."
+    },
+    "edit": {
+      "title": "Edit plan",
+      "description": "Update this subscription plan. Audited.",
+      "notFound": "Plan not found."
+    },
+    "compare": {
+      "title": "Compare plans",
+      "description": "Feature limits across all plans side by side. Edit any cell to stage a change."
+    },
+    "table": {
+      "slug": "Slug",
+      "name": "Name",
+      "subscribers": "Subscribers",
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "status": "Status",
+      "actions": "Actions",
+      "empty": "No plans defined. Create one using the button above.",
+      "subscriberTitle": "{count} active subscriber",
+      "subscribersTitlePlural": "{count} active subscribers"
+    },
+    "wizard": {
+      "steps": {
+        "basics": "Basics",
+        "features": "Features",
+        "review": "Review"
+      },
+      "back": "Back",
+      "cancel": "Cancel",
+      "next": "Next",
+      "createSubmit": "Create plan",
+      "editSubmit": "Save changes",
+      "creating": "Creating…",
+      "saving": "Saving…",
+      "fixErrors": "Fix the highlighted fields to continue.",
+      "reviewConfirm": "Review the details above, then click the button below to confirm."
+    },
+    "basics": {
+      "planCode": "Plan code",
+      "planCodeHint": "Uppercase letters, digits, underscores. 2–32 characters.",
+      "planCodeExamples": "Examples:",
+      "planCodeImmutable": "Plan code is immutable and cannot be changed.",
+      "nameAr": "Name (Arabic)",
+      "nameEn": "Name (English)",
+      "monthlyPrice": "Monthly price",
+      "annualPrice": "Annual price",
+      "currency": "Currency",
+      "isActive": "Active",
+      "errors": {
+        "planCodeRequired": "Plan code is required",
+        "planCodeInvalid": "Invalid plan code. Use uppercase letters, digits, and underscores only.",
+        "nameArRequired": "Arabic name is required",
+        "nameEnRequired": "English name is required",
+        "monthlyRequired": "Monthly price is required",
+        "annualRequired": "Annual price is required"
+      }
+    },
+    "review": {
+      "planBasics": "Plan basics",
+      "limitsAndFeatures": "Limits & features",
+      "planCode": "Plan code",
+      "nameAr": "Name (Arabic)",
+      "nameEn": "Name (English)",
+      "monthlyPrice": "Monthly price",
+      "annualPrice": "Annual price",
+      "statusLabel": "Status",
+      "featuresEnabled": "{enabled} / {total} features enabled",
+      "overageRates": "Overage rates",
+      "unlimited": "Unlimited"
+    },
+    "delete": {
+      "title": "Delete plan",
+      "description": "You are about to delete {name} ({slug}). This action cannot be undone and is written to the audit log.",
+      "cancel": "Cancel",
+      "submit": "Delete plan",
+      "submitting": "Deleting…",
+      "success": "Plan deleted.",
+      "errorFallback": "Failed to delete plan"
+    }
+  },
+  "verticals": {
+    "title": "Verticals",
+    "description": "Clinic archetypes that drive terminology and seed content.",
+    "createButton": "Create vertical",
+    "detail": {
+      "selected": "Selected",
+      "terminologyPack": "Terminology pack",
+      "noTerminology": "No terminology overrides — using defaults.",
+      "key": "Key",
+      "ar": "AR",
+      "en": "EN",
+      "edit": "Edit"
+    },
+    "table": {
+      "slug": "Slug",
+      "name": "Name",
+      "status": "Status",
+      "actions": "Actions",
+      "empty": "No verticals defined. Create one using the button above.",
+      "editTooltip": "Edit",
+      "deleteTooltip": "Delete"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "create": {
+      "title": "Create vertical",
+      "description": "Add a new clinic archetype. This action is written to the audit log.",
+      "slug": "Slug (kebab-case)",
+      "slugPlaceholder": "e.g. general-medicine",
+      "nameAr": "Name (Arabic)",
+      "nameArPlaceholder": "اسم التخصص",
+      "nameEn": "Name (English)",
+      "nameEnPlaceholder": "Vertical name",
+      "templateFamily": "Template family",
+      "templateFamilyPlaceholder": "Select family…",
+      "descriptionAr": "Description (Arabic, optional)",
+      "descriptionEn": "Description (English, optional)",
+      "cancel": "Cancel",
+      "submit": "Create vertical",
+      "submitting": "Creating…",
+      "success": "Vertical created.",
+      "errorFallback": "Failed to create vertical"
+    },
+    "update": {
+      "title": "Edit vertical — {slug}",
+      "description": "Update vertical details. Slug cannot be changed after creation.",
+      "nameAr": "Name (Arabic)",
+      "nameEn": "Name (English)",
+      "templateFamily": "Template family",
+      "descriptionAr": "Description (Arabic, optional)",
+      "descriptionEn": "Description (English, optional)",
+      "cancel": "Cancel",
+      "submit": "Save changes",
+      "submitting": "Saving…",
+      "success": "Vertical updated.",
+      "errorFallback": "Failed to update vertical"
+    },
+    "delete": {
+      "title": "Delete vertical",
+      "description": "You are about to delete {name} ({slug}). This action cannot be undone and is written to the audit log.",
+      "cancel": "Cancel",
+      "submit": "Delete vertical",
+      "submitting": "Deleting…",
+      "success": "Vertical deleted.",
+      "errorFallback": "Failed to delete vertical"
+    }
+  },
   "billing": {
+    "title": "Billing",
+    "description": "SaaS subscriptions across all tenants.",
+    "invoicesLink": "Invoices",
+    "metricsLink": "Metrics",
+    "zohoLink": "Zoho schedule",
+    "metrics": {
+      "title": "Metrics",
+      "description": "MRR, ARR, churn, and per-plan revenue across all tenants.",
+      "mrr": "MRR",
+      "arr": "ARR",
+      "activeSubscriptions": "Active subscriptions",
+      "trialingSubscriptions": "Trialing",
+      "pastDueSubscriptions": "Past due",
+      "loadError": "Failed to load billing metrics: {message}"
+    },
+    "detail": {
+      "plan": "Plan",
+      "status": "Status",
+      "cycle": "Cycle",
+      "period": "Period",
+      "mrr": "MRR",
+      "lastPayment": "Last payment",
+      "trialEnds": "Trial ends",
+      "pastDueSince": "Past due since",
+      "lastFailure": "Last failure",
+      "noSubscription": "No subscription on file for this organization.",
+      "recentInvoices": "Recent invoices",
+      "credits": "Credits",
+      "usage": "Usage",
+      "dunningAttempts": "Dunning attempts",
+      "noInvoices": "No invoices.",
+      "noCredits": "No credits granted.",
+      "noUsage": "No usage records for the current billing period.",
+      "changePlanButton": "Change plan…",
+      "grantCreditButton": "Grant credit…",
+      "waiveButton": "Waive",
+      "refundButton": "Refund",
+      "creditUnused": "unused",
+      "creditGranted": "Granted",
+      "creditConsumed": "Consumed",
+      "creditReason": "Reason"
+    },
     "tables": {
       "invoice": "Invoice",
       "organization": "Organization",
@@ -194,6 +584,14 @@
       "emptyInvoices": "No invoices match the current filters.",
       "priceMonthly": "{amount} SAR/mo"
     },
+    "filters": {
+      "status": "Status",
+      "allStatuses": "All statuses",
+      "organizationId": "Organization ID",
+      "fromDate": "From date",
+      "toDate": "To date",
+      "reset": "Reset"
+    },
     "subscriptionStatus": {
       "TRIALING": "Trialing",
       "ACTIVE": "Active",
@@ -207,9 +605,213 @@
       "PAID": "Paid",
       "FAILED": "Failed",
       "VOID": "Void"
+    },
+    "dunningStatus": {
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "pending": "Pending"
+    },
+    "waive": {
+      "title": "Waive invoice",
+      "description": "Voids invoice {invoiceId} for {amount} {currency}. No money moves. DUE/FAILED only. PAID invoices require a refund. Audited.",
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "Explain why this invoice is being waived (min 10 chars)",
+      "reasonError": "Reason must be at least 10 characters ({count}/10).",
+      "cancel": "Cancel",
+      "submit": "Waive invoice",
+      "submitting": "Waiving…",
+      "success": "Invoice waived.",
+      "errorFallback": "Failed to waive invoice"
+    },
+    "grantCredit": {
+      "title": "Grant credit",
+      "description": "Applies a billing credit to this organization's next invoice. Range: 1 – 100,000 SAR. Audited.",
+      "amountLabel": "Amount (SAR)",
+      "amountPlaceholder": "50",
+      "amountError": "Amount must be between 1 and 100,000 SAR.",
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "Explain why this credit is being granted (min 10 chars)",
+      "reasonError": "Reason must be at least 10 characters ({count}/10).",
+      "cancel": "Cancel",
+      "submit": "Grant credit",
+      "submitting": "Granting…",
+      "success": "Credit granted.",
+      "errorFallback": "Failed to grant credit"
+    },
+    "changePlan": {
+      "title": "Change plan",
+      "description": "Switch this organization to a different plan. Change is immediate, no proration — next invoice reflects the new plan price. Audited.",
+      "currentPlan": "Current plan",
+      "newPlan": "New plan",
+      "newPlanPlaceholder": "Select a plan",
+      "newPlanLoading": "Loading…",
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "Explain why this plan change is being made (min 10 chars)",
+      "reasonError": "Reason must be at least 10 characters ({count}/10).",
+      "cancel": "Cancel",
+      "submit": "Change plan",
+      "submitting": "Changing…",
+      "success": "Plan changed.",
+      "errorFallback": "Failed to change plan"
+    },
+    "refund": {
+      "title": "Refund invoice",
+      "description": "Calls Moyasar to refund invoice {invoiceId}. Funds return to the organization's card. Real money movement. Audited.",
+      "invoiceTotal": "Invoice total",
+      "alreadyRefunded": "Already refunded",
+      "refundable": "Refundable",
+      "refundAmountLabel": "Refund amount",
+      "full": "Full",
+      "partial": "Partial",
+      "partialAmountLabel": "Partial amount",
+      "partialAmountPlaceholder": "Up to {max}",
+      "partialAmountError": "Amount must be between 0.01 and {max} {currency}.",
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "Explain why this refund is being issued (min 10 chars)",
+      "reasonError": "Reason must be at least 10 characters ({count}/10).",
+      "cancel": "Cancel",
+      "submit": "Refund via Moyasar",
+      "submitting": "Processing…",
+      "success": "Refund processed.",
+      "errorFallback": "Failed to process refund"
     }
   },
+  "auditLog": {
+    "title": "Audit log",
+    "description": "Every destructive super-admin action. Read-only.",
+    "totalEntries": "{count} entries",
+    "filters": {
+      "actionType": "Action type",
+      "allActionTypes": "All action types",
+      "organizationId": "Organization ID",
+      "reset": "Reset"
+    },
+    "table": {
+      "actor": "Actor",
+      "action": "Action",
+      "when": "When",
+      "empty": "No audit entries match the current filters."
+    },
+    "actionTypes": {
+      "SUSPEND_ORG": "SUSPEND_ORG",
+      "REINSTATE_ORG": "REINSTATE_ORG",
+      "IMPERSONATE_START": "IMPERSONATE_START",
+      "IMPERSONATE_END": "IMPERSONATE_END",
+      "RESET_PASSWORD": "RESET_PASSWORD",
+      "PLAN_CREATE": "PLAN_CREATE",
+      "PLAN_UPDATE": "PLAN_UPDATE",
+      "PLAN_DELETE": "PLAN_DELETE",
+      "VERTICAL_CREATE": "VERTICAL_CREATE",
+      "VERTICAL_UPDATE": "VERTICAL_UPDATE",
+      "VERTICAL_DELETE": "VERTICAL_DELETE",
+      "INVOICE_WAIVED": "INVOICE_WAIVED",
+      "INVOICE_REFUNDED": "INVOICE_REFUNDED",
+      "BILLING_CREDIT_GRANTED": "BILLING_CREDIT_GRANTED",
+      "PLAN_CHANGED": "PLAN_CHANGED",
+      "PLATFORM_SETTING_UPDATED": "PLATFORM_SETTING_UPDATED"
+    },
+    "pagination": {
+      "summary": "Page {page} of {totalPages}",
+      "previous": "Previous",
+      "next": "Next"
+    }
+  },
+  "impersonation": {
+    "title": "Impersonation sessions",
+    "description": "Active and historical shadow sessions. End any active session immediately.",
+    "filters": {
+      "allSessions": "All sessions",
+      "activeOnly": "Active only",
+      "endedOrExpired": "Ended / expired"
+    },
+    "sections": {
+      "activeNow": "Active now",
+      "pastSessions": "Past sessions"
+    },
+    "table": {
+      "actor": "Actor",
+      "targetUser": "Target user",
+      "organization": "Organization",
+      "started": "Started",
+      "ended": "Ended",
+      "duration": "Duration",
+      "endSession": "End session",
+      "endSessionAriaLabel": "End impersonation session",
+      "activeDot": "Active"
+    },
+    "empty": {
+      "noActiveSessions": "No active sessions.",
+      "noPastSessions": "No past sessions."
+    },
+    "pagination": {
+      "summary": "Page {page} of {totalPages}",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "endSession": {
+      "success": "Impersonation session ended.",
+      "errorFallback": "Failed to end session"
+    }
+  },
+  "metrics": {
+    "title": "Platform metrics",
+    "description": "Cross-tenant snapshot — organizations, users, bookings, revenue.",
+    "ranges": {
+      "24h": "24h",
+      "7d": "7d",
+      "30d": "30d",
+      "90d": "90d"
+    },
+    "kpi": {
+      "orgs": "Orgs",
+      "active": "Active",
+      "suspended": "Suspended",
+      "newThisMonth": "New this month",
+      "users": "Users",
+      "bookings30d": "Bookings 30d",
+      "lifetimeRevenue": "Lifetime revenue"
+    },
+    "loadError": "Failed to load metrics: {message}"
+  },
   "settings": {
+    "hub": {
+      "title": "Settings",
+      "description": "Platform configuration — email, notifications, billing, branding, security, and system health.",
+      "cards": {
+        "email": {
+          "title": "Email",
+          "description": "Configure Resend API key, from address, and delivery settings."
+        },
+        "emailTemplates": {
+          "title": "Email Templates",
+          "description": "Manage bilingual platform email templates."
+        },
+        "emailLogs": {
+          "title": "Email Logs",
+          "description": "Inspect recent platform email delivery events."
+        },
+        "notifications": {
+          "title": "Notifications",
+          "description": "Default notification channels, quiet hours, and FCM credentials."
+        },
+        "billing": {
+          "title": "Billing",
+          "description": "Moyasar platform credentials and billing defaults."
+        },
+        "branding": {
+          "title": "Branding",
+          "description": "Platform logo, colors, and locale defaults."
+        },
+        "health": {
+          "title": "System Health",
+          "description": "Live Postgres, Redis, and MinIO status."
+        },
+        "security": {
+          "title": "Security",
+          "description": "Session TTL, 2FA enforcement, and IP allowlist."
+        }
+      }
+    },
     "email": {
       "title": "Email Settings",
       "description": "Configure platform email delivery via Resend.",
@@ -229,7 +831,25 @@
         "empty": "No platform email templates found.",
         "active": "Active",
         "inactive": "Inactive",
-        "locked": "Locked"
+        "locked": "Locked",
+        "table": {
+          "key": "Key",
+          "locale": "Locale",
+          "subject": "Subject",
+          "lastUpdated": "Last updated",
+          "locked": "Locked",
+          "status": "Status"
+        },
+        "editor": {
+          "subject": "Subject",
+          "htmlBody": "HTML body",
+          "textBody": "Plain text body",
+          "variables": "Available variables",
+          "preview": "Preview",
+          "save": "Save template",
+          "revert": "Revert to default",
+          "saving": "Saving…"
+        }
       },
       "logs": {
         "title": "Delivery Logs",
@@ -249,7 +869,16 @@
           "status": "Status",
           "org": "Org",
           "created": "Created",
-          "error": "Error"
+          "error": "Error",
+          "recipient": "Recipient",
+          "provider": "Provider",
+          "actor": "Actor",
+          "timestamp": "Timestamp"
+        },
+        "statuses": {
+          "sent": "Sent",
+          "failed": "Failed",
+          "queued": "Queued"
         }
       }
     },
@@ -265,7 +894,8 @@
         "description": "Suppress non-urgent push notifications during these hours.",
         "startHour": "Start Hour (0-23)",
         "endHour": "End Hour (0-23)",
-        "timezone": "Timezone"
+        "timezone": "Timezone",
+        "enabled": "Enable quiet hours"
       },
       "fcm": {
         "title": "FCM Credentials",
@@ -303,6 +933,7 @@
         "currency": "Currency",
         "taxPercent": "Tax Percent",
         "trialDays": "Trial Days",
+        "overageModel": "Overage model",
         "save": "Save billing defaults",
         "saving": "Saving..."
       },
@@ -312,6 +943,48 @@
         "failed": "Save failed"
       },
       "loadError": "Failed to load billing settings."
+    },
+    "branding": {
+      "title": "Branding",
+      "description": "Platform brand defaults — logo, colors, and locale settings stored in PlatformSetting.",
+      "brandIdentity": {
+        "title": "Brand Identity",
+        "description": "Platform logo URL and default brand colors shown in admin and email templates.",
+        "logoUrl": "Logo URL",
+        "logoUrlPlaceholder": "https://cdn.example.com/logo.svg",
+        "primaryColor": "Primary Color",
+        "accentColor": "Accent Color"
+      },
+      "localeDefaults": {
+        "title": "Locale Defaults",
+        "description": "Default locale settings applied to new tenants and platform-level emails.",
+        "defaultLocale": "Default Locale",
+        "currencyFormat": "Currency Format",
+        "dateFormat": "Date Format",
+        "rtlDefault": "RTL by default"
+      },
+      "save": "Save branding settings",
+      "saving": "Saving...",
+      "saveSuccess": "Branding settings saved.",
+      "loadError": "Failed to load branding settings.",
+      "saveFailed": "Save failed."
+    },
+    "system": {
+      "title": "System Health",
+      "description": "Platform subsystem status",
+      "overall": "Overall:",
+      "subsystem": "Subsystem",
+      "status": "Status",
+      "latency": "Latency",
+      "detail": "Detail",
+      "checking": "Checking…",
+      "refresh": "Refresh",
+      "asOf": "as of {time}",
+      "statusValues": {
+        "ok": "OK",
+        "degraded": "DEGRADED",
+        "down": "DOWN"
+      }
     },
     "security": {
       "title": "Security Settings",
@@ -327,7 +1000,8 @@
       },
       "ipAllowlist": {
         "title": "IP Allowlist",
-        "label": "IP Allowlist (one CIDR per line, empty = allow all)"
+        "label": "IP Allowlist (one CIDR per line, empty = allow all)",
+        "invalidEntry": "Invalid IP/CIDR: {entry}"
       },
       "save": "Save Security Settings",
       "saving": "Saving…",
@@ -376,5 +1050,8 @@
     "invalidToken": "This link is invalid or has expired",
     "passwordMismatch": "Passwords do not match",
     "weakPassword": "Password must be at least 8 characters"
+  },
+  "offline": {
+    "message": "Offline · changes will sync when reconnected"
   }
 }
