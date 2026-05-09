@@ -28,14 +28,14 @@ export class ApplyCouponHandler {
     }
 
     const invoice = await this.prisma.invoice.findFirst({
-      where: { id: cmd.invoiceId, organizationId },
+      where: { id: cmd.invoiceId },
     });
     if (!invoice) {
       throw new NotFoundException(`Invoice ${cmd.invoiceId} not found`);
     }
 
     const coupon = await this.prisma.coupon.findFirst({
-      where: { code: cmd.code, organizationId },
+      where: { code: cmd.code },
     });
     if (!coupon || !coupon.isActive) throw new NotFoundException(`Coupon ${cmd.code} not found`);
     if (coupon.expiresAt && coupon.expiresAt < new Date()) {

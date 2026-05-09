@@ -16,7 +16,7 @@ export class CreateCouponHandler {
   async execute(cmd: CreateCouponCommand) {
     const organizationId = this.tenant.requireOrganizationIdOrDefault();
     const exists = await this.prisma.coupon.findFirst({
-      where: { code: cmd.code, organizationId },
+      where: { code: cmd.code },
     });
     if (exists) throw new ConflictException(`Coupon code '${cmd.code}' already exists`);
 

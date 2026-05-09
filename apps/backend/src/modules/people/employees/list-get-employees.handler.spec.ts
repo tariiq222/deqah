@@ -4,7 +4,6 @@ import { EmploymentType, OnboardingStatus } from '@prisma/client';
 import { ListEmployeesHandler } from './list-employees.handler';
 import { GetEmployeeHandler } from './get-employee.handler';
 import { PrismaService } from '../../../infrastructure/database';
-import { TenantContextService } from '../../../common/tenant';
 
 const mockEmployee = {
   id: 'e1',
@@ -48,13 +47,6 @@ describe('List/Get Employees handlers', () => {
               groupBy: jest.fn().mockResolvedValue([]),
             },
             booking: { groupBy: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(0) },
-          },
-        },
-        {
-          provide: TenantContextService,
-          useValue: {
-            requireOrganizationId: () => 'org-test',
-            requireOrganizationIdOrDefault: () => 'org-test',
           },
         },
       ],

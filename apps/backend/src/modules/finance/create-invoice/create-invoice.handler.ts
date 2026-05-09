@@ -30,7 +30,7 @@ export class CreateInvoiceHandler {
     const total = parseFloat((vatBase + vatAmt).toFixed(2));
 
     const existing = await this.prisma.invoice.findUnique({
-      where: { bookingId: dto.bookingId ?? '', organizationId },
+      where: { bookingId: dto.bookingId ?? '' },
       select: { id: true },
     });
     if (existing) {

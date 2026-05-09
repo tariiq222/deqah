@@ -38,12 +38,6 @@ interface FetchOpts extends Omit<RequestInit, 'body'> {
    * the `/organizations` listing endpoint allows this.
    */
   withoutOrgId?: boolean;
-  /**
-   * Zoho API supports X-Idempotency-Key for POST/PUT/DELETE requests.
-   * When provided, Zoho returns the same response for duplicate requests
-   * within 24 hours, preventing duplicate invoice/payment creation on retries.
-   */
-  idempotencyKey?: string;
 }
 
 @Injectable()
@@ -123,12 +117,11 @@ export class ZohoApiClient {
       payment_terms_label?: string;
       branch_id?: string;
     },
-    opts: { send?: boolean; idempotencyKey?: string } = {},
+    opts: { send?: boolean } = {},
   ): Promise<{ invoice: ZohoInvoice }> {
     return this.request(ctx, 'POST', '/invoice/v3/invoices', {
       jsonBody: body,
       query: { send: opts.send ? 'true' : undefined },
-      idempotencyKey: opts.idempotencyKey,
     });
   }
 
@@ -254,9 +247,6 @@ export class ZohoApiClient {
     if (opts.jsonBody) {
       headers['Content-Type'] = 'application/json';
       body = JSON.stringify(opts.jsonBody);
-    }
-    if (opts.idempotencyKey) {
-      headers['X-Idempotency-Key'] = opts.idempotencyKey;
     }
 
     const isMutating = method !== 'GET';

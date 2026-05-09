@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ListClientBookingsHandler } from './list-client-bookings.handler';
 import { PrismaService } from '../../../infrastructure/database';
-import { TenantContextService } from '../../../common/tenant/tenant-context.service';
 
 describe('ListClientBookingsHandler', () => {
   let handler: ListClientBookingsHandler;
@@ -40,10 +39,6 @@ describe('ListClientBookingsHandler', () => {
       providers: [
         ListClientBookingsHandler,
         { provide: PrismaService, useValue: mockPrisma },
-        {
-          provide: TenantContextService,
-          useValue: { requireOrganizationId: () => 'org-test' },
-        },
       ],
     }).compile();
 

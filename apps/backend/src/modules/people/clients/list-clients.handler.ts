@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database';
-import { TenantContextService } from '../../../common/tenant/tenant-context.service';
 import { toListResponse } from '../../../common/dto';
 import { ListClientsDto } from './list-clients.dto';
 import { serializeClient } from './client.serializer';
@@ -12,16 +11,10 @@ export type ListClientsQuery = ListClientsDto & {
 
 @Injectable()
 export class ListClientsHandler {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly tenant: TenantContextService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: ListClientsQuery) {
-    const organizationId = this.tenant.requireOrganizationId();
-
     const where = {
-      organizationId,
       deletedAt: null,
       isActive: query.isActive,
       gender: query.gender,
@@ -49,10 +42,7 @@ export class ListClientsHandler {
       this.prisma.client.count({ where }),
     ]);
 
-    const bookingSummaries = await this.loadBookingSummaries(
-      items.map((c) => c.id),
-      organizationId,
-    );
+    const bookingSummaries = await this.loadBookingSummaries(items.map((c) => c.id));
 
     return toListResponse(
       items.map((c) =>
@@ -70,14 +60,8 @@ export class ListClientsHandler {
   // Pulls the most recent past booking and the next future booking per client.
   // Done as two bulk groupBy-style queries so the list endpoint stays O(1)
   // round-trips regardless of page size.
-  private async loadBookingSummaries(
-    clientIds: string[],
-    organizationId: string,
-  ) {
-    const empty = {
-      last: new Map<string, { id: string; date: string; status: string }>(),
-      next: new Map<string, { id: string; date: string; status: string }>(),
-    };
+  private async loadBookingSummaries(clientIds: string[]) {
+    const empty = { last: new Map<string, { id: string; date: string; status: string }>(), next: new Map<string, { id: string; date: string; status: string }>() };
     if (clientIds.length === 0) return empty;
 
     const now = new Date();
@@ -86,7 +70,6 @@ export class ListClientsHandler {
       this.prisma.booking.findMany({
         where: {
           clientId: { in: clientIds },
-          organizationId,
           scheduledAt: { lte: now },
         },
         orderBy: { scheduledAt: 'desc' },
@@ -95,7 +78,6 @@ export class ListClientsHandler {
       this.prisma.booking.findMany({
         where: {
           clientId: { in: clientIds },
-          organizationId,
           scheduledAt: { gt: now },
         },
         orderBy: { scheduledAt: 'asc' },
@@ -106,22 +88,14 @@ export class ListClientsHandler {
     const last = new Map<string, { id: string; date: string; status: string }>();
     for (const b of pastBookings) {
       if (!last.has(b.clientId)) {
-        last.set(b.clientId, {
-          id: b.id,
-          date: b.scheduledAt.toISOString(),
-          status: b.status,
-        });
+        last.set(b.clientId, { id: b.id, date: b.scheduledAt.toISOString(), status: b.status });
       }
     }
 
     const next = new Map<string, { id: string; date: string; status: string }>();
     for (const b of futureBookings) {
       if (!next.has(b.clientId)) {
-        next.set(b.clientId, {
-          id: b.id,
-          date: b.scheduledAt.toISOString(),
-          status: b.status,
-        });
+        next.set(b.clientId, { id: b.id, date: b.scheduledAt.toISOString(), status: b.status });
       }
     }
 

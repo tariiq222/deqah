@@ -52,7 +52,7 @@ describe('CreateInvoiceHandler', () => {
     });
 
     expect(prisma.invoice.findUnique).toHaveBeenCalledWith({
-      where: { bookingId: 'booking-1', organizationId: '00000000-0000-0000-0000-000000000001' },
+      where: { bookingId: 'booking-1' },
       select: { id: true },
     });
     expect(prisma.invoice.create).toHaveBeenCalledWith(

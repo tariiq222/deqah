@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
-import { TenantContextService } from '../../../common/tenant/tenant-context.service';
 import { toListResponse } from '../../../common/dto';
 import { ListEmployeesDto, type EmployeeSortField } from './list-employees.dto';
 import { mapEmployeeRow } from './employee-row.mapper';
@@ -27,16 +26,10 @@ function buildOrderBy(
 
 @Injectable()
 export class ListEmployeesHandler {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly tenant: TenantContextService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: ListEmployeesQuery) {
-    const organizationId = this.tenant.requireOrganizationId();
-
     const where = {
-      organizationId,
       isActive: query.isActive,
       gender: query.gender,
       employmentType: query.employmentType,
@@ -79,7 +72,7 @@ export class ListEmployeesHandler {
           }),
           this.prisma.booking.groupBy({
             by: ['employeeId'],
-            where: { employeeId: { in: ids }, organizationId },
+            where: { employeeId: { in: ids } },
             _count: { _all: true },
           }),
         ])

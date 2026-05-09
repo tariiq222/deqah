@@ -23,8 +23,8 @@ export class ClientCancelBookingHandler {
 
   async execute(cmd: ClientCancelCommand) {
     const organizationId = this.tenant.requireOrganizationIdOrDefault();
-    const booking = await this.prisma.booking.findFirst({
-      where: { id: cmd.bookingId, organizationId },
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: cmd.bookingId },
     });
 
     if (!booking) {

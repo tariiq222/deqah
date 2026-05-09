@@ -19,7 +19,7 @@ export class CheckInBookingHandler {
 
   async execute(cmd: CheckInBookingCommand) {
     const organizationId = this.tenant.requireOrganizationIdOrDefault();
-    const booking = await fetchBookingOrFail(this.prisma, cmd.bookingId, [BookingStatus.CONFIRMED], 'checked in', organizationId);
+    const booking = await fetchBookingOrFail(this.prisma, cmd.bookingId, [BookingStatus.CONFIRMED], 'checked in');
     if (booking.checkedInAt) {
       throw new BadRequestException('Booking is already checked in');
     }

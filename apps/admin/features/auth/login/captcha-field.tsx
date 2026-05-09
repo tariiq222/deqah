@@ -1,17 +1,14 @@
 "use client";
 
-import { forwardRef, useEffect } from "react";
+import { forwardRef } from "react";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
 import { useTranslations } from "next-intl";
 
-if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY) {
-  throw new Error('NEXT_PUBLIC_HCAPTCHA_SITE_KEY is required in production');
+const SITE_KEY = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
+
+if (process.env.NODE_ENV === "production" && !SITE_KEY) {
+  throw new Error("NEXT_PUBLIC_HCAPTCHA_SITE_KEY is required in production");
 }
-
-const TEST_SITE_KEY = "10000000-ffff-ffff-ffff-000000000001";
-const SITE_KEY = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY ?? TEST_SITE_KEY;
-
-export const isCaptchaConfigured = SITE_KEY !== TEST_SITE_KEY;
 
 interface CaptchaFieldProps {
   onVerify: (token: string) => void;
@@ -19,25 +16,14 @@ interface CaptchaFieldProps {
   theme?: "light" | "dark";
 }
 
-/**
- * Wraps the hCaptcha widget. When no real sitekey is configured, the
- * cross-origin iframe renders an unstyled red "for testing only" warning
- * that overlaps the card. Replace it with a clean dev-mode placeholder
- * that auto-issues a token. Production behaviour is unchanged.
- */
 export const CaptchaField = forwardRef<HCaptcha, CaptchaFieldProps>(
   function CaptchaField({ onVerify, onExpire, theme = "light" }, ref) {
     const t = useTranslations("login");
 
-    useEffect(() => {
-      if (!isCaptchaConfigured) onVerify("dev-bypass");
-    }, [onVerify]);
-
-    if (!isCaptchaConfigured) {
+    if (!SITE_KEY) {
       return (
-        <div className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
-          <span className="inline-block size-2 rounded-full bg-success" aria-hidden />
-          <span>{t("captchaDevMode")}</span>
+        <div className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-destructive bg-destructive/5 px-4 py-3 text-xs text-destructive">
+          <span>{t("captchaNotConfigured")}</span>
         </div>
       );
     }

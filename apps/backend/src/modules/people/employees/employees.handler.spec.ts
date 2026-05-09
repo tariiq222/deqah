@@ -61,10 +61,7 @@ describe('Employees handlers', () => {
         },
         {
           provide: TenantContextService,
-          useValue: {
-            requireOrganizationId: () => 'org-test',
-            requireOrganizationIdOrDefault: () => 'org-test',
-          },
+          useValue: { requireOrganizationIdOrDefault: () => 'org-test' },
         },
         {
           provide: EventBusService,

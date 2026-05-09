@@ -75,10 +75,7 @@ describe('Clients handlers', () => {
         { provide: EventBusService, useValue: { publish: jest.fn().mockResolvedValue(undefined) } },
         {
           provide: TenantContextService,
-          useValue: {
-            requireOrganizationId: () => 'org-test',
-            requireOrganizationIdOrDefault: () => 'org-test',
-          },
+          useValue: { requireOrganizationIdOrDefault: () => 'org-test' },
         },
       ],
     }).compile();

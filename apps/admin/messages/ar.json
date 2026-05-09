@@ -344,6 +344,7 @@
     "submit": "تسجيل الدخول",
     "submitting": "جاري التسجيل…",
     "captchaDevMode": "وضع التطوير — تم تخطي التحقق",
+    "captchaNotConfigured": "لم يتم تكوين CAPTCHA — يجب تعيين NEXT_PUBLIC_HCAPTCHA_SITE_KEY",
     "error": {
       "notAuthorized": "هذا الحساب غير مصرّح له بالوصول إلى لوحة التحكم.",
       "noToken": "تم تسجيل الدخول لكن لم يتم إرجاع رمز وصول.",

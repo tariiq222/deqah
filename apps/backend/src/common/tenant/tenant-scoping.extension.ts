@@ -23,11 +23,9 @@ const SCOPED_OPERATIONS = new Set([
   'deleteMany',
 ]);
 
-// NOTE: $transaction(async tx => ...) and $transaction([...]) — PrismaService overrides
-// $transaction to apply the same scoping extension to the tx client before the callback
-// runs, so tenant scoping is NOT bypassed inside transactions. Array-form $transaction
-// (parallel writes) passes through unchanged — callers must include organizationId
-// explicitly in those operations.
+// NOTE: $transaction(async tx => ...) and $transaction([...]) bypass this extension —
+// the `tx` client is raw Prisma, not the scoped proxy. Any update/delete inside a
+// transaction MUST include `organizationId` explicitly in the where clause.
 // See: https://www.prisma.io/docs/concepts/components/prisma-client/transactions
 
 /**

@@ -34,7 +34,7 @@ export class CancelBookingHandler {
   async execute(cmd: CancelBookingCommand) {
     const organizationId = this.tenant.requireOrganizationIdOrDefault();
     const booking = await this.prisma.booking.findFirst({
-      where: { id: cmd.bookingId, organizationId },
+      where: { id: cmd.bookingId },
     });
     if (!booking) {
       throw new NotFoundException(`Booking ${cmd.bookingId} not found`);

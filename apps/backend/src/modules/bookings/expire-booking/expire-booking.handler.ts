@@ -23,7 +23,6 @@ export class ExpireBookingHandler {
       cmd.bookingId,
       [BookingStatus.PENDING, BookingStatus.PENDING_GROUP_FILL, BookingStatus.AWAITING_PAYMENT],
       'expired',
-      organizationId,
     );
 
     const [updated] = await this.prisma.$transaction([

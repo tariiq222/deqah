@@ -18,7 +18,7 @@ export class NoShowBookingHandler {
 
   async execute(cmd: NoShowBookingCommand) {
     const organizationId = this.tenant.requireOrganizationIdOrDefault();
-    const booking = await fetchBookingOrFail(this.prisma, cmd.bookingId, [BookingStatus.CONFIRMED], 'marked as no-show', organizationId);
+    const booking = await fetchBookingOrFail(this.prisma, cmd.bookingId, [BookingStatus.CONFIRMED], 'marked as no-show');
 
     const [updated] = await this.prisma.$transaction([
       this.prisma.booking.update({

@@ -38,7 +38,6 @@ export class ListBookingsHandler {
 
     const searchTerm = query.search?.trim();
     const where: Record<string, unknown> = {
-      organizationId,
       ...(query.clientId ? { clientId: query.clientId } : {}),
       ...(query.employeeId ? { employeeId: query.employeeId } : {}),
       ...employeeWhere,

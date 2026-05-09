@@ -20,7 +20,7 @@ export class InitGuestPaymentHandler {
   async execute(dto: InitGuestPaymentDto): Promise<InitGuestPaymentResult> {
     const organizationId = this.tenant.requireOrganizationIdOrDefault();
     const booking = await this.prisma.booking.findFirst({
-      where: { id: dto.bookingId, organizationId },
+      where: { id: dto.bookingId },
       select: { id: true, status: true, price: true, currency: true },
     });
 
@@ -35,7 +35,7 @@ export class InitGuestPaymentHandler {
     }
 
     const invoice = await this.prisma.invoice.findFirst({
-      where: { bookingId: dto.bookingId, organizationId },
+      where: { bookingId: dto.bookingId },
       select: { id: true, total: true, currency: true },
     });
 

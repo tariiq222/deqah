@@ -10,8 +10,6 @@ const buildMoyasar = () => ({
   createRefund: jest.fn().mockResolvedValue({ id: 'refund-gw-1' }),
 });
 
-const buildTenant = () => ({ requireOrganizationId: () => 'org-1' } as never);
-
 const PAY_ID = 'pay-1';
 const INVOICE_ID = 'inv-1';
 
@@ -43,7 +41,7 @@ describe('RefundPaymentHandler', () => {
     setupRefundRequestMocks(prisma);
     setupTransactionMock(prisma);
 
-    const handler = new RefundPaymentHandler(prisma as never, eventBus as never, buildTenant(), createRlsHelper(), moyasar as never);
+    const handler = new RefundPaymentHandler(prisma as never, eventBus as never, createRlsHelper(), moyasar as never);
     const result = await handler.execute({ paymentId: PAY_ID, reason: 'client request' });
 
     expect(result.status).toBe(PaymentStatus.REFUNDED);
@@ -84,7 +82,7 @@ describe('RefundPaymentHandler', () => {
     prisma.payment.findFirst.mockResolvedValue(null);
 
     await expect(
-      new RefundPaymentHandler(prisma as never, eventBus as never, buildTenant(), createRlsHelper(), buildMoyasar() as never).execute({ paymentId: 'bad', reason: 'x' }),
+      new RefundPaymentHandler(prisma as never, eventBus as never, createRlsHelper(), buildMoyasar() as never).execute({ paymentId: 'bad', reason: 'x' }),
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -94,7 +92,7 @@ describe('RefundPaymentHandler', () => {
     setupPaymentMock(prisma, { ...PAYMENT_BASE, status: PaymentStatus.PENDING });
 
     await expect(
-      new RefundPaymentHandler(prisma as never, eventBus as never, buildTenant(), createRlsHelper(), buildMoyasar() as never).execute({ paymentId: PAY_ID, reason: 'x' }),
+      new RefundPaymentHandler(prisma as never, eventBus as never, createRlsHelper(), buildMoyasar() as never).execute({ paymentId: PAY_ID, reason: 'x' }),
     ).rejects.toThrow(BadRequestException);
   });
 });
@@ -127,7 +125,7 @@ describe('VerifyPaymentHandler', () => {
     setupInvoiceUpdateMock(prisma, { id: INVOICE_ID, status: InvoiceStatus.PAID });
     setupTransactionMock(prisma);
 
-    const handler = new VerifyPaymentHandler(prisma as never, eventBus as never, buildTenant(), createRlsHelper());
+    const handler = new VerifyPaymentHandler(prisma as never, eventBus as never, createRlsHelper());
     const result = await handler.execute({
       paymentId: PAY_ID,
       action: 'approve',
@@ -179,7 +177,7 @@ describe('VerifyPaymentHandler', () => {
     setupPaymentAggregateMock(prisma, { _sum: { amount: 100 } });
     setupTransactionMock(prisma);
 
-    const handler = new VerifyPaymentHandler(prisma as never, eventBus as never, buildTenant(), createRlsHelper());
+    const handler = new VerifyPaymentHandler(prisma as never, eventBus as never, createRlsHelper());
     await handler.execute({ paymentId: PAY_ID, action: 'approve' });
 
     expect(prisma.invoice.update).toHaveBeenCalledWith(
@@ -205,7 +203,7 @@ describe('VerifyPaymentHandler', () => {
     setupPaymentMock(prisma, pendingPayment);
     setupPaymentUpdateMock(prisma, { ...pendingPayment, status: PaymentStatus.FAILED, failureReason: 'Bank transfer rejected' });
 
-    const handler = new VerifyPaymentHandler(prisma as never, eventBus as never, buildTenant(), createRlsHelper());
+    const handler = new VerifyPaymentHandler(prisma as never, eventBus as never, createRlsHelper());
     const result = await handler.execute({ paymentId: PAY_ID, action: 'reject' });
 
     expect(result.status).toBe(PaymentStatus.FAILED);
@@ -224,7 +222,7 @@ describe('VerifyPaymentHandler', () => {
     prisma.payment.findFirst.mockResolvedValue(null);
 
     await expect(
-      new VerifyPaymentHandler(prisma as never, eventBus as never, buildTenant(), createRlsHelper()).execute({
+      new VerifyPaymentHandler(prisma as never, eventBus as never, createRlsHelper()).execute({
         paymentId: 'bad',
         action: 'approve',
       }),
@@ -237,7 +235,7 @@ describe('VerifyPaymentHandler', () => {
     setupPaymentMock(prisma, { ...PAYMENT_BASE, status: PaymentStatus.COMPLETED, gatewayRef: null });
 
     await expect(
-      new VerifyPaymentHandler(prisma as never, eventBus as never, buildTenant(), createRlsHelper()).execute({
+      new VerifyPaymentHandler(prisma as never, eventBus as never, createRlsHelper()).execute({
         paymentId: PAY_ID,
         action: 'approve',
       }),

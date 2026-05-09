@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database';
-import { TenantContextService } from '../../../common/tenant/tenant-context.service';
 import { UpdateCouponDto } from './update-coupon.dto';
 import type { DiscountType } from '@prisma/client';
 
@@ -8,15 +7,11 @@ export type UpdateCouponCommand = UpdateCouponDto & { couponId: string };
 
 @Injectable()
 export class UpdateCouponHandler {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly tenant: TenantContextService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async execute(cmd: UpdateCouponCommand) {
-    const organizationId = this.tenant.requireOrganizationId();
     const coupon = await this.prisma.coupon.findFirst({
-      where: { id: cmd.couponId, organizationId },
+      where: { id: cmd.couponId },
     });
     if (!coupon) throw new NotFoundException('Coupon not found');
 

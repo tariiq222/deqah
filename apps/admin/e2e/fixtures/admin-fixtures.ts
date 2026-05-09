@@ -7,8 +7,12 @@ import { test as base, request as pwRequest, type Page, type APIRequestContext }
 
 const BACKEND = process.env.PW_BACKEND_URL ?? 'http://localhost:5100';
 const ADMIN = process.env.PW_ADMIN_URL ?? 'http://localhost:5104';
-const EMAIL = process.env.PW_SUPER_ADMIN_EMAIL ?? 'tariq.alwalidi@gmail.com';
-const PASSWORD = process.env.PW_SUPER_ADMIN_PASSWORD ?? 'Admin@2026';
+const EMAIL = process.env.PW_SUPER_ADMIN_EMAIL;
+const PASSWORD = process.env.PW_SUPER_ADMIN_PASSWORD;
+
+if (!EMAIL || !PASSWORD) {
+  throw new Error('PW_SUPER_ADMIN_EMAIL and PW_SUPER_ADMIN_PASSWORD environment variables are required for e2e tests');
+}
 
 interface LoginResult {
   accessToken: string;

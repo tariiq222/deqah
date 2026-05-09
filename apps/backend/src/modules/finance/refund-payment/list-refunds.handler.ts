@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database';
-import { TenantContextService } from '../../../common/tenant/tenant-context.service';
 
 export interface RefundRequestListItem {
   id: string;
@@ -17,14 +16,10 @@ export interface RefundRequestListItem {
 
 @Injectable()
 export class ListRefundsHandler {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly tenant: TenantContextService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async execute(status?: string): Promise<RefundRequestListItem[]> {
-    const organizationId = this.tenant.requireOrganizationId();
-    const where: Record<string, unknown> = { organizationId };
+    const where: Record<string, unknown> = {};
     if (status) {
       where.status = status;
     }

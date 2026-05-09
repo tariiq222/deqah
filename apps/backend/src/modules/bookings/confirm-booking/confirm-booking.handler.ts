@@ -23,7 +23,7 @@ export class ConfirmBookingHandler {
 
   async execute(cmd: ConfirmBookingCommand) {
     const organizationId = this.tenant.requireOrganizationIdOrDefault();
-    const booking = await fetchBookingOrFail(this.prisma, cmd.bookingId, [BookingStatus.PENDING], 'confirmed', organizationId);
+    const booking = await fetchBookingOrFail(this.prisma, cmd.bookingId, [BookingStatus.PENDING], 'confirmed');
 
     const [updated] = await this.prisma.$transaction([
       this.prisma.booking.update({

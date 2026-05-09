@@ -1,6 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database';
-import { TenantContextService } from '../../../common/tenant/tenant-context.service';
 import { UpdateClientDto } from './update-client.dto';
 import { serializeClient } from './client.serializer';
 
@@ -8,15 +7,11 @@ export type UpdateClientCommand = UpdateClientDto & { clientId: string };
 
 @Injectable()
 export class UpdateClientHandler {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly tenant: TenantContextService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async execute(cmd: UpdateClientCommand) {
-    const organizationId = this.tenant.requireOrganizationId();
     const client = await this.prisma.client.findFirst({
-      where: { id: cmd.clientId, organizationId, deletedAt: null },
+      where: { id: cmd.clientId, deletedAt: null },
     });
     if (!client) throw new NotFoundException('Client not found');
 
@@ -24,7 +19,6 @@ export class UpdateClientHandler {
       const duplicate = await this.prisma.client.findFirst({
         where: {
           phone: cmd.phone,
-          organizationId,
           deletedAt: null,
           NOT: { id: cmd.clientId },
         },

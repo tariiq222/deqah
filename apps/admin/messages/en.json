@@ -344,6 +344,7 @@
     "submit": "Sign in",
     "submitting": "Signing in…",
     "captchaDevMode": "Dev mode — captcha skipped",
+    "captchaNotConfigured": "CAPTCHA not configured — set NEXT_PUBLIC_HCAPTCHA_SITE_KEY",
     "error": {
       "notAuthorized": "This account is not authorized for the super-admin panel.",
       "noToken": "Login succeeded but no access token was returned.",

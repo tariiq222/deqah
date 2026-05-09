@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database';
-import { TenantContextService } from '../../../common/tenant/tenant-context.service';
 
 export interface GetInvoiceQuery {
   invoiceId: string;
@@ -8,17 +7,13 @@ export interface GetInvoiceQuery {
 
 @Injectable()
 export class GetInvoiceHandler {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly tenant: TenantContextService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetInvoiceQuery) {
-    const organizationId = this.tenant.requireOrganizationId();
     const invoice = await this.prisma.invoice.findFirst({
-      where: { id: query.invoiceId, organizationId },
+      where: { id: query.invoiceId },
       include: {
-        payments: { where: { organizationId }, orderBy: { createdAt: 'desc' } },
+        payments: { orderBy: { createdAt: 'desc' } },
       },
     });
     if (!invoice) {

@@ -2,7 +2,7 @@ import { ListPaymentsHandler } from './list-payments.handler';
 import { PaymentStatus, PaymentMethod } from '@prisma/client';
 
 const mockPayments = [
-  { id: 'pay-1', amount: 100, status: 'COMPLETED', method: 'CARD' as PaymentMethod, invoiceId: 'inv-1', createdAt: new Date(), organizationId: 'org-test' },
+  { id: 'pay-1', amount: 100, status: 'COMPLETED', method: 'CARD' as PaymentMethod, invoiceId: 'inv-1', createdAt: new Date() },
 ];
 
 const buildPrisma = () => ({
@@ -12,12 +12,10 @@ const buildPrisma = () => ({
   },
 });
 
-const buildTenant = () => ({ requireOrganizationId: () => 'org-test' } as never);
-
 describe('ListPaymentsHandler', () => {
   it('returns paginated payments', async () => {
     const prisma = buildPrisma();
-    const handler = new ListPaymentsHandler(prisma as never, buildTenant());
+    const handler = new ListPaymentsHandler(prisma as never);
     const result = await handler.execute({ page: 1, limit: 10 });
     expect(result.items).toHaveLength(1);
     expect(result.meta.total).toBe(1);
@@ -25,7 +23,7 @@ describe('ListPaymentsHandler', () => {
 
   it('filters by status when provided', async () => {
     const prisma = buildPrisma();
-    const handler = new ListPaymentsHandler(prisma as never, buildTenant());
+    const handler = new ListPaymentsHandler(prisma as never);
     await handler.execute({ status: PaymentStatus.COMPLETED, page: 1, limit: 10 });
     expect(prisma.payment.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ status: PaymentStatus.COMPLETED }) }),
@@ -34,7 +32,7 @@ describe('ListPaymentsHandler', () => {
 
   it('filters by clientId through invoice relation', async () => {
     const prisma = buildPrisma();
-    const handler = new ListPaymentsHandler(prisma as never, buildTenant());
+    const handler = new ListPaymentsHandler(prisma as never);
     await handler.execute({ clientId: 'client-1', page: 1, limit: 10 });
     expect(prisma.payment.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ invoice: { clientId: 'client-1' } }) }),
@@ -43,7 +41,7 @@ describe('ListPaymentsHandler', () => {
 
   it('includes date range filtering', async () => {
     const prisma = buildPrisma();
-    const handler = new ListPaymentsHandler(prisma as never, buildTenant());
+    const handler = new ListPaymentsHandler(prisma as never);
     const fromDate = new Date('2026-01-01');
     const toDate = new Date('2026-01-31');
     await handler.execute({ fromDate, toDate, page: 1, limit: 10 });

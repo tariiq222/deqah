@@ -109,8 +109,7 @@ export class CreateZohoInvoiceHandler {
       },
       // Don't auto-send yet — we record the payment first so the email
       // shows the invoice as paid rather than as outstanding.
-      // Idempotency key ensures retry on partial failure can't create duplicate Zoho invoices.
-      { send: false, idempotencyKey: invoice.id },
+      { send: false },
     );
 
     const zohoInvoiceId = created.invoice.invoice_id;

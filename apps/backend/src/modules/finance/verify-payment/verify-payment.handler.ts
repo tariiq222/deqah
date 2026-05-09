@@ -2,7 +2,6 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InvoiceStatus, PaymentStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
 import { EventBusService } from '../../../infrastructure/events';
-import { TenantContextService } from '../../../common/tenant/tenant-context.service';
 import { RlsHelper } from '../../../common/tenant/rls.helper';
 import { PaymentCompletedEvent } from '../events/payment-completed.event';
 
@@ -17,14 +16,12 @@ export class VerifyPaymentHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventBus: EventBusService,
-    private readonly tenant: TenantContextService,
     private readonly rls: RlsHelper,
   ) {}
 
   async execute(cmd: VerifyPaymentCommand) {
-    const organizationId = this.tenant.requireOrganizationId();
     const payment = await this.prisma.payment.findFirst({
-      where: { id: cmd.paymentId, organizationId },
+      where: { id: cmd.paymentId },
     });
 
     if (!payment) throw new NotFoundException('Payment not found');

@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database';
-import { TenantContextService } from '../../../common/tenant/tenant-context.service';
 import { mapBookingRow, type BookingRelations } from '../booking-row.mapper';
 
 export interface GetBookingQuery {
@@ -9,24 +8,20 @@ export interface GetBookingQuery {
 
 @Injectable()
 export class GetBookingHandler {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly tenant: TenantContextService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetBookingQuery) {
-    const organizationId = this.tenant.requireOrganizationId();
     const booking = await this.prisma.booking.findFirst({
-      where: { id: query.bookingId, organizationId },
+      where: { id: query.bookingId },
     });
     if (!booking) {
       throw new NotFoundException(`Booking ${query.bookingId} not found`);
     }
 
     const [client, employee, service] = await Promise.all([
-      this.prisma.client.findFirst({ where: { id: booking.clientId, organizationId } }),
-      this.prisma.employee.findFirst({ where: { id: booking.employeeId, organizationId } }),
-      this.prisma.service.findFirst({ where: { id: booking.serviceId, organizationId } }),
+      this.prisma.client.findFirst({ where: { id: booking.clientId } }),
+      this.prisma.employee.findFirst({ where: { id: booking.employeeId } }),
+      this.prisma.service.findFirst({ where: { id: booking.serviceId } }),
     ]);
 
     const relations: BookingRelations = {

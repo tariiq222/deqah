@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto';
 import { PaymentStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
 import { EventBusService } from '../../../infrastructure/events';
-import { TenantContextService } from '../../../common/tenant/tenant-context.service';
 import { RlsHelper } from '../../../common/tenant/rls.helper';
 import { RefundCompletedEvent } from '../events/refund-completed.event';
 import { MoyasarApiClient } from '../moyasar-api/moyasar-api.client';
@@ -36,15 +35,13 @@ export class RefundPaymentHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventBus: EventBusService,
-    private readonly tenant: TenantContextService,
     private readonly rls: RlsHelper,
     private readonly moyasar: MoyasarApiClient,
   ) {}
 
   async execute(cmd: RefundPaymentCommand) {
-    const organizationId = this.tenant.requireOrganizationId();
     const payment = await this.prisma.payment.findFirst({
-      where: { id: cmd.paymentId, organizationId },
+      where: { id: cmd.paymentId },
       include: { invoice: { select: { id: true, bookingId: true, clientId: true, currency: true, organizationId: true } } },
     });
     if (!payment) throw new NotFoundException('Payment not found');

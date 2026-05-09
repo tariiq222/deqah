@@ -84,11 +84,11 @@ describe('InitGuestPaymentHandler', () => {
       const result = await handler.execute({ bookingId: 'booking-1' });
 
       expect(prisma.booking.findFirst).toHaveBeenCalledWith({
-        where: { id: 'booking-1', organizationId: '00000000-0000-0000-0000-000000000001' },
+        where: { id: 'booking-1' },
         select: { id: true, status: true, price: true, currency: true },
       });
       expect(prisma.invoice.findFirst).toHaveBeenCalledWith({
-        where: { bookingId: 'booking-1', organizationId: '00000000-0000-0000-0000-000000000001' },
+        where: { bookingId: 'booking-1' },
         select: { id: true, total: true, currency: true },
       });
       expect(prisma.payment.findFirst).toHaveBeenCalledWith({

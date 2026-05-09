@@ -34,7 +34,7 @@ export class BankTransferUploadHandler {
     }
 
     const invoice = await this.prisma.invoice.findFirst({
-      where: { id: cmd.invoiceId, organizationId },
+      where: { id: cmd.invoiceId },
     });
     if (!invoice) {
       throw new NotFoundException(`Invoice ${cmd.invoiceId} not found`);

@@ -147,43 +147,31 @@ export class MoyasarWebhookHandler {
       const status: PaymentStatus =
         payload.status === 'paid' ? PaymentStatus.COMPLETED : PaymentStatus.FAILED;
 
-      // Wrap payment upsert + invoice update in a single transaction to ensure
-      // atomicity — if either fails, both roll back and no inconsistent state is stored.
-      const paymentId = await this.prisma.$transaction(async (tx) => {
-        const payment = await tx.payment.upsert({
-          where: { idempotencyKey: `moyasar:${payload.id}` },
-          update: { status, processedAt: new Date(), failureReason: payload.message },
-          create: {
-            organizationId: invoice.organizationId,
-            invoiceId,
-            amount: amountSar,
-            currency: payload.currency,
-            method: PaymentMethod.ONLINE_CARD,
-            status,
-            gatewayRef: payload.id,
-            idempotencyKey: `moyasar:${payload.id}`,
-            processedAt: status === PaymentStatus.COMPLETED ? new Date() : undefined,
-            failureReason: payload.message,
-          },
-        });
-
-        if (status === PaymentStatus.COMPLETED) {
-          await tx.invoice.update({
-            where: { id: invoiceId },
-            data: { status: 'PAID', paidAt: new Date() },
-          });
-        }
-
-        return payment.id;
+      const payment = await this.prisma.payment.upsert({
+        where: { idempotencyKey: `moyasar:${payload.id}` },
+        update: { status, processedAt: new Date(), failureReason: payload.message },
+        create: {
+          organizationId: invoice.organizationId,
+          invoiceId,
+          amount: amountSar,
+          currency: payload.currency,
+          method: PaymentMethod.ONLINE_CARD,
+          status,
+          gatewayRef: payload.id,
+          idempotencyKey: `moyasar:${payload.id}`,
+          processedAt: status === PaymentStatus.COMPLETED ? new Date() : undefined,
+          failureReason: payload.message,
+        },
       });
 
-      // Event emission is intentionally OUTSIDE the transaction:
-      // - The payment and invoice are durably committed.
-      // - If eventBus.publish fails, BullMQ will retry (at-least-once semantics).
-      // - Consumers (booking confirmation, Zoho sync) are idempotent.
       if (status === PaymentStatus.COMPLETED) {
+        await this.prisma.invoice.update({
+          where: { id: invoiceId },
+          data: { status: 'PAID', paidAt: new Date() },
+        });
+
         const event = new PaymentCompletedEvent({
-          paymentId,
+          paymentId: payment.id,
           invoiceId: invoice.id,
           bookingId: invoice.bookingId,
           amount: amountSar,
@@ -193,7 +181,7 @@ export class MoyasarWebhookHandler {
         await this.eventBus.publish(event.eventName, event.toEnvelope());
       } else if (status === PaymentStatus.FAILED) {
         const failedEvent = new PaymentFailedEvent({
-          paymentId,
+          paymentId: payment.id,
           invoiceId: invoice.id,
           clientId: invoice.clientId,
           amount: amountSar,

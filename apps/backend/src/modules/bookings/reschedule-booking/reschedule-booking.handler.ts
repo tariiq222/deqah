@@ -36,7 +36,7 @@ export class RescheduleBookingHandler {
 
   async execute(cmd: RescheduleBookingCommand) {
     const organizationId = this.tenant.requireOrganizationIdOrDefault();
-    const booking = await fetchBookingOrFail(this.prisma, cmd.bookingId, [BookingStatus.PENDING, BookingStatus.CONFIRMED], 'rescheduled', organizationId);
+    const booking = await fetchBookingOrFail(this.prisma, cmd.bookingId, [BookingStatus.PENDING, BookingStatus.CONFIRMED], 'rescheduled');
 
     const newScheduledAt = new Date(cmd.newScheduledAt);
     if (newScheduledAt <= new Date()) {
