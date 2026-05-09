@@ -18,9 +18,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const planSection = page.locator('text=/plan|خطة/i').first();
-    if (await planSection.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(planSection).toBeVisible();
-    }
+    await expect(planSection).toBeVisible({ timeout: 10_000 });
   });
 
   test('should display current plan badge', async ({ page }) => {
@@ -29,9 +27,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const currentPlan = page.locator('text=/current|current plan|النظام الحالي/i').first();
-    if (await currentPlan.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(currentPlan).toBeVisible();
-    }
+    await expect(currentPlan).toBeVisible({ timeout: 10_000 });
   });
 
   test('should display usage section', async ({ page }) => {
@@ -40,9 +36,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const usageSection = page.locator('text=/usage|استخدام/i').first();
-    if (await usageSection.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(usageSection).toBeVisible();
-    }
+    await expect(usageSection).toBeVisible({ timeout: 10_000 });
   });
 
   test('should display usage bar or progress indicator', async ({ page }) => {
@@ -51,9 +45,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const usageBar = page.locator('[class*="progress"], [class*="usage"], [role="progressbar"]').first();
-    if (await usageBar.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(usageBar).toBeVisible();
-    }
+    await expect(usageBar).toBeVisible({ timeout: 10_000 });
   });
 
   test('should navigate to usage page', async ({ page }) => {
@@ -68,9 +60,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const breakdown = page.locator('text=/breakdown|تفصيل/i').first();
-    if (await breakdown.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(breakdown).toBeVisible();
-    }
+    await expect(breakdown).toBeVisible({ timeout: 10_000 });
   });
 
   test('should display employees usage', async ({ page }) => {
@@ -79,9 +69,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const employeesUsage = page.locator('text=/employe|موظف/i').first();
-    if (await employeesUsage.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(employeesUsage).toBeVisible();
-    }
+    await expect(employeesUsage).toBeVisible({ timeout: 10_000 });
   });
 
   test('should display storage usage', async ({ page }) => {
@@ -90,9 +78,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const storageUsage = page.locator('text=/storage|تخزين/i').first();
-    if (await storageUsage.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(storageUsage).toBeVisible();
-    }
+    await expect(storageUsage).toBeVisible({ timeout: 10_000 });
   });
 
   test('should navigate to plans page', async ({ page }) => {
@@ -107,9 +93,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const plansSection = page.locator('text=/plan|خطة/i').first();
-    if (await plansSection.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(plansSection).toBeVisible();
-    }
+    await expect(plansSection).toBeVisible({ timeout: 10_000 });
   });
 
   test('should display monthly billing option', async ({ page }) => {
@@ -118,9 +102,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const monthlyOption = page.locator('text=/monthly|شهري/i').first();
-    if (await monthlyOption.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(monthlyOption).toBeVisible();
-    }
+    await expect(monthlyOption).toBeVisible({ timeout: 10_000 });
   });
 
   test('should display annual billing option', async ({ page }) => {
@@ -129,9 +111,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const annualOption = page.locator('text=/annual|سنوي/i').first();
-    if (await annualOption.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(annualOption).toBeVisible();
-    }
+    await expect(annualOption).toBeVisible({ timeout: 10_000 });
   });
 
   test('should toggle billing cycle between monthly and annual', async ({ page }) => {
@@ -142,10 +122,13 @@ test.describe('Subscription & Plan Flow', () => {
     const annualToggle = page.locator('text=/annual|سنوي/i').first();
     const monthlyToggle = page.locator('text=/monthly|شهري/i').first();
 
-    if (await annualToggle.isVisible({ timeout: 5000 }).catch(() => false)) {
+    const annualVisible = await annualToggle.isVisible({ timeout: 5000 }).catch(() => false);
+    const monthlyVisible = await monthlyToggle.isVisible({ timeout: 5000 }).catch(() => false);
+
+    if (annualVisible) {
       await annualToggle.click();
       await page.waitForTimeout(1000);
-    } else if (await monthlyToggle.isVisible({ timeout: 5000 }).catch(() => false)) {
+    } else if (monthlyVisible) {
       await page.locator('button:has-text("annual" i)').first().click();
       await page.waitForTimeout(1000);
     } else {
@@ -159,9 +142,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const featuresList = page.locator('[class*="feature"], ul li').first();
-    if (await featuresList.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(featuresList).toBeVisible();
-    }
+    await expect(featuresList).toBeVisible({ timeout: 10_000 });
   });
 
   test('should display upgrade button on plan card', async ({ page }) => {
@@ -170,9 +151,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const upgradeButton = page.locator('button:has-text("upgrade" i), button:has-text("ترقية")').first();
-    if (await upgradeButton.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(upgradeButton).toBeVisible();
-    }
+    await expect(upgradeButton).toBeVisible({ timeout: 10_000 });
   });
 
   test('should display current plan as selected', async ({ page }) => {
@@ -181,9 +160,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const currentBadge = page.locator('text=/current|current|الحالي/i');
-    if (await currentBadge.first().isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(currentBadge.first()).toBeVisible();
-    }
+    await expect(currentBadge.first()).toBeVisible({ timeout: 10_000 });
   });
 
   test('should navigate to payment methods page', async ({ page }) => {
@@ -198,9 +175,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const paymentSection = page.locator('text=/payment|دفع|i').first();
-    if (await paymentSection.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(paymentSection).toBeVisible();
-    }
+    await expect(paymentSection).toBeVisible({ timeout: 10_000 });
   });
 
   test('should display add payment method button', async ({ page }) => {
@@ -209,9 +184,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const addButton = page.locator('button:has-text("add" i), button:has-text("إضافة")').first();
-    if (await addButton.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(addButton).toBeVisible();
-    }
+    await expect(addButton).toBeVisible({ timeout: 10_000 });
   });
 
   test('should navigate to invoices page', async ({ page }) => {
@@ -226,9 +199,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const invoicesTable = page.locator('table, [class*="invoice"]').first();
-    if (await invoicesTable.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(invoicesTable).toBeVisible();
-    }
+    await expect(invoicesTable).toBeVisible({ timeout: 10_000 });
   });
 
   test('should display invoice download button', async ({ page }) => {
@@ -237,9 +208,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const downloadButton = page.locator('button:has-text("download" i), button:has-text("تحميل")').first();
-    if (await downloadButton.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(downloadButton).toBeVisible();
-    }
+    await expect(downloadButton).toBeVisible({ timeout: 10_000 });
   });
 
   test('should display trial banner when applicable', async ({ page }) => {
@@ -248,9 +217,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const trialBanner = page.locator('text=/trial|تجربة/i').first();
-    if (await trialBanner.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await expect(trialBanner).toBeVisible();
-    }
+    await expect(trialBanner).toBeVisible({ timeout: 10_000 });
   });
 
   test('should navigate to upgrade from trial banner', async ({ page }) => {
@@ -259,13 +226,14 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const upgradeLink = page.locator('a[href="/subscription"], button:has-text("upgrade" i), button:has-text("ترقية")').first();
-    if (await upgradeLink.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await upgradeLink.click();
-      await page.waitForURL(/\/subscription/, { timeout: 10000 });
-      await expect(page.locator('body')).toBeVisible();
-    } else {
+    const visible = await upgradeLink.isVisible({ timeout: 5000 }).catch(() => false);
+    if (!visible) {
       test.skip();
+      return;
     }
+    await upgradeLink.click();
+    await page.waitForURL(/\/subscription/, { timeout: 10_000 });
+    await expect(page.locator('body')).toBeVisible();
   });
 
   test('should display feature limit warning', async ({ page }) => {
@@ -274,9 +242,7 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const warning = page.locator('text=/limit|حد|warning|تحذير/i').first();
-    if (await warning.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(warning).toBeVisible();
-    }
+    await expect(warning).toBeVisible({ timeout: 10_000 });
   });
 
   test('should display billing contact info', async ({ page }) => {
@@ -285,8 +251,6 @@ test.describe('Subscription & Plan Flow', () => {
     await page.waitForTimeout(1000);
 
     const billingContact = page.locator('text=/billing|الفواتير/i').first();
-    if (await billingContact.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(billingContact).toBeVisible();
-    }
+    await expect(billingContact).toBeVisible({ timeout: 10_000 });
   });
 });
