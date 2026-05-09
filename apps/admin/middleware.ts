@@ -11,7 +11,8 @@ export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const marker = req.cookies.get('admin.authenticated')?.value === '1';
 
-  if (pathname === '/login' || pathname.startsWith('/api/')) {
+  const publicPaths = new Set(['/login', '/forgot-password', '/reset-password']);
+  if (publicPaths.has(pathname) || pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
 
