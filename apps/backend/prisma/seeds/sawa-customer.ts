@@ -1,6 +1,6 @@
 /**
  * One-time idempotent seed: relabel the dev DEFAULT_ORGANIZATION as
- * "سواء للإرشاد الأسري" and link it to the family-consulting vertical.
+ * "سواء للإرشاد الأسري" and link it to the therapy vertical.
  *
  * Run:  npm run seed:sawa --workspace=backend
  * Safe to re-run.
@@ -19,11 +19,11 @@ async function main() {
   await prisma.$connect();
 
   const vertical = await prisma.vertical.findUnique({
-    where: { slug: 'family-consulting' },
+    where: { slug: 'therapy' },
   });
   if (!vertical) {
     throw new Error(
-      'Vertical "family-consulting" not found. Run base seeds first (npm run seed).',
+      'Vertical "therapy" not found. Run base seeds first (npm run seed).',
     );
   }
 

@@ -8,6 +8,7 @@ import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { seedVerticals } from './seeds/verticals';
 
 const ADMIN_EMAIL    = process.env.SEED_EMAIL    ?? 'admin@deqah-test.com';
 const ADMIN_PASSWORD = process.env.SEED_PASSWORD ?? 'Admin@1234';
@@ -146,6 +147,9 @@ async function main() {
       update: {},
     });
   }
+
+  // 5.5. Canonical verticals
+  await seedVerticals(prisma);
 
   // 6. Email templates — one row per slug the backend sends.
   //    Free-form: owners rewrite name/subject/body in any language they want.

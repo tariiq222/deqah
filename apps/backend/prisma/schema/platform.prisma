@@ -221,6 +221,7 @@ model Invitation {
 
 enum TemplateFamily {
   MEDICAL
+  THERAPY
   CONSULTING
   SALON
   FITNESS

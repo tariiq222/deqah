@@ -10,7 +10,7 @@
 // TypeScript's `module: commonjs` output used by the backend. Inlining
 // sidesteps both constraints — pure TS, no JSON, no attributes.
 
-export const TEMPLATE_FAMILIES = ['MEDICAL', 'CONSULTING', 'SALON', 'FITNESS'] as const;
+export const TEMPLATE_FAMILIES = ['MEDICAL', 'THERAPY', 'CONSULTING', 'SALON', 'FITNESS'] as const;
 export type TemplateFamily = (typeof TEMPLATE_FAMILIES)[number];
 
 export const TERMINOLOGY_KEYS = [
@@ -50,8 +50,8 @@ const medical: TerminologyPack = {
   'employee.possessive': { ar: 'طبيبك', en: 'your doctor' },
   'service.singular': { ar: 'خدمة', en: 'Service' },
   'service.plural': { ar: 'الخدمات', en: 'Services' },
-  'client.singular': { ar: 'مريض', en: 'Patient' },
-  'client.plural': { ar: 'المرضى', en: 'Patients' },
+  'client.singular': { ar: 'مستفيد', en: 'Beneficiary' },
+  'client.plural': { ar: 'المستفيدون', en: 'Beneficiaries' },
   'booking.singular': { ar: 'حجز', en: 'Booking' },
   'booking.plural': { ar: 'الحجوزات', en: 'Bookings' },
   'appointment.singular': { ar: 'موعد', en: 'Appointment' },
@@ -62,6 +62,28 @@ const medical: TerminologyPack = {
   'category.plural': { ar: 'الفئات', en: 'Categories' },
   'branch.singular': { ar: 'فرع', en: 'Branch' },
   'branch.plural': { ar: 'الفروع', en: 'Branches' },
+  'session.singular': { ar: 'جلسة', en: 'Session' },
+  'session.plural': { ar: 'الجلسات', en: 'Sessions' },
+};
+
+const therapy: TerminologyPack = {
+  'employee.singular': { ar: 'معالج', en: 'Therapist' },
+  'employee.plural': { ar: 'المعالجون', en: 'Therapists' },
+  'employee.possessive': { ar: 'معالجك', en: 'your therapist' },
+  'service.singular': { ar: 'جلسة', en: 'Session' },
+  'service.plural': { ar: 'الجلسات', en: 'Sessions' },
+  'client.singular': { ar: 'مراجع', en: 'Client' },
+  'client.plural': { ar: 'المراجعون', en: 'Clients' },
+  'booking.singular': { ar: 'حجز', en: 'Booking' },
+  'booking.plural': { ar: 'الحجوزات', en: 'Bookings' },
+  'appointment.singular': { ar: 'موعد', en: 'Appointment' },
+  'appointment.plural': { ar: 'المواعيد', en: 'Appointments' },
+  'department.singular': { ar: 'قسم', en: 'Department' },
+  'department.plural': { ar: 'الأقسام', en: 'Departments' },
+  'category.singular': { ar: 'مجال', en: 'Area' },
+  'category.plural': { ar: 'المجالات', en: 'Areas' },
+  'branch.singular': { ar: 'مركز', en: 'Center' },
+  'branch.plural': { ar: 'المراكز', en: 'Centers' },
   'session.singular': { ar: 'جلسة', en: 'Session' },
   'session.plural': { ar: 'الجلسات', en: 'Sessions' },
 };
@@ -134,6 +156,7 @@ const fitness: TerminologyPack = {
 
 export const BASE_PACKS: Record<TemplateFamily, TerminologyPack> = {
   MEDICAL: medical,
+  THERAPY: therapy,
   CONSULTING: consulting,
   SALON: salon,
   FITNESS: fitness,
