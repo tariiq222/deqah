@@ -10,7 +10,6 @@ export interface StartImpersonationCommand {
   superAdminUserId: string;
   organizationId: string;
   targetUserId: string;
-  reason: string;
   ipAddress: string;
   userAgent: string;
 }
@@ -70,7 +69,7 @@ export class StartImpersonationHandler {
           superAdminUserId: cmd.superAdminUserId,
           targetUserId: cmd.targetUserId,
           organizationId: cmd.organizationId,
-          reason: cmd.reason,
+          reason: null,
           startedAt,
           expiresAt,
           ipAddress: cmd.ipAddress,
@@ -84,7 +83,7 @@ export class StartImpersonationHandler {
           actionType: SuperAdminActionType.IMPERSONATE_START,
           organizationId: cmd.organizationId,
           impersonationSessionId: created.id,
-          reason: cmd.reason,
+          reason: null,
           metadata: { targetUserId: cmd.targetUserId, expiresAt: expiresAt.toISOString() },
           ipAddress: cmd.ipAddress,
           userAgent: cmd.userAgent,

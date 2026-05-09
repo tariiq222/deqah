@@ -11,7 +11,6 @@ import {
   DialogTrigger,
 } from '@deqah/ui/primitives/dialog';
 import { Label } from '@deqah/ui/primitives/label';
-import { Textarea } from '@deqah/ui/primitives/textarea';
 import { useListPlans } from '@/features/plans/list-plans/use-list-plans';
 import { useChangePlan } from './use-change-plan';
 
@@ -23,31 +22,28 @@ interface Props {
 export function ChangePlanDialog({ orgId, currentPlanId }: Props) {
   const [open, setOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState('');
-  const [reason, setReason] = useState('');
 
   const { data: plans = [] } = useListPlans();
   const mutation = useChangePlan(orgId);
 
   const activePlans = plans.filter((p) => p.isActive);
-  const isValid = selectedPlanId !== '' && selectedPlanId !== currentPlanId && reason.trim().length >= 10;
+  const isValid = selectedPlanId !== '' && selectedPlanId !== currentPlanId;
 
   function handleOpen(val: boolean) {
     setOpen(val);
     if (!val) {
       setSelectedPlanId('');
-      setReason('');
     }
   }
 
   function submit() {
     if (!isValid) return;
     mutation.mutate(
-      { newPlanId: selectedPlanId, reason: reason.trim() },
+      { newPlanId: selectedPlanId },
       {
         onSuccess: () => {
           setOpen(false);
           setSelectedPlanId('');
-          setReason('');
         },
       },
     );
@@ -81,17 +77,6 @@ export function ChangePlanDialog({ orgId, currentPlanId }: Props) {
                 </option>
               ))}
             </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="cp-reason">Reason (min 10 chars)</Label>
-            <Textarea
-              id="cp-reason"
-              rows={3}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Reason for changing plan (written to audit log)…"
-            />
           </div>
 
           {mutation.error ? (

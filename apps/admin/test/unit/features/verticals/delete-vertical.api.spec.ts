@@ -20,11 +20,11 @@ describe('delete-vertical.api', () => {
     const { deleteVertical } = await import('@/features/verticals/delete-vertical/delete-vertical.api');
     mockApiRequest.mockResolvedValue(undefined);
 
-    await deleteVertical({ verticalId: 'vertical-12', reason: 'deprecated' });
+    await deleteVertical({ verticalId: 'vertical-12' });
 
     expect(mockApiRequest).toHaveBeenCalledWith('/admin/verticals/vertical-12', {
       method: 'DELETE',
-      body: JSON.stringify({ reason: 'deprecated' }),
+      body: JSON.stringify({}),
     });
   });
 
@@ -32,7 +32,7 @@ describe('delete-vertical.api', () => {
     const { deleteVertical } = await import('@/features/verticals/delete-vertical/delete-vertical.api');
     mockApiRequest.mockResolvedValue(undefined);
 
-    const result = await deleteVertical({ verticalId: '1', reason: 'a' });
+    const result = await deleteVertical({ verticalId: '1' });
 
     expect(result).toBeUndefined();
   });

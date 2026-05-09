@@ -7,7 +7,6 @@ import { CreatePlanVersionHandler } from '../../billing/plan-versions/create-pla
 
 export interface CreatePlanCommand {
   superAdminUserId: string;
-  reason: string;
   ipAddress: string;
   userAgent: string;
   data: {
@@ -55,7 +54,7 @@ export class CreatePlanHandler {
           superAdminUserId: cmd.superAdminUserId,
           actionType: SuperAdminActionType.PLAN_CREATE,
           organizationId: null,
-          reason: cmd.reason,
+          reason: null,
           metadata: { planId: created.id, slug: created.slug },
           ipAddress: cmd.ipAddress,
           userAgent: cmd.userAgent,

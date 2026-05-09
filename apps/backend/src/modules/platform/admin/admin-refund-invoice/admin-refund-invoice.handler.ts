@@ -17,7 +17,6 @@ export interface AdminRefundInvoiceCommand {
   /** Amount in SAR. Omit for full refund of remaining. */
   amount?: number;
   superAdminUserId: string;
-  reason: string;
   ipAddress: string;
   userAgent: string;
 }
@@ -119,7 +118,7 @@ export class AdminRefundInvoiceHandler {
           superAdminUserId: cmd.superAdminUserId,
           actionType: SuperAdminActionType.BILLING_REFUND,
           organizationId: invoice.organizationId,
-          reason: cmd.reason,
+          reason: null,
           metadata: {
             invoiceId: invoice.id,
             moyasarPaymentId: invoice.moyasarPaymentId,

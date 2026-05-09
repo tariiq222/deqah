@@ -37,7 +37,6 @@ interface FormState {
   templateFamily: TemplateFamily;
   descriptionAr: string;
   descriptionEn: string;
-  reason: string;
 }
 
 export function UpdateVerticalDialog({ open, onOpenChange, vertical }: Props) {
@@ -73,13 +72,11 @@ function UpdateVerticalForm({
     templateFamily: vertical.templateFamily as TemplateFamily,
     descriptionAr: vertical.descriptionAr ?? '',
     descriptionEn: vertical.descriptionEn ?? '',
-    reason: '',
   }));
 
   const isValid =
     form.nameAr.trim().length > 0 &&
-    form.nameEn.trim().length > 0 &&
-    form.reason.trim().length >= 10;
+    form.nameEn.trim().length > 0;
 
   const set = (field: keyof FormState) => (value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -94,7 +91,6 @@ function UpdateVerticalForm({
         templateFamily: form.templateFamily,
         descriptionAr: form.descriptionAr.trim() || null,
         descriptionEn: form.descriptionEn.trim() || null,
-        reason: form.reason.trim(),
       },
       { onSuccess: onClose },
     );
@@ -163,17 +159,6 @@ function UpdateVerticalForm({
             rows={2}
             value={form.descriptionEn}
             onChange={(e) => set('descriptionEn')(e.target.value)}
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="uv-reason">Reason (min 10 chars)</Label>
-          <Textarea
-            id="uv-reason"
-            rows={3}
-            value={form.reason}
-            onChange={(e) => set('reason')(e.target.value)}
-            placeholder="Reason for updating this vertical…"
           />
         </div>
       </div>

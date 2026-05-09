@@ -100,31 +100,6 @@ describe('UpdateVerticalDialog', () => {
     });
   });
 
-  it('renders reason textarea', async () => {
-    const onOpenChange = vi.fn();
-
-    wrap(
-      <UpdateVerticalDialog open={true} onOpenChange={onOpenChange} vertical={mockVertical} />,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByLabelText(/Reason \(min 10 chars\)/i)).toBeInTheDocument();
-    });
-  });
-
-  it('disables submit when form is invalid', async () => {
-    const onOpenChange = vi.fn();
-
-    wrap(
-      <UpdateVerticalDialog open={true} onOpenChange={onOpenChange} vertical={mockVertical} />,
-    );
-
-    await waitFor(() => {
-      const submitButton = screen.getByRole('button', { name: /save changes/i });
-      expect(submitButton).toBeDisabled();
-    });
-  });
-
   it('enables submit when form is valid', async () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
@@ -138,11 +113,6 @@ describe('UpdateVerticalDialog', () => {
       await user.type(screen.getByLabelText(/Name \(Arabic\)/i), 'طب القلب');
       await user.clear(screen.getByLabelText(/Name \(English\)/i));
       await user.type(screen.getByLabelText(/Name \(English\)/i), 'Cardiology');
-      await user.clear(screen.getByLabelText(/Reason \(min 10 chars\)/i));
-      await user.type(
-        screen.getByLabelText(/Reason \(min 10 chars\)/i),
-        'Updating vertical to cardiology',
-      );
     });
 
     await waitFor(() => {

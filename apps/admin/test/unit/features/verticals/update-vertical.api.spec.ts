@@ -20,11 +20,11 @@ describe('update-vertical.api', () => {
     const { updateVertical } = await import('@/features/verticals/update-vertical/update-vertical.api');
     mockApiRequest.mockResolvedValue({ id: 'v-5' });
 
-    await updateVertical({ verticalId: 'v-5', nameEn: 'Updated Medical', reason: 'name correction' });
+    await updateVertical({ verticalId: 'v-5', nameEn: 'Updated Medical' });
 
     expect(mockApiRequest).toHaveBeenCalledWith('/admin/verticals/v-5', {
       method: 'PATCH',
-      body: JSON.stringify({ nameEn: 'Updated Medical', reason: 'name correction' }),
+      body: JSON.stringify({ nameEn: 'Updated Medical' }),
     });
   });
 
@@ -32,7 +32,7 @@ describe('update-vertical.api', () => {
     const { updateVertical } = await import('@/features/verticals/update-vertical/update-vertical.api');
     mockApiRequest.mockResolvedValue({ id: '1' });
 
-    await updateVertical({ verticalId: 'v-99', nameAr: 'محدث', reason: 'fix' });
+    await updateVertical({ verticalId: 'v-99', nameAr: 'محدث' });
 
     const call = mockApiRequest.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(call[1].body as string);
@@ -45,7 +45,7 @@ describe('update-vertical.api', () => {
     const mockRow = { id: 'v-1', nameEn: 'Updated' };
     mockApiRequest.mockResolvedValue(mockRow);
 
-    const result = await updateVertical({ verticalId: 'v-1', reason: 'a' });
+    const result = await updateVertical({ verticalId: 'v-1' });
 
     expect(result.nameEn).toBe('Updated');
   });

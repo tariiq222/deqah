@@ -53,7 +53,6 @@ describe('StartImpersonationHandler', () => {
     superAdminUserId: 'sa1',
     organizationId: 'o1',
     targetUserId: 'u1',
-    reason: 'Support ticket #4242',
     ipAddress: '1.2.3.4',
     userAgent: 'jest',
   };

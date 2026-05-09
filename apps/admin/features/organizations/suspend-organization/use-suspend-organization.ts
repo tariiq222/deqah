@@ -8,7 +8,7 @@ export function useSuspendOrganization(organizationId: string) {
   const qc = useQueryClient();
   return useMutation(withSentryMutation({
     context: 'admin:organization:suspend',
-    mutationFn: (reason: string) => suspendOrganization({ organizationId, reason }),
+    mutationFn: () => suspendOrganization({ organizationId }),
     onSuccess: () => {
       toast.success('Organization suspended.');
       void qc.invalidateQueries({ queryKey: organizationDetailKey(organizationId) });

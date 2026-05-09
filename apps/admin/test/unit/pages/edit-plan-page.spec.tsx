@@ -127,12 +127,6 @@ describe('EditPlanPage', () => {
     expect(screen.getByLabelText(/^Active$/i)).toBeInTheDocument();
   });
 
-  it('disables submit button when form is invalid', () => {
-    render(<EditPlanPage />, { wrapper });
-    const submitButton = screen.getByRole('button', { name: /save changes/i });
-    expect(submitButton).toBeDisabled();
-  });
-
   it('enables submit button when form is valid', async () => {
     const user = userEvent.setup();
     render(<EditPlanPage />, { wrapper });
@@ -141,8 +135,6 @@ describe('EditPlanPage', () => {
     await user.type(screen.getByLabelText(/Name \(Arabic\)/i), 'Updated Plan');
     await user.clear(screen.getByLabelText(/Name \(English\)/i));
     await user.type(screen.getByLabelText(/Name \(English\)/i), 'Updated Plan EN');
-    await user.clear(screen.getByLabelText(/Reason \(min 3 chars\)/i));
-    await user.type(screen.getByLabelText(/Reason \(min 3 chars\)/i), 'This is a valid reason for testing');
 
     const submitButton = screen.getByRole('button', { name: /save changes/i });
     expect(submitButton).not.toBeDisabled();

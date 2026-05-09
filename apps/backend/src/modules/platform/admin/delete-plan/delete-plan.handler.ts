@@ -5,7 +5,6 @@ import { PrismaService } from '../../../../infrastructure/database';
 export interface DeletePlanCommand {
   planId: string;
   superAdminUserId: string;
-  reason: string;
   ipAddress: string;
   userAgent: string;
 }
@@ -42,7 +41,7 @@ export class DeletePlanHandler {
           superAdminUserId: cmd.superAdminUserId,
           actionType: SuperAdminActionType.PLAN_DELETE,
           organizationId: null,
-          reason: cmd.reason,
+          reason: null,
           metadata: { planId: cmd.planId, softDelete: true },
           ipAddress: cmd.ipAddress,
           userAgent: cmd.userAgent,

@@ -13,7 +13,6 @@ import { CreatePlanVersionHandler } from '../../billing/plan-versions/create-pla
 export interface UpdatePlanCommand {
   planId: string;
   superAdminUserId: string;
-  reason: string;
   ipAddress: string;
   userAgent: string;
   data: {
@@ -61,7 +60,7 @@ export class UpdatePlanHandler {
           superAdminUserId: cmd.superAdminUserId,
           actionType: SuperAdminActionType.PLAN_UPDATE,
           organizationId: null,
-          reason: cmd.reason,
+          reason: null,
           metadata: { planId: cmd.planId, changedFields: Object.keys(updateData) },
           ipAddress: cmd.ipAddress,
           userAgent: cmd.userAgent,

@@ -72,7 +72,7 @@ describe('ArchiveOrganizationHandler', () => {
       data: expect.objectContaining({
         status: 'ARCHIVED',
         suspendedAt: expect.any(Date),
-        suspendedReason: cmd.reason,
+        suspendedReason: null,
       }),
       select: expect.any(Object),
     });
@@ -98,7 +98,7 @@ describe('ArchiveOrganizationHandler', () => {
       data: expect.objectContaining({
         actionType: 'TENANT_ARCHIVE',
         organizationId: 'org-1',
-        reason: cmd.reason,
+        reason: null,
         metadata: {
           previousStatus: 'ACTIVE',
           refreshTokensRevoked: 2,

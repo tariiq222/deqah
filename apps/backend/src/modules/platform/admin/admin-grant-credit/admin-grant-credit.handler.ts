@@ -6,7 +6,6 @@ export interface AdminGrantCreditCommand {
   organizationId: string;
   amount: number;
   currency: string;
-  reason: string;
   superAdminUserId: string;
   ipAddress: string;
   userAgent: string;
@@ -29,7 +28,7 @@ export class AdminGrantCreditHandler {
           organizationId: cmd.organizationId,
           amount: new Prisma.Decimal(cmd.amount),
           currency: cmd.currency,
-          reason: cmd.reason,
+          reason: null,
           grantedByUserId: cmd.superAdminUserId,
         },
         select: {
@@ -48,7 +47,7 @@ export class AdminGrantCreditHandler {
           superAdminUserId: cmd.superAdminUserId,
           actionType: SuperAdminActionType.BILLING_GRANT_CREDIT,
           organizationId: cmd.organizationId,
-          reason: cmd.reason,
+          reason: null,
           metadata: {
             creditId: credit.id,
             amount: credit.amount.toString(),

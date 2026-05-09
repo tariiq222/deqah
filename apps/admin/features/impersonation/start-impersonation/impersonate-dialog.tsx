@@ -13,7 +13,6 @@ import {
 } from '@deqah/ui/primitives/dialog';
 import { Input } from '@deqah/ui/primitives/input';
 import { Label } from '@deqah/ui/primitives/label';
-import { Textarea } from '@deqah/ui/primitives/textarea';
 import { useStartImpersonation } from './use-start-impersonation';
 
 interface Props {
@@ -24,12 +23,11 @@ interface Props {
 export function ImpersonateDialog({ organizationId, organizationName }: Props) {
   const [open, setOpen] = useState(false);
   const [targetUserId, setTargetUserId] = useState('');
-  const [reason, setReason] = useState('');
   const mutation = useStartImpersonation();
 
   function submit() {
     mutation.mutate(
-      { organizationId, targetUserId: targetUserId.trim(), reason: reason.trim() },
+      { organizationId, targetUserId: targetUserId.trim() },
       {
         onSuccess: (result) => {
           // Navigate the current tab to the tenant dashboard carrying the
@@ -42,7 +40,7 @@ export function ImpersonateDialog({ organizationId, organizationName }: Props) {
   }
 
   const valid =
-    targetUserId.trim().length > 0 && reason.trim().length >= 10 && /^[0-9a-f-]{36}$/i.test(targetUserId.trim());
+    targetUserId.trim().length > 0 && /^[0-9a-f-]{36}$/i.test(targetUserId.trim());
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -71,16 +69,6 @@ export function ImpersonateDialog({ organizationId, organizationName }: Props) {
             <p className="text-xs text-muted-foreground">
               Paste the user&apos;s UUID from the Users page. Impersonating another super-admin is rejected.
             </p>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="impersonate-reason">Reason</Label>
-            <Textarea
-              id="impersonate-reason"
-              rows={3}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g., Support ticket #4242 — user cannot load bookings"
-            />
           </div>
         </div>
         <DialogFooter>

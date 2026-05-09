@@ -11,7 +11,6 @@ export interface CreatePlanCommand {
   limits: Record<string, unknown>;
   isActive?: boolean;
   sortOrder?: number;
-  reason: string;
 }
 
 export function createPlan(cmd: CreatePlanCommand): Promise<PlanRow> {

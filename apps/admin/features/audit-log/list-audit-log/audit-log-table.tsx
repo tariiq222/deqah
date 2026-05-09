@@ -51,7 +51,7 @@ export function AuditLogTable({ items, isLoading }: Props) {
                 <TableCell className="font-mono text-xs">
                   {entry.organizationId ?? '—'}
                 </TableCell>
-                <TableCell className="max-w-md truncate text-sm">{entry.reason}</TableCell>
+                <TableCell className="max-w-md truncate text-sm">{entry.reason ?? '—'}</TableCell>
                 <TableCell className="font-mono text-xs text-muted-foreground">
                   {entry.ipAddress || '—'}
                 </TableCell>

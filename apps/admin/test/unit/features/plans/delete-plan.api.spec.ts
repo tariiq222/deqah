@@ -20,11 +20,11 @@ describe('delete-plan.api', () => {
     const { deletePlan } = await import('@/features/plans/delete-plan/delete-plan.api');
     mockApiRequest.mockResolvedValue(undefined);
 
-    await deletePlan({ planId: 'plan-88', reason: 'superseded' });
+    await deletePlan({ planId: 'plan-88' });
 
     expect(mockApiRequest).toHaveBeenCalledWith('/admin/plans/plan-88', {
       method: 'DELETE',
-      body: JSON.stringify({ reason: 'superseded' }),
+      body: JSON.stringify({}),
     });
   });
 
@@ -32,7 +32,7 @@ describe('delete-plan.api', () => {
     const { deletePlan } = await import('@/features/plans/delete-plan/delete-plan.api');
     mockApiRequest.mockResolvedValue(undefined);
 
-    const result = await deletePlan({ planId: '1', reason: 'a' });
+    const result = await deletePlan({ planId: '1' });
 
     expect(result).toBeUndefined();
   });

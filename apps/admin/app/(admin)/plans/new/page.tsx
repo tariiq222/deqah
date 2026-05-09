@@ -6,7 +6,6 @@ import { useState } from 'react';
 import { Button } from '@deqah/ui/primitives/button';
 import { Input } from '@deqah/ui/primitives/input';
 import { Label } from '@deqah/ui/primitives/label';
-import { Textarea } from '@deqah/ui/primitives/textarea';
 import { useCreatePlan } from '@/features/plans/create-plan/use-create-plan';
 import { PlanFormTabs } from '@/features/plans/plan-form-tabs';
 import { FeaturesTab } from '@/features/plans/features-tab/features-tab';
@@ -21,7 +20,6 @@ const DEFAULT_FORM = {
   priceMonthly: '',
   priceAnnual: '',
   currency: 'SAR',
-  reason: '',
 };
 
 export default function CreatePlanPage() {
@@ -37,8 +35,7 @@ export default function CreatePlanPage() {
     form.nameAr.trim().length > 0 &&
     form.nameEn.trim().length > 0 &&
     form.priceMonthly !== '' &&
-    form.priceAnnual !== '' &&
-    form.reason.trim().length >= 3;
+    form.priceAnnual !== '';
 
   const set = (field: keyof typeof DEFAULT_FORM) => (value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -55,7 +52,6 @@ export default function CreatePlanPage() {
         currency: form.currency.trim() || 'SAR',
         limits: { ...limits },
         isActive: true,
-        reason: form.reason.trim(),
       },
       { onSuccess: () => router.push('/plans') },
     );
@@ -135,17 +131,6 @@ export default function CreatePlanPage() {
           />
         </div>
       </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="cp-reason">Reason (min 3 chars)</Label>
-        <Textarea
-          id="cp-reason"
-          rows={3}
-          value={form.reason}
-          onChange={(e) => set('reason')(e.target.value)}
-          placeholder="Reason for creating this plan…"
-        />
-      </div>
     </>
   );
 
@@ -168,7 +153,7 @@ export default function CreatePlanPage() {
         </Link>
         <h2 className="mt-2 text-2xl font-semibold">Create plan</h2>
         <p className="text-sm text-muted-foreground">
-          Add a new subscription plan. Reason is written to the audit log.
+          Add a new subscription plan. This action is written to the audit log.
         </p>
       </div>
 

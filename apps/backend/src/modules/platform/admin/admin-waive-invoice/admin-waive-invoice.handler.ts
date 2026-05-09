@@ -8,7 +8,6 @@ import { PrismaService } from '../../../../infrastructure/database';
 export interface AdminWaiveInvoiceCommand {
   invoiceId: string;
   superAdminUserId: string;
-  reason: string;
   ipAddress: string;
   userAgent: string;
 }
@@ -40,7 +39,7 @@ export class AdminWaiveInvoiceHandler {
         where: { id: cmd.invoiceId },
         data: {
           status: SubscriptionInvoiceStatus.VOID,
-          voidedReason: cmd.reason,
+          voidedReason: null,
         },
         select: {
           id: true,
@@ -56,7 +55,7 @@ export class AdminWaiveInvoiceHandler {
           superAdminUserId: cmd.superAdminUserId,
           actionType: SuperAdminActionType.BILLING_WAIVE_INVOICE,
           organizationId: invoice.organizationId,
-          reason: cmd.reason,
+          reason: null,
           metadata: {
             invoiceId: invoice.id,
             previousStatus: invoice.status,

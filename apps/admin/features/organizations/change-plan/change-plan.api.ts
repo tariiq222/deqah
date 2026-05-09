@@ -2,7 +2,6 @@ import { adminRequest } from '@/lib/api-client';
 
 export interface ChangePlanCommand {
   newPlanId: string;
-  reason: string;
 }
 
 export function changePlanForOrg(orgId: string, cmd: ChangePlanCommand): Promise<{ id: string }> {

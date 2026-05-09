@@ -14,7 +14,6 @@ import {
 } from '@deqah/ui/primitives/dialog';
 import { Input } from '@deqah/ui/primitives/input';
 import { Label } from '@deqah/ui/primitives/label';
-import { Textarea } from '@deqah/ui/primitives/textarea';
 import type { OrganizationDetail } from '../types';
 import { useUpdateOrganization } from './use-update-organization';
 
@@ -32,14 +31,13 @@ export function UpdateOrganizationDialog({ open, onOpenChange, organization }: P
       nameEn: organization.nameEn ?? '',
       verticalSlug: '',
       trialEndsAt: toDatetimeLocal(organization.trialEndsAt),
-      reason: '',
     }),
     [organization.nameAr, organization.nameEn, organization.trialEndsAt],
   );
   const [form, setForm] = useState(initial);
   const mutation = useUpdateOrganization(organization.id);
 
-  const canSubmit = form.nameAr.trim().length >= 2 && form.reason.trim().length >= 10;
+  const canSubmit = form.nameAr.trim().length >= 2;
 
   const reset = () => {
     setForm(initial);
@@ -64,7 +62,6 @@ export function UpdateOrganizationDialog({ open, onOpenChange, organization }: P
         nameEn: form.nameEn.trim() || null,
         verticalSlug: form.verticalSlug.trim() || undefined,
         trialEndsAt: form.trialEndsAt ? new Date(form.trialEndsAt).toISOString() : undefined,
-        reason: form.reason.trim(),
       },
       {
         onSuccess: () => handleOpenChange(false),
@@ -117,15 +114,6 @@ export function UpdateOrganizationDialog({ open, onOpenChange, organization }: P
                   onChange={(event) => set('trialEndsAt')(event.target.value)}
                 />
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="update-reason">{t('reason')}</Label>
-              <Textarea
-                id="update-reason"
-                rows={3}
-                value={form.reason}
-                onChange={(event) => set('reason')(event.target.value)}
-              />
             </div>
             {errorMessage ? (
               <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">

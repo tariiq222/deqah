@@ -35,7 +35,6 @@ describe('CreateVerticalAdminHandler', () => {
 
   const cmd = {
     superAdminUserId: 'sa1',
-    reason: 'Adding spa vertical for new clinic chain',
     ipAddress: '1.2.3.4',
     userAgent: 'jest',
     data: {

@@ -34,7 +34,6 @@ const DEFAULT_FORM = {
   templateFamily: '' as 'MEDICAL' | 'CONSULTING' | 'SALON' | 'FITNESS' | '',
   descriptionAr: '',
   descriptionEn: '',
-  reason: '',
 };
 
 export function CreateVerticalDialog({ open, onOpenChange }: Props) {
@@ -45,8 +44,7 @@ export function CreateVerticalDialog({ open, onOpenChange }: Props) {
     form.slug.trim().length > 0 &&
     form.nameAr.trim().length > 0 &&
     form.nameEn.trim().length > 0 &&
-    form.templateFamily !== '' &&
-    form.reason.trim().length >= 10;
+    form.templateFamily !== '';
 
   const reset = () => setForm(DEFAULT_FORM);
 
@@ -63,7 +61,6 @@ export function CreateVerticalDialog({ open, onOpenChange }: Props) {
         templateFamily: form.templateFamily,
         descriptionAr: form.descriptionAr.trim() || undefined,
         descriptionEn: form.descriptionEn.trim() || undefined,
-        reason: form.reason.trim(),
       },
       {
         onSuccess: () => {
@@ -80,7 +77,7 @@ export function CreateVerticalDialog({ open, onOpenChange }: Props) {
         <DialogHeader>
           <DialogTitle>Create vertical</DialogTitle>
           <DialogDescription>
-            Add a new clinic archetype. Reason is required and written to the audit log.
+            Add a new clinic archetype. This action is written to the audit log.
           </DialogDescription>
         </DialogHeader>
 
@@ -152,17 +149,6 @@ export function CreateVerticalDialog({ open, onOpenChange }: Props) {
               rows={2}
               value={form.descriptionEn}
               onChange={(e) => set('descriptionEn')(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="cv-reason">Reason (min 10 chars)</Label>
-            <Textarea
-              id="cv-reason"
-              rows={3}
-              value={form.reason}
-              onChange={(e) => set('reason')(e.target.value)}
-              placeholder="Reason for creating this vertical…"
             />
           </div>
         </div>

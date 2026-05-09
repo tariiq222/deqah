@@ -27,7 +27,6 @@ describe('create-plan.api', () => {
       priceMonthly: 99,
       priceAnnual: 990,
       limits: { users: 10 },
-      reason: 'new tier',
     });
 
     expect(mockApiRequest).toHaveBeenCalledWith('/admin/plans', {
@@ -39,7 +38,6 @@ describe('create-plan.api', () => {
         priceMonthly: 99,
         priceAnnual: 990,
         limits: { users: 10 },
-        reason: 'new tier',
       }),
     });
   });
@@ -54,10 +52,10 @@ describe('create-plan.api', () => {
       nameEn: 'a',
       priceMonthly: 1,
       priceAnnual: 10,
+      limits: {},
       currency: 'SAR',
       isActive: false,
       sortOrder: 5,
-      reason: 'a',
     });
 
     const call = mockApiRequest.mock.calls[0] as [string, RequestInit];
@@ -71,7 +69,7 @@ describe('create-plan.api', () => {
     const mockRow = { id: 'p-1', slug: 'basic', nameEn: 'Basic' };
     mockApiRequest.mockResolvedValue(mockRow);
 
-    const result = await createPlan({ slug: 'b', nameAr: 'b', nameEn: 'b', priceMonthly: 1, priceAnnual: 10, reason: 'b' });
+    const result = await createPlan({ slug: 'b', nameAr: 'b', nameEn: 'b', priceMonthly: 1, priceAnnual: 10, limits: {} });
 
     expect(result.id).toBe('p-1');
   });

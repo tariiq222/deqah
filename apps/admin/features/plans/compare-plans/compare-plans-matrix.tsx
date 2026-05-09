@@ -7,7 +7,6 @@ import { Button } from '@deqah/ui/primitives/button';
 import { Input } from '@deqah/ui/primitives/input';
 import { Switch } from '@deqah/ui/primitives/switch';
 import { Label } from '@deqah/ui/primitives/label';
-import { Textarea } from '@deqah/ui/primitives/textarea';
 import { FEATURE_CATALOG } from '@deqah/shared';
 import type { PlanRow } from '../types';
 import { QUANT_FIELD_MAP, hydrateLimits, type PlanLimits } from '../plan-limits';
@@ -48,7 +47,6 @@ export function ComparePlansMatrix({ plans }: Props) {
   const [originalLimits, setOriginalLimits] = useState<Record<string, PlanLimits>>(() =>
     initLimits(sorted),
   );
-  const [reason, setReason] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const { batchUpdate } = useBatchUpdatePlans();
@@ -93,11 +91,10 @@ export function ComparePlansMatrix({ plans }: Props) {
       if (!window.confirm('Discard all unsaved changes?')) return;
     }
     setCurrentLimits(initLimits(sorted));
-    setReason('');
   };
 
   const handleSave = async () => {
-    if (dirtyCount === 0 || reason.trim().length < 10 || isSaving) return;
+    if (dirtyCount === 0 || isSaving) return;
 
     const dirtyPlans = sorted.filter((p) => dirtyPlanIds.includes(p.id));
     const plansWithSubscribers = dirtyPlans.filter((p) => p._count.subscriptions > 0);
@@ -115,7 +112,6 @@ export function ComparePlansMatrix({ plans }: Props) {
       const items = dirtyPlans.map((plan) => ({
         plan,
         limits: currentLimits[plan.id],
-        reason,
       }));
 
       const { succeeded, failed } = await batchUpdate(items);
@@ -127,7 +123,6 @@ export function ComparePlansMatrix({ plans }: Props) {
           for (const planId of succeeded) next[planId] = { ...currentLimits[planId] };
           return next;
         });
-        setReason('');
       } else {
         toast.error(
           `${failed.length} of ${dirtyCount} plan${dirtyCount === 1 ? '' : 's'} failed: ${failed.map((f) => f.planId).join(', ')}`,
@@ -145,7 +140,7 @@ export function ComparePlansMatrix({ plans }: Props) {
     }
   };
 
-  const saveDisabled = dirtyCount === 0 || reason.trim().length < 10 || isSaving;
+  const saveDisabled = dirtyCount === 0 || isSaving;
 
   const featureColWidth = 260;
   const planColWidth = 150;
@@ -285,24 +280,8 @@ export function ComparePlansMatrix({ plans }: Props) {
                 <span className="font-medium">
                   {dirtyCount} plan{dirtyCount === 1 ? '' : 's'} pending
                 </span>
-                {reason.trim().length < 10 ? (
-                  <span className="text-muted-foreground">
-                    {' '}— add a reason (min 10 chars) below to save
-                  </span>
-                ) : null}
               </p>
             )}
-            <div className="space-y-1">
-              <Label htmlFor="cmp-reason">Reason (min 3 chars)</Label>
-              <Textarea
-                id="cmp-reason"
-                rows={2}
-                placeholder="Reason for these plan updates…"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="max-w-lg"
-              />
-            </div>
           </div>
           <div className="flex items-end gap-2 pt-7">
             <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
@@ -311,7 +290,6 @@ export function ComparePlansMatrix({ plans }: Props) {
             <Button
               onClick={() => void handleSave()}
               disabled={saveDisabled}
-              title={saveDisabled && !isSaving ? 'Add a reason (min 10 chars) below to enable saving.' : undefined}
             >
               {isSaving ? 'Saving…' : 'Save changes'}
             </Button>

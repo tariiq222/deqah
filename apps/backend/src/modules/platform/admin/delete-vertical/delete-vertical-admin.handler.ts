@@ -5,7 +5,6 @@ import { PrismaService } from '../../../../infrastructure/database';
 export interface DeleteVerticalAdminCommand {
   verticalId: string;
   superAdminUserId: string;
-  reason: string;
   ipAddress: string;
   userAgent: string;
 }
@@ -38,7 +37,7 @@ export class DeleteVerticalAdminHandler {
           superAdminUserId: cmd.superAdminUserId,
           actionType: SuperAdminActionType.VERTICAL_DELETE,
           organizationId: null,
-          reason: cmd.reason,
+          reason: null,
           metadata: { verticalId: cmd.verticalId, softDelete: true },
           ipAddress: cmd.ipAddress,
           userAgent: cmd.userAgent,

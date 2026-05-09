@@ -78,13 +78,11 @@ export class AdminVerticalsController {
     @CurrentUser() user: { id: string },
     @Req() req: Request,
   ) {
-    const { reason, ...data } = dto;
     return this.createHandler.execute({
       superAdminUserId: user.id,
-      reason,
       ipAddress: req.ip ?? '',
       userAgent: req.headers['user-agent'] ?? '',
-      data,
+      data: dto,
     });
   }
 
@@ -99,14 +97,12 @@ export class AdminVerticalsController {
     @CurrentUser() user: { id: string },
     @Req() req: Request,
   ) {
-    const { reason, ...data } = dto;
     return this.updateHandler.execute({
       verticalId: id,
       superAdminUserId: user.id,
-      reason,
       ipAddress: req.ip ?? '',
       userAgent: req.headers['user-agent'] ?? '',
-      data,
+      data: dto,
     });
   }
 
@@ -125,7 +121,6 @@ export class AdminVerticalsController {
     await this.deleteHandler.execute({
       verticalId: id,
       superAdminUserId: user.id,
-      reason: dto.reason,
       ipAddress: req.ip ?? '',
       userAgent: req.headers['user-agent'] ?? '',
     });

@@ -97,7 +97,7 @@ export interface CreditRow {
   id: string;
   amount: string | number;
   currency: string;
-  reason: string;
+  reason?: string | null;
   grantedByUserId: string;
   grantedAt: string;
   consumedInvoiceId: string | null;

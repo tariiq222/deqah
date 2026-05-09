@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Button } from '@deqah/ui/primitives/button';
 import {
   Dialog,
@@ -11,20 +10,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@deqah/ui/primitives/dialog';
-import { Label } from '@deqah/ui/primitives/label';
-import { Textarea } from '@deqah/ui/primitives/textarea';
+import { useState } from 'react';
 import { useSuspendOrganization } from './use-suspend-organization';
 
 export function SuspendDialog({ organizationId }: { organizationId: string }) {
   const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState('');
   const mutation = useSuspendOrganization(organizationId);
 
   const submit = () => {
-    mutation.mutate(reason, {
+    mutation.mutate(undefined, {
       onSuccess: () => {
         setOpen(false);
-        setReason('');
       },
     });
   };
@@ -38,18 +34,9 @@ export function SuspendDialog({ organizationId }: { organizationId: string }) {
         <DialogHeader>
           <DialogTitle>Suspend organization</DialogTitle>
           <DialogDescription>
-            Members will be signed out within 30 seconds. Reason is required (min 10 characters)
-            and written to the audit log.
+            Members will be signed out within 30 seconds. This action is written to the audit log.
           </DialogDescription>
         </DialogHeader>
-        <Label htmlFor="suspend-reason">Reason</Label>
-        <Textarea
-          id="suspend-reason"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          rows={3}
-          placeholder="e.g., Non-payment past 60-day grace period"
-        />
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>
             Cancel
@@ -57,7 +44,7 @@ export function SuspendDialog({ organizationId }: { organizationId: string }) {
           <Button
             variant="destructive"
             onClick={submit}
-            disabled={mutation.isPending || reason.trim().length < 10}
+            disabled={mutation.isPending}
           >
             {mutation.isPending ? 'Suspending…' : 'Confirm suspend'}
           </Button>

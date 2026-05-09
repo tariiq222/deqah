@@ -62,7 +62,6 @@ export class AdminImpersonationController {
       superAdminUserId: user.sub,
       organizationId: dto.organizationId,
       targetUserId: dto.targetUserId,
-      reason: dto.reason,
       ipAddress: req.ip ?? '',
       userAgent: req.headers['user-agent'] ?? '',
     });

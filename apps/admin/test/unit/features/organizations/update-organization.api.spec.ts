@@ -20,11 +20,11 @@ describe('update-organization.api', () => {
     const { updateOrganization } = await import('@/features/organizations/update-organization/update-organization.api');
     mockApiRequest.mockResolvedValue({ id: 'org-1' });
 
-    await updateOrganization({ organizationId: 'org-1', nameAr: 'محدث', reason: 'name fix' });
+    await updateOrganization({ organizationId: 'org-1', nameAr: 'محدث' });
 
     expect(mockApiRequest).toHaveBeenCalledWith('/admin/organizations/org-1', {
       method: 'PATCH',
-      body: JSON.stringify({ nameAr: 'محدث', reason: 'name fix' }),
+      body: JSON.stringify({ nameAr: 'محدث' }),
     });
   });
 
@@ -36,7 +36,6 @@ describe('update-organization.api', () => {
       organizationId: 'org-99',
       nameEn: 'Updated Name',
       verticalSlug: null,
-      reason: 'correcting',
     });
 
     const call = mockApiRequest.mock.calls[0] as [string, RequestInit];
@@ -51,7 +50,7 @@ describe('update-organization.api', () => {
     const mockRow = { id: 'org-1', nameEn: 'Updated' };
     mockApiRequest.mockResolvedValue(mockRow);
 
-    const result = await updateOrganization({ organizationId: 'org-1', reason: 'a' });
+    const result = await updateOrganization({ organizationId: 'org-1' });
 
     expect(result.nameEn).toBe('Updated');
   });

@@ -49,7 +49,6 @@ describe('ResetUserPasswordHandler', () => {
   const cmd = {
     targetUserId: 'u1',
     superAdminUserId: 'sa1',
-    reason: 'User locked out, support call #1234',
     ipAddress: '1.2.3.4',
     userAgent: 'jest',
   };

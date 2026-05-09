@@ -20,11 +20,11 @@ describe('suspend-organization.api', () => {
     const { suspendOrganization } = await import('@/features/organizations/suspend-organization/suspend-organization.api');
     mockApiRequest.mockResolvedValue(undefined);
 
-    await suspendOrganization({ organizationId: 'org-55', reason: 'policy violation' });
+    await suspendOrganization({ organizationId: 'org-55' });
 
     expect(mockApiRequest).toHaveBeenCalledWith('/admin/organizations/org-55/suspend', {
       method: 'POST',
-      body: JSON.stringify({ reason: 'policy violation' }),
+      body: JSON.stringify({}),
     });
   });
 
@@ -32,7 +32,7 @@ describe('suspend-organization.api', () => {
     const { suspendOrganization } = await import('@/features/organizations/suspend-organization/suspend-organization.api');
     mockApiRequest.mockResolvedValue(undefined);
 
-    const result = await suspendOrganization({ organizationId: '1', reason: 'test' });
+    const result = await suspendOrganization({ organizationId: '1' });
 
     expect(result).toBeUndefined();
   });

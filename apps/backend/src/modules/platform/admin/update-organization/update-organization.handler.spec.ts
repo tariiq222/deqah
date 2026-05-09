@@ -29,7 +29,6 @@ describe('UpdateOrganizationHandler', () => {
     verticalSlug: 'clinic',
     trialEndsAt: new Date('2026-05-10T00:00:00.000Z'),
     superAdminUserId: 'sa-1',
-    reason: 'Update tenant profile',
     ipAddress: '127.0.0.1',
     userAgent: 'jest',
   };
@@ -78,7 +77,7 @@ describe('UpdateOrganizationHandler', () => {
       data: expect.objectContaining({
         actionType: 'TENANT_UPDATE',
         organizationId: 'org-1',
-        reason: cmd.reason,
+        reason: null,
         metadata: expect.objectContaining({
           previous: current,
           next: expect.objectContaining({

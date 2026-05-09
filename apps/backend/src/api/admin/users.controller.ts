@@ -80,7 +80,6 @@ export class AdminUsersController {
     await this.resetHandler.execute({
       targetUserId: id,
       superAdminUserId: user.sub,
-      reason: dto.reason,
       ipAddress: req.ip ?? '',
       userAgent: req.headers['user-agent'] ?? '',
     });

@@ -11,7 +11,7 @@ export function useArchiveOrganization(organizationId: string) {
 
   return useMutation(withSentryMutation({
     context: 'admin:organization:archive',
-    mutationFn: (reason: string) => archiveOrganization({ organizationId, reason }),
+    mutationFn: () => archiveOrganization({ organizationId }),
     onSuccess: () => {
       toast.success(t('success'));
       void qc.invalidateQueries({ queryKey: organizationDetailKey(organizationId) });

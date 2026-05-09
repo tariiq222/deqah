@@ -11,7 +11,6 @@ export interface CreateVerticalCommand {
   iconUrl?: string;
   isActive?: boolean;
   sortOrder?: number;
-  reason: string;
 }
 
 export function createVertical(cmd: CreateVerticalCommand): Promise<VerticalRow> {

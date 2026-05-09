@@ -9,7 +9,6 @@ export interface UpdateOrganizationCommand {
   verticalSlug?: string | null;
   trialEndsAt?: Date | null;
   superAdminUserId: string;
-  reason: string;
   ipAddress: string;
   userAgent: string;
 }
@@ -76,7 +75,7 @@ export class UpdateOrganizationHandler {
           superAdminUserId: cmd.superAdminUserId,
           actionType: SuperAdminActionType.TENANT_UPDATE,
           organizationId: cmd.organizationId,
-          reason: cmd.reason,
+          reason: null,
           metadata: {
             previous: current,
             next: {

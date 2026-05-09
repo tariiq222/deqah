@@ -43,7 +43,6 @@ describe('UpdatePlanHandler', () => {
   const cmd = {
     planId: 'p1',
     superAdminUserId: 'sa1',
-    reason: 'Adjusting BASIC pricing for Q3',
     ipAddress: '1.2.3.4',
     userAgent: 'jest',
     data: { priceMonthly: 149, isActive: false },

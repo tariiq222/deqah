@@ -25,7 +25,6 @@ describe('create-vertical.api', () => {
       nameAr: 'لياقة',
       nameEn: 'Fitness',
       templateFamily: 'FITNESS',
-      reason: 'new vertical',
     });
 
     expect(mockApiRequest).toHaveBeenCalledWith('/admin/verticals', {
@@ -35,7 +34,6 @@ describe('create-vertical.api', () => {
         nameAr: 'لياقة',
         nameEn: 'Fitness',
         templateFamily: 'FITNESS',
-        reason: 'new vertical',
       }),
     });
   });
@@ -54,7 +52,6 @@ describe('create-vertical.api', () => {
       iconUrl: 'https://icon.png',
       isActive: false,
       sortOrder: 3,
-      reason: 'r',
     });
 
     const call = mockApiRequest.mock.calls[0] as [string, RequestInit];
@@ -68,7 +65,7 @@ describe('create-vertical.api', () => {
     const mockRow = { id: 'v-1', slug: 'salon', nameEn: 'Salon' };
     mockApiRequest.mockResolvedValue(mockRow);
 
-    const result = await createVertical({ slug: 'sal', nameAr: 'س', nameEn: 'Sal', templateFamily: 'SALON', reason: 'r' });
+    const result = await createVertical({ slug: 'sal', nameAr: 'س', nameEn: 'Sal', templateFamily: 'SALON' });
 
     expect(result.id).toBe('v-1');
   });

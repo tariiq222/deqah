@@ -66,7 +66,6 @@ describe('SuspendOrganizationHandler', () => {
   const cmd = {
     organizationId: 'o1',
     superAdminUserId: 'sa1',
-    reason: 'Non-payment for 90 days',
     ipAddress: '1.2.3.4',
     userAgent: 'jest',
   };
@@ -82,7 +81,7 @@ describe('SuspendOrganizationHandler', () => {
       where: { id: 'o1' },
       data: expect.objectContaining({
         suspendedAt: expect.any(Date),
-        suspendedReason: cmd.reason,
+        suspendedReason: null,
         status: 'SUSPENDED',
       }),
     });
@@ -91,7 +90,7 @@ describe('SuspendOrganizationHandler', () => {
         actionType: 'SUSPEND_ORG',
         organizationId: 'o1',
         superAdminUserId: 'sa1',
-        reason: cmd.reason,
+        reason: null,
         ipAddress: '1.2.3.4',
         metadata: {
           refreshTokensRevoked: 2,
@@ -153,7 +152,6 @@ describe('SuspendOrganizationHandler', () => {
       'owner@example.com',
       expect.objectContaining({
         status: 'SUSPENDED',
-        reason: cmd.reason,
       }),
     );
   });

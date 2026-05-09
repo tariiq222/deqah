@@ -51,7 +51,6 @@ describe('AdminRefundInvoiceHandler', () => {
   const baseCmd = {
     invoiceId: 'inv1',
     superAdminUserId: 'sa1',
-    reason: 'Customer requested cancellation',
     ipAddress: '1.2.3.4',
     userAgent: 'jest',
   };

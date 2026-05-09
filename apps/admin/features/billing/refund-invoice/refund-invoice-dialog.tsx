@@ -13,7 +13,6 @@ import {
 import { Input } from '@deqah/ui/primitives/input';
 import { Label } from '@deqah/ui/primitives/label';
 import { RadioGroup, RadioGroupItem } from '@deqah/ui/primitives/radio-group';
-import { Textarea } from '@deqah/ui/primitives/textarea';
 import type { SubscriptionInvoiceRow } from '../types';
 import { useRefundInvoice } from './use-refund-invoice';
 
@@ -29,7 +28,6 @@ type Mode = 'full' | 'partial';
 export function RefundInvoiceDialog({ open, onOpenChange, invoice, orgId }: Props) {
   const [mode, setMode] = useState<Mode>('full');
   const [amount, setAmount] = useState('');
-  const [reason, setReason] = useState('');
   const mutation = useRefundInvoice(orgId);
 
   const totalAmount = Number(invoice.amount);
@@ -40,14 +38,11 @@ export function RefundInvoiceDialog({ open, onOpenChange, invoice, orgId }: Prop
   const validPartial =
     Number.isFinite(numericPartial) && numericPartial >= 0.01 && numericPartial <= remaining;
 
-  const validReason = reason.trim().length >= 10;
-  const canSubmit =
-    validReason && (mode === 'full' ? remaining > 0 : validPartial);
+  const canSubmit = mode === 'full' ? remaining > 0 : validPartial;
 
   const reset = () => {
     setMode('full');
     setAmount('');
-    setReason('');
   };
 
   const submit = () => {
@@ -56,7 +51,6 @@ export function RefundInvoiceDialog({ open, onOpenChange, invoice, orgId }: Prop
       {
         invoiceId: invoice.id,
         amount: mode === 'full' ? undefined : numericPartial,
-        reason: reason.trim(),
       },
       {
         onSuccess: () => {
@@ -74,7 +68,7 @@ export function RefundInvoiceDialog({ open, onOpenChange, invoice, orgId }: Prop
           <DialogTitle>Refund invoice</DialogTitle>
           <DialogDescription>
             Calls Moyasar to refund <span className="font-mono text-xs">{invoice.id.slice(0, 8)}…</span>.
-            Funds return to the organization’s card. This action is{' '}
+            Funds return to the organization's card. This action is{' '}
             <span className="font-semibold">real money movement</span> and is audited.
           </DialogDescription>
         </DialogHeader>
@@ -136,17 +130,6 @@ export function RefundInvoiceDialog({ open, onOpenChange, invoice, orgId }: Prop
                 ) : null}
               </div>
             ) : null}
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="rf-reason">Reason (min 10 chars)</Label>
-            <Textarea
-              id="rf-reason"
-              rows={3}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Reason for refunding this invoice…"
-            />
           </div>
         </div>
 

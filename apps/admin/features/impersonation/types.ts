@@ -3,7 +3,7 @@ export interface ImpersonationSession {
   superAdminUserId: string;
   targetUserId: string;
   organizationId: string;
-  reason: string;
+  reason?: string | null;
   startedAt: string;
   endedAt: string | null;
   expiresAt: string;

@@ -7,7 +7,6 @@ import { Button } from '@deqah/ui/primitives/button';
 import { Input } from '@deqah/ui/primitives/input';
 import { Label } from '@deqah/ui/primitives/label';
 import { Skeleton } from '@deqah/ui/primitives/skeleton';
-import { Textarea } from '@deqah/ui/primitives/textarea';
 import { useListPlans } from '@/features/plans/list-plans/use-list-plans';
 import { PlanFormTabs } from '@/features/plans/plan-form-tabs';
 import { FeaturesTab } from '@/features/plans/features-tab/features-tab';
@@ -22,7 +21,6 @@ interface EditForm {
   priceAnnual: string;
   currency: string;
   isActive: boolean;
-  reason: string;
 }
 
 export default function EditPlanPage() {
@@ -42,7 +40,6 @@ export default function EditPlanPage() {
     priceAnnual: '',
     currency: 'SAR',
     isActive: true,
-    reason: '',
   });
   const [limits, setLimits] = useState<PlanLimits>(DEFAULT_PLAN_LIMITS);
   const [initialized, setInitialized] = useState(false);
@@ -56,7 +53,6 @@ export default function EditPlanPage() {
         priceAnnual: String(plan.priceAnnual),
         currency: plan.currency,
         isActive: plan.isActive,
-        reason: '',
       });
       setLimits({ ...DEFAULT_PLAN_LIMITS, ...(plan.limits as Partial<PlanLimits>) });
       setInitialized(true);
@@ -67,8 +63,7 @@ export default function EditPlanPage() {
     form.nameAr.trim().length > 0 &&
     form.nameEn.trim().length > 0 &&
     form.priceMonthly !== '' &&
-    form.priceAnnual !== '' &&
-    form.reason.trim().length >= 3;
+    form.priceAnnual !== '';
 
   const set =
     (field: keyof Omit<EditForm, 'isActive'>) => (value: string) =>
@@ -86,7 +81,6 @@ export default function EditPlanPage() {
         currency: form.currency.trim() || 'SAR',
         isActive: form.isActive,
         limits: { ...limits },
-        reason: form.reason.trim(),
       },
       { onSuccess: () => router.push('/plans') },
     );
@@ -204,17 +198,6 @@ export default function EditPlanPage() {
           <span className="text-sm text-muted-foreground">Plan is active and available</span>
         </div>
       </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="ep-reason">Reason (min 3 chars)</Label>
-        <Textarea
-          id="ep-reason"
-          rows={3}
-          value={form.reason}
-          onChange={(e) => set('reason')(e.target.value)}
-          placeholder="Reason for updating this plan…"
-        />
-      </div>
     </>
   );
 
@@ -235,7 +218,7 @@ export default function EditPlanPage() {
         </Link>
         <h2 className="mt-2 text-2xl font-semibold">Edit plan</h2>
         <p className="text-sm text-muted-foreground">
-          Update this subscription plan. Reason is written to the audit log.
+          Update this subscription plan. This action is written to the audit log.
         </p>
       </div>
 

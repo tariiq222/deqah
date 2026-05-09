@@ -4,7 +4,6 @@ import { PrismaService } from '../../../../infrastructure/database';
 
 export interface CreateVerticalAdminCommand {
   superAdminUserId: string;
-  reason: string;
   ipAddress: string;
   userAgent: string;
   data: {
@@ -48,7 +47,7 @@ export class CreateVerticalAdminHandler {
           superAdminUserId: cmd.superAdminUserId,
           actionType: SuperAdminActionType.VERTICAL_CREATE,
           organizationId: null,
-          reason: cmd.reason,
+          reason: null,
           metadata: { verticalId: vertical.id, slug: vertical.slug },
           ipAddress: cmd.ipAddress,
           userAgent: cmd.userAgent,

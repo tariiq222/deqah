@@ -11,19 +11,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@deqah/ui/primitives/dialog';
-import { Textarea } from '@deqah/ui/primitives/textarea';
 import { useReinstateOrganization } from './use-reinstate-organization';
 
 export function ReinstateDialog({ organizationId }: { organizationId: string }) {
   const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState('');
   const mutation = useReinstateOrganization(organizationId);
 
   const submit = () => {
-    mutation.mutate(reason, {
+    mutation.mutate(undefined, {
       onSuccess: () => {
         setOpen(false);
-        setReason('');
       },
     });
   };
@@ -37,10 +34,9 @@ export function ReinstateDialog({ organizationId }: { organizationId: string }) 
         <DialogHeader>
           <DialogTitle>Reinstate organization</DialogTitle>
           <DialogDescription>
-            Reason for reinstatement (optional, written to audit log).
+            Confirm reinstatement. This action is written to the audit log.
           </DialogDescription>
         </DialogHeader>
-        <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} />
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>
             Cancel

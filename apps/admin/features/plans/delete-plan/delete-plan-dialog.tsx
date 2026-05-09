@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Button } from '@deqah/ui/primitives/button';
 import {
   Dialog,
@@ -10,8 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@deqah/ui/primitives/dialog';
-import { Label } from '@deqah/ui/primitives/label';
-import { Textarea } from '@deqah/ui/primitives/textarea';
 import type { PlanRow } from '../types';
 import { useDeletePlan } from './use-delete-plan';
 
@@ -22,19 +19,14 @@ interface Props {
 }
 
 export function DeletePlanDialog({ open, onOpenChange, plan }: Props) {
-  const [reason, setReason] = useState('');
   const mutation = useDeletePlan();
 
-  const isValid = reason.trim().length >= 10;
-
   const submit = () => {
-    if (!isValid) return;
     mutation.mutate(
-      { planId: plan.id, reason: reason.trim() },
+      { planId: plan.id },
       {
         onSuccess: () => {
           onOpenChange(false);
-          setReason('');
         },
       },
     );
@@ -50,28 +42,14 @@ export function DeletePlanDialog({ open, onOpenChange, plan }: Props) {
             <span className="font-semibold">
               {plan.nameEn} ({plan.slug})
             </span>
-            . This action cannot be undone. Reason is required and written to the audit log.
+            . This action cannot be undone and is written to the audit log.
           </DialogDescription>
         </DialogHeader>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="dp-reason">Reason (min 10 chars)</Label>
-          <Textarea
-            id="dp-reason"
-            rows={3}
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="Reason for deleting this plan…"
-          />
-        </div>
 
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={() => {
-              onOpenChange(false);
-              setReason('');
-            }}
+            onClick={() => onOpenChange(false)}
             disabled={mutation.isPending}
           >
             Cancel
@@ -79,7 +57,7 @@ export function DeletePlanDialog({ open, onOpenChange, plan }: Props) {
           <Button
             variant="destructive"
             onClick={submit}
-            disabled={mutation.isPending || !isValid}
+            disabled={mutation.isPending}
           >
             {mutation.isPending ? 'Deleting…' : 'Delete plan'}
           </Button>

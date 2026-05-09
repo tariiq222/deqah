@@ -41,7 +41,6 @@ describe('AdminChangePlanForOrgHandler', () => {
     organizationId: 'o1',
     newPlanId: 'p-pro',
     superAdminUserId: 'sa1',
-    reason: 'Enterprise customer upgrade per sales contract',
     ipAddress: '1.2.3.4',
     userAgent: 'jest',
   };
@@ -64,7 +63,7 @@ describe('AdminChangePlanForOrgHandler', () => {
         data: expect.objectContaining({
           actionType: SuperAdminActionType.BILLING_CHANGE_PLAN,
           organizationId: 'o1',
-          reason: cmd.reason,
+          reason: null,
           metadata: expect.objectContaining({
             previousPlanId: 'p-basic',
             previousPlanSlug: 'BASIC',

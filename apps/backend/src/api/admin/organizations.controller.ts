@@ -173,7 +173,6 @@ export class AdminOrganizationsController {
     await this.archiveOrganizationHandler.execute({
       organizationId: id,
       superAdminUserId: user.sub ?? user.id ?? '',
-      reason: dto.reason,
       ipAddress: req.ip ?? '',
       userAgent: req.headers['user-agent'] ?? '',
     });
@@ -194,7 +193,6 @@ export class AdminOrganizationsController {
     await this.suspendHandler.execute({
       organizationId: id,
       superAdminUserId: user.sub ?? user.id ?? '',
-      reason: dto.reason,
       ipAddress: req.ip ?? '',
       userAgent: req.headers['user-agent'] ?? '',
     });
@@ -215,7 +213,6 @@ export class AdminOrganizationsController {
     await this.reinstateHandler.execute({
       organizationId: id,
       superAdminUserId: user.sub ?? user.id ?? '',
-      reason: dto.reason,
       ipAddress: req.ip ?? '',
       userAgent: req.headers['user-agent'] ?? '',
     });

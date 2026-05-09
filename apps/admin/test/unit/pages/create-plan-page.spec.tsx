@@ -89,11 +89,6 @@ describe('CreatePlanPage', () => {
     expect(screen.getByLabelText(/Currency/i)).toBeInTheDocument();
   });
 
-  it('renders reason textarea', () => {
-    render(<CreatePlanPage />, { wrapper });
-    expect(screen.getByLabelText(/Reason \(min 3 chars\)/i)).toBeInTheDocument();
-  });
-
   it('disables submit button when form is invalid', () => {
     render(<CreatePlanPage />, { wrapper });
 
@@ -110,7 +105,6 @@ describe('CreatePlanPage', () => {
     await user.type(screen.getByLabelText(/Name \(English\)/i), 'Starter Plan');
     await user.type(screen.getByLabelText(/Monthly price/i), '99');
     await user.type(screen.getByLabelText(/Annual price/i), '990');
-    await user.type(screen.getByLabelText(/Reason \(min 3 chars\)/i), 'This is a valid reason for testing');
 
     const submitButton = screen.getByRole('button', { name: /create plan/i });
     expect(submitButton).not.toBeDisabled();

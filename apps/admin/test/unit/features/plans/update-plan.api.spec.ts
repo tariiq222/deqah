@@ -20,11 +20,11 @@ describe('update-plan.api', () => {
     const { updatePlan } = await import('@/features/plans/update-plan/update-plan.api');
     mockApiRequest.mockResolvedValue({ id: 'plan-5' });
 
-    await updatePlan({ planId: 'plan-5', nameEn: 'Pro Plan', reason: 'rebrand' });
+    await updatePlan({ planId: 'plan-5', nameEn: 'Pro Plan' });
 
     expect(mockApiRequest).toHaveBeenCalledWith('/admin/plans/plan-5', {
       method: 'PATCH',
-      body: JSON.stringify({ nameEn: 'Pro Plan', reason: 'rebrand' }),
+      body: JSON.stringify({ nameEn: 'Pro Plan' }),
     });
   });
 
@@ -32,7 +32,7 @@ describe('update-plan.api', () => {
     const { updatePlan } = await import('@/features/plans/update-plan/update-plan.api');
     mockApiRequest.mockResolvedValue({ id: '1' });
 
-    await updatePlan({ planId: 'p-99', priceMonthly: 199, reason: 'price change' });
+    await updatePlan({ planId: 'p-99', priceMonthly: 199 });
 
     const call = mockApiRequest.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(call[1].body as string);
@@ -45,7 +45,7 @@ describe('update-plan.api', () => {
     const mockRow = { id: 'p-1', nameEn: 'Updated' };
     mockApiRequest.mockResolvedValue(mockRow);
 
-    const result = await updatePlan({ planId: 'p-1', reason: 'a' });
+    const result = await updatePlan({ planId: 'p-1' });
 
     expect(result.nameEn).toBe('Updated');
   });

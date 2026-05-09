@@ -60,7 +60,6 @@ describe('ReinstateOrganizationHandler', () => {
   const cmd = {
     organizationId: 'o1',
     superAdminUserId: 'sa1',
-    reason: 'Payment received',
     ipAddress: '1.2.3.4',
     userAgent: 'jest',
   };
@@ -80,7 +79,7 @@ describe('ReinstateOrganizationHandler', () => {
       data: expect.objectContaining({
         actionType: 'REINSTATE_ORG',
         organizationId: 'o1',
-        reason: cmd.reason,
+        reason: null,
       }),
     });
   });
@@ -105,16 +104,6 @@ describe('ReinstateOrganizationHandler', () => {
     await expect(handler.execute(cmd)).rejects.toBeInstanceOf(ConflictException);
     expect(orgUpdate).not.toHaveBeenCalled();
     expect(redisDel).not.toHaveBeenCalled();
-  });
-
-  it('uses default reason when caller omits it', async () => {
-    orgFindUnique.mockResolvedValue({ id: 'o1', status: 'SUSPENDED', suspendedAt: new Date() });
-
-    await handler.execute({ ...cmd, reason: undefined });
-
-    expect(logCreate).toHaveBeenCalledWith({
-      data: expect.objectContaining({ reason: 'Reinstated by super-admin' }),
-    });
   });
 
   it('throws ConflictException when org is archived', async () => {

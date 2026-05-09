@@ -6,7 +6,6 @@ export interface AdminChangePlanForOrgCommand {
   organizationId: string;
   newPlanId: string;
   superAdminUserId: string;
-  reason: string;
   ipAddress: string;
   userAgent: string;
 }
@@ -58,7 +57,7 @@ export class AdminChangePlanForOrgHandler {
           superAdminUserId: cmd.superAdminUserId,
           actionType: SuperAdminActionType.BILLING_CHANGE_PLAN,
           organizationId: cmd.organizationId,
-          reason: cmd.reason,
+          reason: null,
           metadata: {
             subscriptionId: sub.id,
             previousPlanId: sub.planId,

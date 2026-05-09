@@ -12,7 +12,6 @@ export interface UpdatePlanCommand {
   isActive?: boolean;
   isVisible?: boolean;
   sortOrder?: number;
-  reason: string;
 }
 
 export function updatePlan({ planId, ...body }: UpdatePlanCommand): Promise<PlanRow> {

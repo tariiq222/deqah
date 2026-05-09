@@ -12,7 +12,6 @@ import {
 } from '@deqah/ui/primitives/dialog';
 import { Input } from '@deqah/ui/primitives/input';
 import { Label } from '@deqah/ui/primitives/label';
-import { Textarea } from '@deqah/ui/primitives/textarea';
 import { useGrantCredit } from './use-grant-credit';
 
 interface Props {
@@ -23,17 +22,14 @@ interface Props {
 
 export function GrantCreditDialog({ open, onOpenChange, organizationId }: Props) {
   const [amount, setAmount] = useState('');
-  const [reason, setReason] = useState('');
   const mutation = useGrantCredit(organizationId);
 
   const numericAmount = Number(amount);
   const validAmount = Number.isFinite(numericAmount) && numericAmount >= 1 && numericAmount <= 100000;
-  const validReason = reason.trim().length >= 10;
-  const canSubmit = validAmount && validReason;
+  const canSubmit = validAmount;
 
   const reset = () => {
     setAmount('');
-    setReason('');
   };
 
   const submit = () => {
@@ -43,7 +39,6 @@ export function GrantCreditDialog({ open, onOpenChange, organizationId }: Props)
         organizationId,
         amount: numericAmount,
         currency: 'SAR',
-        reason: reason.trim(),
       },
       {
         onSuccess: () => {
@@ -60,7 +55,7 @@ export function GrantCreditDialog({ open, onOpenChange, organizationId }: Props)
         <DialogHeader>
           <DialogTitle>Grant credit</DialogTitle>
           <DialogDescription>
-            Adds a billing credit applied against this organization’s next invoice.
+            Adds a billing credit applied against this organization's next invoice.
             Range: 1 – 100,000 ⃁. All actions are audited.
           </DialogDescription>
         </DialogHeader>
@@ -81,16 +76,6 @@ export function GrantCreditDialog({ open, onOpenChange, organizationId }: Props)
             {amount && !validAmount ? (
               <p className="text-xs text-destructive">Amount must be between 1 and 100,000 ⃁.</p>
             ) : null}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="gc-reason">Reason (min 10 chars)</Label>
-            <Textarea
-              id="gc-reason"
-              rows={3}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Reason for granting this credit…"
-            />
           </div>
         </div>
 

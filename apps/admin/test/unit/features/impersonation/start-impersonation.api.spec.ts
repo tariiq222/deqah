@@ -20,11 +20,11 @@ describe('start-impersonation.api', () => {
     const { startImpersonation } = await import('@/features/impersonation/start-impersonation/start-impersonation.api');
     mockApiRequest.mockResolvedValue({ sessionId: 'sess-1', shadowAccessToken: 'tok', expiresAt: '2025-01-01', redirectUrl: '/dashboard' });
 
-    await startImpersonation({ organizationId: 'org-1', targetUserId: 'user-2', reason: 'debugging' });
+    await startImpersonation({ organizationId: 'org-1', targetUserId: 'user-2' });
 
     expect(mockApiRequest).toHaveBeenCalledWith('/admin/impersonation', {
       method: 'POST',
-      body: JSON.stringify({ organizationId: 'org-1', targetUserId: 'user-2', reason: 'debugging' }),
+      body: JSON.stringify({ organizationId: 'org-1', targetUserId: 'user-2' }),
     });
   });
 
@@ -33,7 +33,7 @@ describe('start-impersonation.api', () => {
     const mockResponse = { sessionId: 'sess-x', shadowAccessToken: 'tok', expiresAt: '2025-06-01', redirectUrl: '/clinic' };
     mockApiRequest.mockResolvedValue(mockResponse);
 
-    const result = await startImpersonation({ organizationId: 'o', targetUserId: 'u', reason: 'r' });
+    const result = await startImpersonation({ organizationId: 'o', targetUserId: 'u' });
 
     expect(result.sessionId).toBe('sess-x');
     expect(result.redirectUrl).toBe('/clinic');

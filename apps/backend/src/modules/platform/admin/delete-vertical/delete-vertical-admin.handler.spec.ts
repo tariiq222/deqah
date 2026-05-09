@@ -36,7 +36,6 @@ describe('DeleteVerticalAdminHandler', () => {
   const cmd = {
     verticalId: 'v1',
     superAdminUserId: 'sa1',
-    reason: 'Removing unused legacy vertical',
     ipAddress: '1.2.3.4',
     userAgent: 'jest',
   };

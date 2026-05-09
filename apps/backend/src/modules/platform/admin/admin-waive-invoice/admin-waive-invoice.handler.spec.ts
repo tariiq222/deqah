@@ -40,7 +40,6 @@ describe('AdminWaiveInvoiceHandler', () => {
   const cmd = {
     invoiceId: 'inv1',
     superAdminUserId: 'sa1',
-    reason: 'Goodwill credit for outage 2026-04-22',
     ipAddress: '1.2.3.4',
     userAgent: 'jest',
   };
@@ -59,7 +58,7 @@ describe('AdminWaiveInvoiceHandler', () => {
     expect(invUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'inv1' },
-        data: { status: SubscriptionInvoiceStatus.VOID, voidedReason: cmd.reason },
+        data: { status: SubscriptionInvoiceStatus.VOID, voidedReason: null },
       }),
     );
     expect(logCreate).toHaveBeenCalledWith(
@@ -67,7 +66,7 @@ describe('AdminWaiveInvoiceHandler', () => {
         data: expect.objectContaining({
           actionType: SuperAdminActionType.BILLING_WAIVE_INVOICE,
           organizationId: 'o1',
-          reason: cmd.reason,
+          reason: null,
         }),
       }),
     );

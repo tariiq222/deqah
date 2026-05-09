@@ -5,7 +5,6 @@ import { PrismaService } from '../../../../infrastructure/database';
 export interface UpdateVerticalAdminCommand {
   verticalId: string;
   superAdminUserId: string;
-  reason: string;
   ipAddress: string;
   userAgent: string;
   data: {
@@ -43,7 +42,7 @@ export class UpdateVerticalAdminHandler {
           superAdminUserId: cmd.superAdminUserId,
           actionType: SuperAdminActionType.VERTICAL_UPDATE,
           organizationId: null,
-          reason: cmd.reason,
+          reason: null,
           metadata: { verticalId: cmd.verticalId, changedFields: Object.keys(updateData) },
           ipAddress: cmd.ipAddress,
           userAgent: cmd.userAgent,

@@ -7,7 +7,6 @@ import { PlatformMailerService } from '../../../../infrastructure/mail';
 export interface SuspendOrganizationCommand {
   organizationId: string;
   superAdminUserId: string;
-  reason: string;
   ipAddress: string;
   userAgent: string;
 }
@@ -34,7 +33,7 @@ export class SuspendOrganizationHandler {
         where: { id: cmd.organizationId },
         data: {
           suspendedAt: now,
-          suspendedReason: cmd.reason,
+          suspendedReason: null,
           status: 'SUSPENDED',
         },
       });
@@ -53,7 +52,7 @@ export class SuspendOrganizationHandler {
           superAdminUserId: cmd.superAdminUserId,
           actionType: SuperAdminActionType.SUSPEND_ORG,
           organizationId: cmd.organizationId,
-          reason: cmd.reason,
+          reason: null,
           metadata: {
             refreshTokensRevoked: refreshTokens.count,
             impersonationSessionsEnded: impersonationSessions.count,
@@ -81,7 +80,6 @@ export class SuspendOrganizationHandler {
         ownerName: owner.displayName ?? owner.user.name ?? '',
         orgName: owner.organization.nameAr,
         status: 'SUSPENDED',
-        reason: cmd.reason,
       });
     }
   }

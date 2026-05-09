@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@deqah/ui/primitives/button';
 import {
@@ -12,8 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@deqah/ui/primitives/dialog';
-import { Label } from '@deqah/ui/primitives/label';
-import { Textarea } from '@deqah/ui/primitives/textarea';
 import { useArchiveOrganization } from './use-archive-organization';
 
 interface Props {
@@ -25,12 +23,9 @@ interface Props {
 
 export function ArchiveDialog({ open, onOpenChange, organizationId, organizationName }: Props) {
   const t = useTranslations('organizations.archive');
-  const [reason, setReason] = useState('');
   const mutation = useArchiveOrganization(organizationId);
-  const canSubmit = reason.trim().length >= 10;
 
   const reset = () => {
-    setReason('');
     mutation.reset();
   };
 
@@ -41,8 +36,8 @@ export function ArchiveDialog({ open, onOpenChange, organizationId, organization
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!canSubmit || mutation.isPending) return;
-    mutation.mutate(reason.trim(), {
+    if (mutation.isPending) return;
+    mutation.mutate(undefined, {
       onSuccess: () => handleOpenChange(false),
     });
   };
@@ -58,15 +53,6 @@ export function ArchiveDialog({ open, onOpenChange, organizationId, organization
             <DialogDescription>{t('description', { name: organizationName })}</DialogDescription>
           </DialogHeader>
           <DialogBody className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="archive-reason">{t('reason')}</Label>
-              <Textarea
-                id="archive-reason"
-                rows={4}
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-              />
-            </div>
             {errorMessage ? (
               <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
                 {errorMessage}
@@ -82,7 +68,7 @@ export function ArchiveDialog({ open, onOpenChange, organizationId, organization
             >
               {t('cancel')}
             </Button>
-            <Button type="submit" variant="destructive" disabled={mutation.isPending || !canSubmit}>
+            <Button type="submit" variant="destructive" disabled={mutation.isPending}>
               {mutation.isPending ? t('submitting') : t('submit')}
             </Button>
           </DialogFooter>

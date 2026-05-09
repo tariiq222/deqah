@@ -3,7 +3,6 @@ import { adminRequest } from '@/lib/api-client';
 export interface StartImpersonationCommand {
   organizationId: string;
   targetUserId: string;
-  reason: string;
 }
 
 export interface StartImpersonationResponse {

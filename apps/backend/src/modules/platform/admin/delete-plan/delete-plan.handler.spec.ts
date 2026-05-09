@@ -36,7 +36,6 @@ describe('DeletePlanHandler', () => {
   const cmd = {
     planId: 'p1',
     superAdminUserId: 'sa1',
-    reason: 'Sunsetting BASIC tier per Q3 plan',
     ipAddress: '1.2.3.4',
     userAgent: 'jest',
   };

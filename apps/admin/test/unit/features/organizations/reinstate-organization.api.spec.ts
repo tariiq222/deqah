@@ -20,11 +20,11 @@ describe('reinstate-organization.api', () => {
     const { reinstateOrganization } = await import('@/features/organizations/reinstate-organization/reinstate-organization.api');
     mockApiRequest.mockResolvedValue(undefined);
 
-    await reinstateOrganization({ organizationId: 'org-12', reason: 'appeal approved' });
+    await reinstateOrganization({ organizationId: 'org-12' });
 
     expect(mockApiRequest).toHaveBeenCalledWith('/admin/organizations/org-12/reinstate', {
       method: 'POST',
-      body: JSON.stringify({ reason: 'appeal approved' }),
+      body: JSON.stringify({}),
     });
   });
 
@@ -32,7 +32,7 @@ describe('reinstate-organization.api', () => {
     const { reinstateOrganization } = await import('@/features/organizations/reinstate-organization/reinstate-organization.api');
     mockApiRequest.mockResolvedValue(undefined);
 
-    const result = await reinstateOrganization({ organizationId: '1', reason: 'r' });
+    const result = await reinstateOrganization({ organizationId: '1' });
 
     expect(result).toBeUndefined();
   });

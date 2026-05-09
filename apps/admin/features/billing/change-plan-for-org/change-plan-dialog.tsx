@@ -18,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@deqah/ui/primitives/select';
-import { Textarea } from '@deqah/ui/primitives/textarea';
 import { useChangePlanForOrg, usePlanOptions } from './use-change-plan-for-org';
 
 interface Props {
@@ -37,23 +36,20 @@ export function ChangePlanDialog({
   currentPlanLabel,
 }: Props) {
   const [newPlanId, setNewPlanId] = useState('');
-  const [reason, setReason] = useState('');
   const { data: plans, isLoading: loadingPlans } = usePlanOptions();
   const mutation = useChangePlanForOrg(organizationId);
 
   const validPlan = newPlanId && newPlanId !== currentPlanId;
-  const validReason = reason.trim().length >= 10;
-  const canSubmit = validPlan && validReason;
+  const canSubmit = validPlan;
 
   const reset = () => {
     setNewPlanId('');
-    setReason('');
   };
 
   const submit = () => {
     if (!canSubmit) return;
     mutation.mutate(
-      { organizationId, newPlanId, reason: reason.trim() },
+      { organizationId, newPlanId },
       {
         onSuccess: () => {
           onOpenChange(false);
@@ -71,7 +67,7 @@ export function ChangePlanDialog({
           <DialogDescription>
             Switch this organization to a different plan. Change is{' '}
             <span className="font-semibold">immediate, with no proration</span> — the next
-            invoice will reflect the new plan’s price. Audited.
+            invoice will reflect the new plan's price. Audited.
           </DialogDescription>
         </DialogHeader>
 
@@ -98,16 +94,6 @@ export function ChangePlanDialog({
                   ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="cp-reason">Reason (min 10 chars)</Label>
-            <Textarea
-              id="cp-reason"
-              rows={3}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Reason for changing the plan…"
-            />
           </div>
         </div>
 

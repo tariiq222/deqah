@@ -41,7 +41,6 @@ describe('CreatePlanHandler', () => {
 
   const baseCmd = {
     superAdminUserId: 'sa1',
-    reason: 'Adding new BASIC tier',
     ipAddress: '1.2.3.4',
     userAgent: 'jest',
     data: {

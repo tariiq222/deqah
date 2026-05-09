@@ -20,11 +20,11 @@ describe('reset-user-password.api', () => {
     const { resetUserPassword } = await import('@/features/users/reset-user-password/reset-user-password.api');
     mockApiRequest.mockResolvedValue(undefined);
 
-    await resetUserPassword({ userId: 'user-33', reason: 'user requested reset' });
+    await resetUserPassword({ userId: 'user-33' });
 
     expect(mockApiRequest).toHaveBeenCalledWith('/admin/users/user-33/reset-password', {
       method: 'POST',
-      body: JSON.stringify({ reason: 'user requested reset' }),
+      body: JSON.stringify({}),
     });
   });
 
@@ -32,7 +32,7 @@ describe('reset-user-password.api', () => {
     const { resetUserPassword } = await import('@/features/users/reset-user-password/reset-user-password.api');
     mockApiRequest.mockResolvedValue(undefined);
 
-    const result = await resetUserPassword({ userId: '1', reason: 'a' });
+    const result = await resetUserPassword({ userId: '1' });
 
     expect(result).toBeUndefined();
   });

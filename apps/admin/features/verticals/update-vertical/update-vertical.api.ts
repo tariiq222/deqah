@@ -11,7 +11,6 @@ export interface UpdateVerticalCommand {
   iconUrl?: string | null;
   isActive?: boolean;
   sortOrder?: number;
-  reason: string;
 }
 
 export function updateVertical({ verticalId, ...body }: UpdateVerticalCommand): Promise<VerticalRow> {

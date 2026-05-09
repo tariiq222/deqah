@@ -20,11 +20,11 @@ describe('waive-invoice.api', () => {
     const { waiveInvoice } = await import('@/features/billing/waive-invoice/waive-invoice.api');
     mockApiRequest.mockResolvedValue({ id: 'inv-1', status: 'WAIVED' });
 
-    await waiveInvoice({ invoiceId: 'inv-55', reason: 'customer dispute resolved' });
+    await waiveInvoice({ invoiceId: 'inv-55' });
 
     expect(mockApiRequest).toHaveBeenCalledWith('/admin/billing/invoices/inv-55/waive', {
       method: 'POST',
-      body: JSON.stringify({ reason: 'customer dispute resolved' }),
+      body: JSON.stringify({}),
     });
   });
 
@@ -33,7 +33,7 @@ describe('waive-invoice.api', () => {
     const mockRow = { id: 'inv-2', status: 'WAIVED' as const, amount: 990 };
     mockApiRequest.mockResolvedValue(mockRow);
 
-    const result = await waiveInvoice({ invoiceId: 'inv-2', reason: 'r' });
+    const result = await waiveInvoice({ invoiceId: 'inv-2' });
 
     expect(result.status).toBe('WAIVED');
   });

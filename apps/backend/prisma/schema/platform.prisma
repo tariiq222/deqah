@@ -111,7 +111,7 @@ model ImpersonationSession {
   superAdminUserId String
   targetUserId     String
   organizationId   String
-  reason           String    @db.Text
+  reason           String?   @db.Text
   startedAt        DateTime  @default(now())
   endedAt          DateTime?
   expiresAt        DateTime
@@ -551,7 +551,7 @@ model BillingCredit {
   organizationId    String
   amount            Decimal   @db.Decimal(12, 2)
   currency          String    @default("SAR")
-  reason            String    @db.Text
+  reason            String?   @db.Text
   grantedByUserId   String
   grantedAt         DateTime  @default(now())
   consumedInvoiceId String?

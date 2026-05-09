@@ -7,7 +7,7 @@ export interface AuditLogEntry {
   actionType: string;
   organizationId: string | null;
   impersonationSessionId: string | null;
-  reason: string;
+  reason?: string | null;
   metadata: Record<string, unknown>;
   ipAddress: string;
   userAgent: string;

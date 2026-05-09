@@ -74,13 +74,11 @@ export class AdminPlansController {
     @CurrentUser() user: { id: string },
     @Req() req: Request,
   ) {
-    const { reason, ...data } = dto;
     return this.createHandler.execute({
       superAdminUserId: user.id,
-      reason,
       ipAddress: req.ip ?? '',
       userAgent: req.headers['user-agent'] ?? '',
-      data,
+      data: dto,
     });
   }
 
@@ -95,14 +93,12 @@ export class AdminPlansController {
     @CurrentUser() user: { id: string },
     @Req() req: Request,
   ) {
-    const { reason, ...data } = dto;
     return this.updateHandler.execute({
       planId: id,
       superAdminUserId: user.id,
-      reason,
       ipAddress: req.ip ?? '',
       userAgent: req.headers['user-agent'] ?? '',
-      data,
+      data: dto,
     });
   }
 
@@ -121,7 +117,6 @@ export class AdminPlansController {
     await this.deleteHandler.execute({
       planId: id,
       superAdminUserId: user.id,
-      reason: dto.reason,
       ipAddress: req.ip ?? '',
       userAgent: req.headers['user-agent'] ?? '',
     });

@@ -2,12 +2,11 @@ import { adminRequest } from '@/lib/api-client';
 
 export interface ReinstateOrganizationCommand {
   organizationId: string;
-  reason: string;
 }
 
 export function reinstateOrganization(cmd: ReinstateOrganizationCommand): Promise<void> {
   return adminRequest<void>(`/organizations/${cmd.organizationId}/reinstate`, {
     method: 'POST',
-    body: JSON.stringify({ reason: cmd.reason }),
+    body: JSON.stringify({}),
   });
 }

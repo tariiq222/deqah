@@ -21,11 +21,11 @@ describe('change-plan-for-org.api', () => {
       const { changePlanForOrg } = await import('@/features/billing/change-plan-for-org/change-plan-for-org.api');
       mockApiRequest.mockResolvedValue({});
 
-      await changePlanForOrg({ organizationId: 'org-3', newPlanId: 'plan-enterprise', reason: 'upgrade' });
+      await changePlanForOrg({ organizationId: 'org-3', newPlanId: 'plan-enterprise' });
 
       expect(mockApiRequest).toHaveBeenCalledWith('/admin/billing/subscriptions/org-3/plan', {
         method: 'PATCH',
-        body: JSON.stringify({ newPlanId: 'plan-enterprise', reason: 'upgrade' }),
+        body: JSON.stringify({ newPlanId: 'plan-enterprise' }),
       });
     });
 
@@ -33,7 +33,7 @@ describe('change-plan-for-org.api', () => {
       const { changePlanForOrg } = await import('@/features/billing/change-plan-for-org/change-plan-for-org.api');
       mockApiRequest.mockResolvedValue({ success: true });
 
-      const result = await changePlanForOrg({ organizationId: 'o', newPlanId: 'p', reason: 'r' });
+      const result = await changePlanForOrg({ organizationId: 'o', newPlanId: 'p' });
 
       expect(result).toEqual({ success: true });
     });

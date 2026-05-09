@@ -5,7 +5,6 @@ export interface GrantCreditCommand {
   organizationId: string;
   amount: number;
   currency?: string;
-  reason: string;
 }
 
 export function grantCredit(cmd: GrantCreditCommand): Promise<CreditRow> {

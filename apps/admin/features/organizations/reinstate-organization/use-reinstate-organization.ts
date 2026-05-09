@@ -8,11 +8,7 @@ export function useReinstateOrganization(organizationId: string) {
   const qc = useQueryClient();
   return useMutation(withSentryMutation({
     context: 'admin:organization:reinstate',
-    mutationFn: (reason: string) =>
-      reinstateOrganization({
-        organizationId,
-        reason: reason.trim() || 'Reinstated by super-admin',
-      }),
+    mutationFn: () => reinstateOrganization({ organizationId }),
     onSuccess: () => {
       toast.success('Organization reinstated.');
       void qc.invalidateQueries({ queryKey: organizationDetailKey(organizationId) });

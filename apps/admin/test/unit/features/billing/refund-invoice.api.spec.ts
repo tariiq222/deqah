@@ -20,11 +20,11 @@ describe('refund-invoice.api', () => {
     const { refundInvoice } = await import('@/features/billing/refund-invoice/refund-invoice.api');
     mockApiRequest.mockResolvedValue({ id: 'inv-1', status: 'REFUNDED' });
 
-    await refundInvoice({ invoiceId: 'inv-77', amount: 200, reason: 'partial refund for service issue' });
+    await refundInvoice({ invoiceId: 'inv-77', amount: 200 });
 
     expect(mockApiRequest).toHaveBeenCalledWith('/admin/billing/invoices/inv-77/refund', {
       method: 'POST',
-      body: JSON.stringify({ amount: 200, reason: 'partial refund for service issue' }),
+      body: JSON.stringify({ amount: 200 }),
     });
   });
 
@@ -32,19 +32,19 @@ describe('refund-invoice.api', () => {
     const { refundInvoice } = await import('@/features/billing/refund-invoice/refund-invoice.api');
     mockApiRequest.mockResolvedValue({ id: '1' });
 
-    await refundInvoice({ invoiceId: 'inv-1', reason: 'full refund' });
+    await refundInvoice({ invoiceId: 'inv-1' });
 
     const call = mockApiRequest.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(call[1].body as string);
     expect(body.amount).toBeUndefined();
-    expect(body.reason).toBe('full refund');
+    expect(body.reason).toBeUndefined();
   });
 
   it('includes amount when provided', async () => {
     const { refundInvoice } = await import('@/features/billing/refund-invoice/refund-invoice.api');
     mockApiRequest.mockResolvedValue({ id: '1' });
 
-    await refundInvoice({ invoiceId: 'inv-2', amount: 50, reason: 'r' });
+    await refundInvoice({ invoiceId: 'inv-2', amount: 50 });
 
     const call = mockApiRequest.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(call[1].body as string);
@@ -56,7 +56,7 @@ describe('refund-invoice.api', () => {
     const mockRow = { id: 'inv-3', status: 'REFUNDED' as const, amount: 300 };
     mockApiRequest.mockResolvedValue(mockRow);
 
-    const result = await refundInvoice({ invoiceId: 'inv-3', amount: 300, reason: 'r' });
+    const result = await refundInvoice({ invoiceId: 'inv-3', amount: 300 });
 
     expect(result.amount).toBe(300);
   });

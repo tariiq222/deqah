@@ -7,7 +7,6 @@ import { PlatformMailerService } from '../../../../infrastructure/mail';
 export interface ReinstateOrganizationCommand {
   organizationId: string;
   superAdminUserId: string;
-  reason?: string;
   ipAddress: string;
   userAgent: string;
 }
@@ -46,7 +45,7 @@ export class ReinstateOrganizationHandler {
           superAdminUserId: cmd.superAdminUserId,
           actionType: SuperAdminActionType.REINSTATE_ORG,
           organizationId: cmd.organizationId,
-          reason: cmd.reason ?? 'Reinstated by super-admin',
+          reason: null,
           metadata: {},
           ipAddress: cmd.ipAddress,
           userAgent: cmd.userAgent,

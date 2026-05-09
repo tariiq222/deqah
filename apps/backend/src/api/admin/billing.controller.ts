@@ -190,7 +190,6 @@ export class AdminBillingController {
     return this.waiveInvoice.execute({
       invoiceId: id,
       superAdminUserId: user.id,
-      reason: dto.reason,
       ipAddress: req.ip ?? '',
       userAgent: req.headers['user-agent'] ?? '',
     });
@@ -210,7 +209,6 @@ export class AdminBillingController {
       organizationId: dto.organizationId,
       amount: dto.amount,
       currency: dto.currency ?? 'SAR',
-      reason: dto.reason,
       superAdminUserId: user.id,
       ipAddress: req.ip ?? '',
       userAgent: req.headers['user-agent'] ?? '',
@@ -235,7 +233,6 @@ export class AdminBillingController {
       invoiceId: id,
       amount: dto.amount,
       superAdminUserId: user.id,
-      reason: dto.reason,
       ipAddress: req.ip ?? '',
       userAgent: req.headers['user-agent'] ?? '',
     });
@@ -295,7 +292,6 @@ export class AdminBillingController {
       organizationId: orgId,
       newPlanId: dto.newPlanId,
       superAdminUserId: user.id,
-      reason: dto.reason,
       ipAddress: req.ip ?? '',
       userAgent: req.headers['user-agent'] ?? '',
     });

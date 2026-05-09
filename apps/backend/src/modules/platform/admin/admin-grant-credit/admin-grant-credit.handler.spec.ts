@@ -39,7 +39,6 @@ describe('AdminGrantCreditHandler', () => {
     organizationId: 'o1',
     amount: 50,
     currency: 'SAR',
-    reason: 'Goodwill credit for billing dispute',
     superAdminUserId: 'sa1',
     ipAddress: '1.2.3.4',
     userAgent: 'jest',
@@ -52,7 +51,7 @@ describe('AdminGrantCreditHandler', () => {
       organizationId: 'o1',
       amount: { toString: () => '50.00' },
       currency: 'SAR',
-      reason: cmd.reason,
+      reason: null,
       grantedByUserId: 'sa1',
       grantedAt: new Date(),
     });
@@ -66,7 +65,7 @@ describe('AdminGrantCreditHandler', () => {
         data: expect.objectContaining({
           organizationId: 'o1',
           currency: 'SAR',
-          reason: cmd.reason,
+          reason: null,
           grantedByUserId: 'sa1',
         }),
       }),
@@ -76,7 +75,7 @@ describe('AdminGrantCreditHandler', () => {
         data: expect.objectContaining({
           actionType: SuperAdminActionType.BILLING_GRANT_CREDIT,
           organizationId: 'o1',
-          reason: cmd.reason,
+          reason: null,
         }),
       }),
     );
@@ -97,7 +96,7 @@ describe('AdminGrantCreditHandler', () => {
       organizationId: 'o1',
       amount: { toString: () => '50' },
       currency: 'SAR',
-      reason: cmd.reason,
+      reason: null,
       grantedByUserId: 'sa1',
       grantedAt: new Date(),
     });

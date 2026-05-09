@@ -6,7 +6,6 @@ import { PrismaService } from '../../../../infrastructure/database';
 export interface ArchiveOrganizationCommand {
   organizationId: string;
   superAdminUserId: string;
-  reason: string;
   ipAddress: string;
   userAgent: string;
 }
@@ -35,7 +34,7 @@ export class ArchiveOrganizationHandler {
         data: {
           status: OrganizationStatus.ARCHIVED,
           suspendedAt: org.suspendedAt ?? now,
-          suspendedReason: cmd.reason,
+          suspendedReason: null,
         },
         select: { id: true, status: true, suspendedAt: true, suspendedReason: true },
       });
@@ -54,7 +53,7 @@ export class ArchiveOrganizationHandler {
           superAdminUserId: cmd.superAdminUserId,
           actionType: SuperAdminActionType.TENANT_ARCHIVE,
           organizationId: cmd.organizationId,
-          reason: cmd.reason,
+          reason: null,
           metadata: {
             previousStatus: org.status,
             refreshTokensRevoked: refreshTokens.count,

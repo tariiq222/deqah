@@ -20,11 +20,11 @@ describe('grant-credit.api', () => {
     const { grantCredit } = await import('@/features/billing/grant-credit/grant-credit.api');
     mockApiRequest.mockResolvedValue({ id: 'credit-1', organizationId: 'org-1', amount: 500 });
 
-    await grantCredit({ organizationId: 'org-1', amount: 500, reason: 'promotional credit' });
+    await grantCredit({ organizationId: 'org-1', amount: 500 });
 
     expect(mockApiRequest).toHaveBeenCalledWith('/admin/billing/credits', {
       method: 'POST',
-      body: JSON.stringify({ organizationId: 'org-1', amount: 500, reason: 'promotional credit' }),
+      body: JSON.stringify({ organizationId: 'org-1', amount: 500 }),
     });
   });
 
@@ -32,7 +32,7 @@ describe('grant-credit.api', () => {
     const { grantCredit } = await import('@/features/billing/grant-credit/grant-credit.api');
     mockApiRequest.mockResolvedValue({ id: '1' });
 
-    await grantCredit({ organizationId: 'o', amount: 100, currency: 'SAR', reason: 'r' });
+    await grantCredit({ organizationId: 'o', amount: 100, currency: 'SAR' });
 
     const call = mockApiRequest.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(call[1].body as string);
@@ -43,7 +43,7 @@ describe('grant-credit.api', () => {
     const { grantCredit } = await import('@/features/billing/grant-credit/grant-credit.api');
     mockApiRequest.mockResolvedValue({ id: '1' });
 
-    await grantCredit({ organizationId: 'o', amount: 100, reason: 'r' });
+    await grantCredit({ organizationId: 'o', amount: 100 });
 
     const call = mockApiRequest.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(call[1].body as string);
@@ -55,8 +55,8 @@ describe('grant-credit.api', () => {
     const mockRow = { id: 'cr-1', organizationId: 'org-x', amount: 200, balance: 200 };
     mockApiRequest.mockResolvedValue(mockRow);
 
-    const result = await grantCredit({ organizationId: 'org-x', amount: 200, reason: 'a' });
+    const result = await grantCredit({ organizationId: 'org-x', amount: 200 });
 
-    expect(result.balance).toBe(200);
+    expect(result.id).toBe('cr-1');
   });
 });

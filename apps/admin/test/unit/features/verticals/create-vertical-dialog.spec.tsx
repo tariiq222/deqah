@@ -79,7 +79,6 @@ describe('CreateVerticalDialog', () => {
       expect(screen.getByLabelText(/Template family/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/Description \(Arabic, optional\)/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/Description \(English, optional\)/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Reason \(min 10 chars\)/i)).toBeInTheDocument();
     });
   });
 
@@ -138,7 +137,6 @@ describe('CreateVerticalDialog', () => {
     await user.type(screen.getByLabelText(/Slug \(kebab-case\)/i), 'cardiology');
     await user.type(screen.getByLabelText(/Name \(Arabic\)/i), 'طب القلب');
     await user.type(screen.getByLabelText(/Name \(English\)/i), 'Cardiology');
-    await user.type(screen.getByLabelText(/Reason \(min 10 chars\)/i), 'Creating cardiology vertical');
     await user.selectOptions(screen.getByRole('combobox', { name: /template family/i }), 'MEDICAL');
 
     await waitFor(() => {
@@ -176,7 +174,6 @@ describe('CreateVerticalDialog', () => {
     await user.type(screen.getByLabelText(/Slug \(kebab-case\)/i), 'cardiology');
     await user.type(screen.getByLabelText(/Name \(Arabic\)/i), 'طب القلب');
     await user.type(screen.getByLabelText(/Name \(English\)/i), 'Cardiology');
-    await user.type(screen.getByLabelText(/Reason \(min 10 chars\)/i), 'Creating cardiology vertical');
     await user.selectOptions(screen.getByRole('combobox', { name: /template family/i }), 'MEDICAL');
 
     await waitFor(() => {
@@ -189,7 +186,7 @@ describe('CreateVerticalDialog', () => {
         slug: 'cardiology',
         nameAr: 'طب القلب',
         nameEn: 'Cardiology',
-        reason: 'Creating cardiology vertical',
+        templateFamily: 'MEDICAL',
       }),
       expect.any(Object),
     ));
@@ -218,7 +215,7 @@ describe('CreateVerticalDialog', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Add a new clinic archetype.*Reason is required/i),
+        screen.getByText(/Add a new clinic archetype/i),
       ).toBeInTheDocument();
     });
   });

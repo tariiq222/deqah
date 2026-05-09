@@ -8,7 +8,6 @@ import type { PlanLimits } from '../plan-limits';
 export interface BatchUpdateItem {
   plan: PlanRow;
   limits: PlanLimits;
-  reason: string;
 }
 
 export interface BatchUpdateResult {
@@ -35,7 +34,6 @@ export function useBatchUpdatePlans() {
           priceAnnual: Number(item.plan.priceAnnual),
           currency: item.plan.currency,
           limits: mergeLimits(item.plan.limits, item.limits),
-          reason: item.reason.trim(),
         }),
       ),
     );

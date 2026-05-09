@@ -36,7 +36,6 @@ describe('UpdateVerticalAdminHandler', () => {
   const cmd = {
     verticalId: 'v1',
     superAdminUserId: 'sa1',
-    reason: 'Renaming Arabic label per legal review',
     ipAddress: '1.2.3.4',
     userAgent: 'jest',
     data: { nameAr: 'صحة' },

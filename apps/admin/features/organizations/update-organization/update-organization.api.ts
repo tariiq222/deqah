@@ -7,7 +7,6 @@ export interface UpdateOrganizationCommand {
   nameEn?: string | null;
   verticalSlug?: string | null;
   trialEndsAt?: string | null;
-  reason: string;
 }
 
 export function updateOrganization(cmd: UpdateOrganizationCommand): Promise<OrganizationRow> {

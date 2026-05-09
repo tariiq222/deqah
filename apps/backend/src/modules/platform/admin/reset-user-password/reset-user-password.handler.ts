@@ -8,7 +8,6 @@ import { SmtpService } from '../../../../infrastructure/mail';
 export interface ResetUserPasswordCommand {
   targetUserId: string;
   superAdminUserId: string;
-  reason: string;
   ipAddress: string;
   userAgent: string;
 }
@@ -44,7 +43,7 @@ export class ResetUserPasswordHandler {
           superAdminUserId: cmd.superAdminUserId,
           actionType: SuperAdminActionType.RESET_PASSWORD,
           organizationId: null,
-          reason: cmd.reason,
+          reason: null,
           metadata: { targetUserId: cmd.targetUserId },
           ipAddress: cmd.ipAddress,
           userAgent: cmd.userAgent,
