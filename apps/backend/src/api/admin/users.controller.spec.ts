@@ -48,13 +48,12 @@ describe('AdminUsersController', () => {
     }));
   });
 
-  it('resetPassword — passes context and reason', async () => {
+  it('resetPassword — passes context', async () => {
     const { controller, resetHandler } = buildController();
-    await controller.resetPassword('user-1', { reason: 'forgot' }, user, req);
+    await controller.resetPassword('user-1', {}, user, req);
     expect(resetHandler.execute).toHaveBeenCalledWith({
       targetUserId: 'user-1',
       superAdminUserId: user.sub,
-      reason: 'forgot',
       ipAddress: '1.1.1.1',
       userAgent: 'jest',
     });

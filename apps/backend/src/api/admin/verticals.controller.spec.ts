@@ -33,40 +33,37 @@ describe('AdminVerticalsController', () => {
     expect(listHandler.execute).toHaveBeenCalledWith({ page: 2, perPage: 10 });
   });
 
-  it('create — strips reason from data and passes context', async () => {
+  it('create — passes data and context', async () => {
     const { controller, createHandler } = buildController();
-    const dto = { name: 'Healthcare', reason: 'new sector' } as never;
+    const dto = { name: 'Healthcare' } as never;
     await controller.create(dto, user, req);
     expect(createHandler.execute).toHaveBeenCalledWith({
       superAdminUserId: user.id,
-      reason: 'new sector',
       ipAddress: '1.1.1.1',
       userAgent: 'jest',
       data: { name: 'Healthcare' },
     });
   });
 
-  it('update — strips reason from data and passes context', async () => {
+  it('update — passes data and context', async () => {
     const { controller, updateHandler } = buildController();
-    const dto = { name: 'Health & Wellness', reason: 'renaming' } as never;
+    const dto = { name: 'Health & Wellness' } as never;
     await controller.update('vert-1', dto, user, req);
     expect(updateHandler.execute).toHaveBeenCalledWith({
       verticalId: 'vert-1',
       superAdminUserId: user.id,
-      reason: 'renaming',
       ipAddress: '1.1.1.1',
       userAgent: 'jest',
       data: { name: 'Health & Wellness' },
     });
   });
 
-  it('remove — passes context and reason', async () => {
+  it('remove — passes context', async () => {
     const { controller, deleteHandler } = buildController();
-    await controller.remove('vert-1', { reason: 'obsolete' }, user, req);
+    await controller.remove('vert-1', {}, user, req);
     expect(deleteHandler.execute).toHaveBeenCalledWith({
       verticalId: 'vert-1',
       superAdminUserId: user.id,
-      reason: 'obsolete',
       ipAddress: '1.1.1.1',
       userAgent: 'jest',
     });

@@ -21,13 +21,12 @@ describe('AdminImpersonationController', () => {
 
   it('start — passes context correctly', async () => {
     const { controller, startHandler } = buildController();
-    const dto = { organizationId: 'org-1', targetUserId: 'user-1', reason: 'support' };
+    const dto = { organizationId: 'org-1', targetUserId: 'user-1' };
     await controller.start(dto, user, req);
     expect(startHandler.execute).toHaveBeenCalledWith({
       superAdminUserId: user.sub,
       organizationId: dto.organizationId,
       targetUserId: dto.targetUserId,
-      reason: dto.reason,
       ipAddress: '1.1.1.1',
       userAgent: 'jest',
     });

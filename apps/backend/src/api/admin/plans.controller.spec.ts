@@ -33,40 +33,37 @@ describe('AdminPlansController', () => {
     expect(listHandler.execute).toHaveBeenCalledWith({ page: 2, perPage: 50 });
   });
 
-  it('create — strips reason from data and passes context', async () => {
+  it('create — passes data and context', async () => {
     const { controller, createHandler } = buildController();
-    const dto = { name: 'Gold', reason: 'new tier', price: 100 } as never;
+    const dto = { name: 'Gold', price: 100 } as never;
     await controller.create(dto, user, req);
     expect(createHandler.execute).toHaveBeenCalledWith({
       superAdminUserId: user.id,
-      reason: 'new tier',
       ipAddress: '1.1.1.1',
       userAgent: 'jest',
       data: { name: 'Gold', price: 100 },
     });
   });
 
-  it('update — strips reason from data and passes context', async () => {
+  it('update — passes data and context', async () => {
     const { controller, updateHandler } = buildController();
-    const dto = { name: 'Gold+', reason: 'price increase', price: 110 } as never;
+    const dto = { name: 'Gold+', price: 110 } as never;
     await controller.update('plan-1', dto, user, req);
     expect(updateHandler.execute).toHaveBeenCalledWith({
       planId: 'plan-1',
       superAdminUserId: user.id,
-      reason: 'price increase',
       ipAddress: '1.1.1.1',
       userAgent: 'jest',
       data: { name: 'Gold+', price: 110 },
     });
   });
 
-  it('remove — passes context and reason', async () => {
+  it('remove — passes context', async () => {
     const { controller, deleteHandler } = buildController();
-    await controller.remove('plan-1', { reason: 'retired' }, user, req);
+    await controller.remove('plan-1', {}, user, req);
     expect(deleteHandler.execute).toHaveBeenCalledWith({
       planId: 'plan-1',
       superAdminUserId: user.id,
-      reason: 'retired',
       ipAddress: '1.1.1.1',
       userAgent: 'jest',
     });

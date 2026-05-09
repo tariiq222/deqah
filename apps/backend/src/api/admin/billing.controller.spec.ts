@@ -76,13 +76,12 @@ describe('AdminBillingController', () => {
     expect(getMetrics.execute).toHaveBeenCalled();
   });
 
-  it('waive — passes context and reason', async () => {
+  it('waive — passes context', async () => {
     const { controller, waiveInvoice } = buildController();
-    await controller.waive('inv-1', { reason: 'mistake' }, user, req);
+    await controller.waive('inv-1', {}, user, req);
     expect(waiveInvoice.execute).toHaveBeenCalledWith({
       invoiceId: 'inv-1',
       superAdminUserId: user.id,
-      reason: 'mistake',
       ipAddress: '1.1.1.1',
       userAgent: 'jest',
     });
@@ -90,12 +89,11 @@ describe('AdminBillingController', () => {
 
   it('grant — defaults currency to SAR', async () => {
     const { controller, grantCredit } = buildController();
-    await controller.grant({ organizationId: 'org-1', amount: 100, reason: 'promo' }, user, req);
+    await controller.grant({ organizationId: 'org-1', amount: 100 }, user, req);
     expect(grantCredit.execute).toHaveBeenCalledWith({
       organizationId: 'org-1',
       amount: 100,
       currency: 'SAR',
-      reason: 'promo',
       superAdminUserId: user.id,
       ipAddress: '1.1.1.1',
       userAgent: 'jest',
@@ -104,12 +102,11 @@ describe('AdminBillingController', () => {
 
   it('refund — passes params correctly', async () => {
     const { controller, refundInvoice } = buildController();
-    await controller.refund('inv-1', { amount: 50, reason: 'dissatisfied' }, user, req);
+    await controller.refund('inv-1', { amount: 50 }, user, req);
     expect(refundInvoice.execute).toHaveBeenCalledWith({
       invoiceId: 'inv-1',
       amount: 50,
       superAdminUserId: user.id,
-      reason: 'dissatisfied',
       ipAddress: '1.1.1.1',
       userAgent: 'jest',
     });
@@ -117,12 +114,11 @@ describe('AdminBillingController', () => {
 
   it('changePlan — passes params correctly', async () => {
     const { controller, changePlanForOrg } = buildController();
-    await controller.changePlan('org-1', { newPlanId: 'plan-2', reason: 'upsell' }, user, req);
+    await controller.changePlan('org-1', { newPlanId: 'plan-2' }, user, req);
     expect(changePlanForOrg.execute).toHaveBeenCalledWith({
       organizationId: 'org-1',
       newPlanId: 'plan-2',
       superAdminUserId: user.id,
-      reason: 'upsell',
       ipAddress: '1.1.1.1',
       userAgent: 'jest',
     });

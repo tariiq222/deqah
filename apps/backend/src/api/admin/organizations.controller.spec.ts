@@ -121,39 +121,36 @@ describe('AdminOrganizationsController', () => {
     });
   });
 
-  it('archive — passes id, reason, and request context', async () => {
+  it('archive — passes id and request context', async () => {
     const { controller, archiveOrganizationHandler } = buildController();
 
-    await controller.archive('org-1', { reason: 'Archive inactive tenant' }, user, req);
+    await controller.archive('org-1', {}, user, req);
 
     expect(archiveOrganizationHandler.execute).toHaveBeenCalledWith({
       organizationId: 'org-1',
       superAdminUserId: user.sub,
-      reason: 'Archive inactive tenant',
       ipAddress: '1.1.1.1',
       userAgent: 'jest',
     });
   });
 
-  it('suspend — passes context and reason', async () => {
+  it('suspend — passes context', async () => {
     const { controller, suspendHandler } = buildController();
-    await controller.suspend('org-1', { reason: 'violation' }, user, req);
+    await controller.suspend('org-1', {}, user, req);
     expect(suspendHandler.execute).toHaveBeenCalledWith({
       organizationId: 'org-1',
       superAdminUserId: user.sub,
-      reason: 'violation',
       ipAddress: '1.1.1.1',
       userAgent: 'jest',
     });
   });
 
-  it('reinstate — passes context and reason', async () => {
+  it('reinstate — passes context', async () => {
     const { controller, reinstateHandler } = buildController();
-    await controller.reinstate('org-1', { reason: 'fixed' }, user, req);
+    await controller.reinstate('org-1', {}, user, req);
     expect(reinstateHandler.execute).toHaveBeenCalledWith({
       organizationId: 'org-1',
       superAdminUserId: user.sub,
-      reason: 'fixed',
       ipAddress: '1.1.1.1',
       userAgent: 'jest',
     });
