@@ -232,6 +232,7 @@ export default function BookingWizardPage() {
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
               min={new Date().toISOString().split('T')[0]}
+              suppressHydrationWarning
               style={{
                 padding: '0.5rem',
                 border: '1px solid color-mix(in srgb, var(--primary) 30%, transparent)',

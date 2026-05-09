@@ -164,7 +164,7 @@ function RescheduleModal({ booking, locale, onClose, onSuccess, rescheduleApi }:
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <div>
             <label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>New Date</label>
-            <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} min={new Date().toISOString().split('T')[0]} style={inputStyle()} />
+            <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} min={new Date().toISOString().split('T')[0]} style={inputStyle()} suppressHydrationWarning />
           </div>
           <div>
             <label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>New Time</label>

@@ -82,10 +82,10 @@ export default function HomeScreen() {
           entering={reduceMotion ? undefined : FadeInDown.duration(600).easing(Easing.out(Easing.cubic))}
           style={styles.greetingBlock}
         >
-          <Text style={[styles.dateLabel, { fontFamily: f600, textAlign: dir.textAlign }]}>
+          <Text style={[styles.dateLabel, { fontFamily: f600, textAlign: dir.textAlign }]} suppressHydrationWarning>
             {today}
           </Text>
-          <Text style={[styles.greeting, { fontFamily: f700, textAlign: dir.textAlign }]}>
+          <Text style={[styles.greeting, { fontFamily: f700, textAlign: dir.textAlign }]} suppressHydrationWarning>
             {`${greeting}، ${firstName}`}
           </Text>
         </Animated.View>
