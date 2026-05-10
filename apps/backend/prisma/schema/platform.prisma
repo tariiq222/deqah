@@ -503,6 +503,7 @@ model SubscriptionInvoice {
   dunningLogs DunningLog[]
 
   @@unique([organizationId, invoiceNumber], name: "SubscriptionInvoice_org_number_uq")
+  @@unique([subscriptionId, periodStart, billingCycle], name: "SubscriptionInvoice_sub_period_cycle_uq")
   @@index([subscriptionId])
   @@index([organizationId])
   @@index([status])
