@@ -5,6 +5,7 @@ import { DatabaseModule } from '../../infrastructure/database';
 import { MessagingModule } from '../../infrastructure/messaging.module';
 import { BookingsModule } from '../bookings/bookings.module';
 import { BillingModule } from '../platform/billing/billing.module';
+import { FinanceModule } from '../finance/finance.module';
 import { CronTasksService } from './cron-tasks/cron-tasks.service';
 import { BookingAutocompleteCron } from './cron-tasks/booking-autocomplete.cron';
 import { BookingExpiryCron } from './cron-tasks/booking-expiry.cron';
@@ -31,6 +32,8 @@ import { DbRowCountCron } from './cron-tasks/db-row-count.cron';
 import { DbMetricsService } from '../../infrastructure/telemetry/db-metrics.service';
 import { RunOrphanAuditHandler } from './orphan-audit/run-orphan-audit.handler';
 import { ReconcileUsageCountersHandler } from './cron-tasks/reconcile-usage-counters/reconcile-usage-counters.handler';
+import { ReconcileRefundsCron } from './cron-tasks/reconcile-refunds.cron';
+import { OutboxPublisherCron } from './cron-tasks/outbox-publisher.cron';
 
 const handlers = [
   LogActivityHandler,
@@ -61,6 +64,10 @@ const cronHandlers = [
   DbRowCountCron,
   // Phase 5 — usage counter reconciliation
   ReconcileUsageCountersHandler,
+  // CR-6 — refund reconciliation
+  ReconcileRefundsCron,
+  // CR-5 — outbox publisher
+  OutboxPublisherCron,
 ];
 
 // Note: UsageAggregatorService, SubscriptionStateMachine and
@@ -68,8 +75,11 @@ const cronHandlers = [
 // them here would create separate instances — the in-memory UsageAggregator
 // Map would diverge between the request-time interceptor and the cron flush,
 // silently dropping every increment. Import BillingModule instead.
+//
+// FinanceModule is imported to make MoyasarApiClient available to
+// ReconcileRefundsCron. MoyasarApiClient is exported by FinanceModule.
 @Module({
-  imports: [DatabaseModule, MessagingModule, TerminusModule, BookingsModule, BillingModule],
+  imports: [DatabaseModule, MessagingModule, TerminusModule, BookingsModule, BillingModule, FinanceModule],
   controllers: [DashboardOpsController],
   providers: [...handlers, ...cronHandlers, RedisService, CronTasksService, DbMetricsService, RunOrphanAuditHandler],
   exports: [...handlers, RunOrphanAuditHandler],

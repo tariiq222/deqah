@@ -25,6 +25,8 @@ export interface MoyasarPayment {
   updatedAt: string;
 }
 
+export type MoyasarRefundStatus = 'paid' | 'failed' | 'pending';
+
 export interface MoyasarRefund {
   id: string;
   amount: number;
@@ -32,6 +34,11 @@ export interface MoyasarRefund {
   status: 'refunded';
   paymentId: string;
   createdAt: string;
+}
+
+export interface MoyasarRefundStatusResult {
+  id: string;
+  status: MoyasarRefundStatus;
 }
 
 interface MoyasarApiResponse {
@@ -213,5 +220,27 @@ export class MoyasarApiClient {
       paymentId: data.payment_id,
       createdAt: data.created_at,
     };
+  }
+
+  /**
+   * Fetches the status of a previously issued refund from Moyasar.
+   * Used by the reconcile-refunds cron to finalize PROCESSING rows that
+   * stalled after the gateway round-trip succeeded but our DB write failed.
+   *
+   * GET /v1/refunds/:id → { status: 'paid' | 'failed' | 'pending' }
+   */
+  async getRefundStatus(
+    organizationId: string,
+    moyasarRefundId: string,
+  ): Promise<MoyasarRefundStatusResult> {
+    const data = await this.request<{ id: string; status: string }>(
+      organizationId,
+      `/refunds/${moyasarRefundId}`,
+      { method: 'GET' },
+    );
+    const raw = data.status;
+    const status: MoyasarRefundStatus =
+      raw === 'paid' || raw === 'failed' || raw === 'pending' ? raw : 'pending';
+    return { id: data.id, status };
   }
 }

@@ -37,6 +37,8 @@ type CronDeps = [
   never,
   never,
   never, // reconcileUsageCounters (Phase 5 / Task 11)
+  never, // reconcileRefunds (CR-6)
+  never, // outboxPublisher
 ];
 
 /** Build cron mocks (all crons except BullMqService itself). */
@@ -59,6 +61,8 @@ const buildAllMocks = () => [
   buildCronMock(), // dbRowCount (DB-12)        [15]
   buildCronMock(), // orphanAudit (DB-13)       [16]
   buildCronMock(), // reconcileUsageCounters    [17]
+  buildCronMock(), // reconcileRefunds (CR-6)   [18]
+  buildCronMock(), // outboxPublisher           [19]
 ] as const;
 
 const buildService = (bullMq: ReturnType<typeof buildBullMq>, mocks: ReturnType<typeof buildAllMocks>) =>
@@ -125,6 +129,7 @@ describe('CronTasksService', () => {
     [CRON_JOBS.DB_ROW_COUNT, 15],
     [CRON_JOBS.ORPHAN_AUDIT, 16],
     [CRON_JOBS.RECONCILE_USAGE_COUNTERS, 17],
+    [CRON_JOBS.RECONCILE_REFUNDS, 18],
   ];
 
   it.each(ROUTED_JOBS)('worker routes %s job to correct cron handler', async (jobName, idx) => {

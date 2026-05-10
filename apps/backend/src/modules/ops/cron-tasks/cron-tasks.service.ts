@@ -18,6 +18,8 @@ import { DunningRetryCron } from '../../platform/billing/dunning-retry/dunning-r
 import { DbRowCountCron } from './db-row-count.cron';
 import { RunOrphanAuditHandler } from '../orphan-audit/run-orphan-audit.handler';
 import { ReconcileUsageCountersHandler } from './reconcile-usage-counters/reconcile-usage-counters.handler';
+import { ReconcileRefundsCron } from './reconcile-refunds.cron';
+import { OutboxPublisherCron } from './outbox-publisher.cron';
 
 const QUEUE_NAME = 'ops-cron';
 
@@ -39,6 +41,8 @@ export const CRON_JOBS = {
   DB_ROW_COUNT: 'db-row-count',
   ORPHAN_AUDIT: 'orphan-audit',
   RECONCILE_USAGE_COUNTERS: 'reconcile-usage-counters',
+  RECONCILE_REFUNDS: 'reconcile-refunds',
+  OUTBOX_PUBLISHER: 'outbox-publisher',
 } as const;
 
 @Injectable()
@@ -65,6 +69,8 @@ export class CronTasksService implements OnModuleInit {
     private readonly dbRowCount: DbRowCountCron,
     private readonly orphanAudit: RunOrphanAuditHandler,
     private readonly reconcileUsageCounters: ReconcileUsageCountersHandler,
+    private readonly reconcileRefunds: ReconcileRefundsCron,
+    private readonly outboxPublisher: OutboxPublisherCron,
   ) {}
 
   onModuleInit(): void {
@@ -93,6 +99,8 @@ export class CronTasksService implements OnModuleInit {
       { name: CRON_JOBS.DB_ROW_COUNT, cron: '0 1 * * 0' }, // weekly Sunday 01:00
       { name: CRON_JOBS.ORPHAN_AUDIT, cron: '0 2 * * 0' }, // weekly Sunday 02:00
       { name: CRON_JOBS.RECONCILE_USAGE_COUNTERS, cron: '0 3 * * *' }, // daily at 03:00 KSA (= UTC+3)
+      { name: CRON_JOBS.RECONCILE_REFUNDS, cron: '*/15 * * * *' },    // every 15 min
+      { name: CRON_JOBS.OUTBOX_PUBLISHER, cron: '*/1 * * * *' },      // every minute (BullMQ min granularity; real tick is every 5s via worker loop)
     ];
 
     for (const { name, cron } of jobs) {
@@ -172,6 +180,12 @@ export class CronTasksService implements OnModuleInit {
             break;
           case CRON_JOBS.RECONCILE_USAGE_COUNTERS:
             await this.reconcileUsageCounters.execute();
+            break;
+          case CRON_JOBS.RECONCILE_REFUNDS:
+            await this.reconcileRefunds.execute();
+            break;
+          case CRON_JOBS.OUTBOX_PUBLISHER:
+            await this.outboxPublisher.execute();
             break;
           default:
             this.logger.warn(`Unknown cron job: ${job.name}`);
