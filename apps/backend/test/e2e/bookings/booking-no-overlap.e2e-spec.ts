@@ -60,8 +60,7 @@ describe('Booking no-overlap constraint (DB-02)', () => {
 
   describe('Direct DB constraint', () => {
     afterEach(async () => {
-      await (testPrisma as never as Record<string, { deleteMany: (args: unknown) => Promise<unknown> }>)
-        ['booking'].deleteMany({ where: { employeeId } });
+      await (testPrisma as never as Record<string, { deleteMany: (args: unknown) => Promise<unknown> }>)['booking'].deleteMany({ where: { employeeId } });
     });
 
     it('allows two non-overlapping bookings for the same employee', async () => {
@@ -70,8 +69,7 @@ describe('Booking no-overlap constraint (DB-02)', () => {
       const slotB_start = new Date(BASE_START.getTime() + 61 * 60 * 1_000); // starts 1 min after A ends
       const slotB_end = new Date(slotB_start.getTime() + 60 * 60 * 1_000);
 
-      await (testPrisma as never as Record<string, { create: (args: unknown) => Promise<unknown> }>)
-        ['booking'].create({
+      await (testPrisma as never as Record<string, { create: (args: unknown) => Promise<unknown> }>)['booking'].create({
           data: {
             organizationId: TEST_ORG_ID,
             branchId,
@@ -90,8 +88,7 @@ describe('Booking no-overlap constraint (DB-02)', () => {
 
       // Second booking must succeed (no overlap)
       await expect(
-        (testPrisma as never as Record<string, { create: (args: unknown) => Promise<unknown> }>)
-          ['booking'].create({
+        (testPrisma as never as Record<string, { create: (args: unknown) => Promise<unknown> }>)['booking'].create({
             data: {
               organizationId: TEST_ORG_ID,
               branchId,
@@ -112,8 +109,7 @@ describe('Booking no-overlap constraint (DB-02)', () => {
 
     it('rejects an overlapping CONFIRMED booking via direct DB insert (constraint fires)', async () => {
       // Insert the first booking via ORM (plain testPrisma bypasses the RLS proxy)
-      await (testPrisma as never as Record<string, { create: (args: unknown) => Promise<unknown> }>)
-        ['booking'].create({
+      await (testPrisma as never as Record<string, { create: (args: unknown) => Promise<unknown> }>)['booking'].create({
           data: {
             organizationId: TEST_ORG_ID,
             branchId,
@@ -135,8 +131,7 @@ describe('Booking no-overlap constraint (DB-02)', () => {
       const overlapEnd = new Date(BASE_END.getTime() + 30 * 60_000);
 
       await expect(
-        (testPrisma as never as Record<string, { create: (args: unknown) => Promise<unknown> }>)
-          ['booking'].create({
+        (testPrisma as never as Record<string, { create: (args: unknown) => Promise<unknown> }>)['booking'].create({
             data: {
               organizationId: TEST_ORG_ID,
               branchId,
@@ -157,8 +152,7 @@ describe('Booking no-overlap constraint (DB-02)', () => {
 
     it('allows overlapping bookings for GROUP type (constraint is partial)', async () => {
       // Group bookings with same slot must not trigger the constraint
-      await (testPrisma as never as Record<string, { create: (args: unknown) => Promise<unknown> }>)
-        ['booking'].create({
+      await (testPrisma as never as Record<string, { create: (args: unknown) => Promise<unknown> }>)['booking'].create({
           data: {
             organizationId: TEST_ORG_ID,
             branchId,
@@ -177,8 +171,7 @@ describe('Booking no-overlap constraint (DB-02)', () => {
 
       // Same slot, same employee, GROUP — must succeed
       await expect(
-        (testPrisma as never as Record<string, { create: (args: unknown) => Promise<unknown> }>)
-          ['booking'].create({
+        (testPrisma as never as Record<string, { create: (args: unknown) => Promise<unknown> }>)['booking'].create({
             data: {
               organizationId: TEST_ORG_ID,
               branchId,
@@ -198,8 +191,7 @@ describe('Booking no-overlap constraint (DB-02)', () => {
     });
 
     it('allows a CANCELLED booking to coexist with a CONFIRMED booking in the same slot', async () => {
-      await (testPrisma as never as Record<string, { create: (args: unknown) => Promise<unknown> }>)
-        ['booking'].create({
+      await (testPrisma as never as Record<string, { create: (args: unknown) => Promise<unknown> }>)['booking'].create({
           data: {
             organizationId: TEST_ORG_ID,
             branchId,
@@ -217,8 +209,7 @@ describe('Booking no-overlap constraint (DB-02)', () => {
         });
 
       await expect(
-        (testPrisma as never as Record<string, { create: (args: unknown) => Promise<unknown> }>)
-          ['booking'].create({
+        (testPrisma as never as Record<string, { create: (args: unknown) => Promise<unknown> }>)['booking'].create({
             data: {
               organizationId: TEST_ORG_ID,
               branchId,
@@ -245,13 +236,11 @@ describe('Booking no-overlap constraint (DB-02)', () => {
     const API_START = new Date(Date.now() + 48 * 60 * 60 * 1_000);
 
     beforeEach(async () => {
-      await (testPrisma as never as Record<string, { deleteMany: (args: unknown) => Promise<unknown> }>)
-        ['booking'].deleteMany({ where: { employeeId, scheduledAt: { gte: API_START } } });
+      await (testPrisma as never as Record<string, { deleteMany: (args: unknown) => Promise<unknown> }>)['booking'].deleteMany({ where: { employeeId, scheduledAt: { gte: API_START } } });
     });
 
     afterEach(async () => {
-      await (testPrisma as never as Record<string, { deleteMany: (args: unknown) => Promise<unknown> }>)
-        ['booking'].deleteMany({ where: { employeeId, scheduledAt: { gte: API_START } } });
+      await (testPrisma as never as Record<string, { deleteMany: (args: unknown) => Promise<unknown> }>)['booking'].deleteMany({ where: { employeeId, scheduledAt: { gte: API_START } } });
     });
 
     it('returns 409 when a second booking overlaps a PENDING booking', async () => {

@@ -82,3 +82,20 @@ model Report {
   @@index([organizationId])
   @@index([type, createdAt])
 }
+
+// ─── OutboxEvent ──────────────────────────────────────────────────────────────
+// CR-5: transactional outbox for reliable event delivery.
+// Events are written here inside the booking (or any domain) transaction;
+// OutboxPublisherCron picks them up every 5 s and forwards to EventBusService.
+// publishedAt IS NULL means not yet published.
+
+model OutboxEvent {
+  id          String    @id @default(uuid()) @db.Uuid
+  aggregateId String
+  eventType   String
+  payload     Json
+  publishedAt DateTime? @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@index([publishedAt], map: "OutboxEvent_publishedAt_idx")
+}

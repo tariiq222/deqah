@@ -59,6 +59,9 @@ const buildPrisma = () => {
     organizationSettings: {
       findFirst: jest.fn().mockResolvedValue({ vatRate: '0.15' }),
     },
+    outboxEvent: {
+      create: jest.fn().mockResolvedValue({ id: 'outbox-1' }),
+    },
     $transaction: jest.fn(),
     $executeRaw: jest.fn().mockResolvedValue(undefined),
   };
@@ -460,6 +463,101 @@ describe('CreateBookingHandler — coupon strict validation', () => {
         data: expect.objectContaining({ couponCode: 'OLD10' }),
       }),
     );
+  });
+});
+
+describe('CreateBookingHandler — advisory lock for individual bookings', () => {
+  it('acquires pg_advisory_xact_lock BEFORE the conflict findFirst for individual bookings', async () => {
+    const prisma = buildPrisma();
+
+    const callOrder: string[] = [];
+    (prisma.$executeRaw as jest.Mock).mockImplementation(async () => {
+      callOrder.push('$executeRaw');
+    });
+    (prisma.booking.findFirst as jest.Mock).mockImplementation(async () => {
+      callOrder.push('booking.findFirst');
+      return null; // no conflict
+    });
+
+    await new CreateBookingHandler(
+      prisma as never,
+      mockTenant as never,
+      buildPriceResolver() as never,
+      buildSettingsHandler() as never,
+      {} as never,
+      mockEventBus as never,
+      mockSubscriptionCache as never,
+      { couponStrictEnabled: false } as never,
+      {} as never,
+    ).execute(dto);
+
+    // Lock must be acquired before the overlap check
+    const lockIdx = callOrder.indexOf('$executeRaw');
+    const findIdx = callOrder.findIndex((c) => c === 'booking.findFirst');
+    expect(lockIdx).toBeGreaterThanOrEqual(0);
+    expect(lockIdx).toBeLessThan(findIdx);
+
+    // Confirm the SQL references pg_advisory_xact_lock
+    const rawCall = (prisma.$executeRaw as jest.Mock).mock.calls[0];
+    const templateStrings: string[] = rawCall[0];
+    expect(templateStrings.join('')).toMatch(/pg_advisory_xact_lock/);
+  });
+
+  it('throws ConflictException when overlap found after lock is held', async () => {
+    const prisma = buildPrisma();
+    // The findFirst inside the tx returns a conflict
+    prisma.booking.findFirst = jest.fn().mockResolvedValue({ id: 'existing-booking' });
+
+    await expect(
+      new CreateBookingHandler(
+        prisma as never,
+        mockTenant as never,
+        buildPriceResolver() as never,
+        buildSettingsHandler() as never,
+        {} as never,
+        mockEventBus as never,
+        mockSubscriptionCache as never,
+        { couponStrictEnabled: false } as never,
+        {} as never,
+      ).execute(dto),
+    ).rejects.toThrow('Employee already has a booking in this time slot');
+  });
+});
+
+describe('CreateBookingHandler — outbox pattern', () => {
+  it('writes to outboxEvent inside the transaction instead of calling eventBus.publish directly', async () => {
+    const prisma = buildPrisma();
+    // Add outboxEvent mock to the prisma mock
+    (prisma as Record<string, unknown>).outboxEvent = {
+      create: jest.fn().mockResolvedValue({ id: 'outbox-1' }),
+    };
+
+    await new CreateBookingHandler(
+      prisma as never,
+      mockTenant as never,
+      buildPriceResolver() as never,
+      buildSettingsHandler() as never,
+      {} as never,
+      mockEventBus as never,
+      mockSubscriptionCache as never,
+      { couponStrictEnabled: false } as never,
+      {} as never,
+    ).execute(dto);
+
+    // outboxEvent.create must have been called inside the tx
+    const outboxCreate = (prisma as unknown as Record<string, { create: jest.Mock }>).outboxEvent.create;
+    expect(outboxCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          aggregateId: 'book-1',
+          eventType: 'bookings.booking.created',
+          payload: expect.objectContaining({ source: 'bookings' }),
+        }),
+      }),
+    );
+
+    // eventBus.publish must NOT have been called directly
+    expect(mockEventBus.publish).not.toHaveBeenCalled();
   });
 });
 

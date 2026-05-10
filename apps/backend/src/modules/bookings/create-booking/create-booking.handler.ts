@@ -155,7 +155,15 @@ export class CreateBookingHandler {
     const booking = await this.prisma.$transaction(
       async (tx) => {
         if (!isGroupService) {
-          // Individual bookings: hard overlap check
+          // CR-5: acquire advisory lock BEFORE the conflict check so that two
+          // concurrent requests on the same employee+slot cannot both see "no
+          // conflict" and both proceed. Lock key is scoped to
+          // (employeeId, organizationId) + slot window.
+          const lockKey1 = hashToInt32(`${dto.employeeId ?? 'noemp'}:${organizationId}`);
+          const lockKey2 = hashToInt32(`${scheduledAt.toISOString()}:${endsAt.toISOString()}`);
+          await tx.$executeRaw`SELECT pg_advisory_xact_lock(${lockKey1}::int, ${lockKey2}::int)`;
+
+          // Now that the lock is held, check for an overlap with PENDING/CONFIRMED bookings.
           const conflict = await tx.booking.findFirst({
             where: {
               organizationId,
@@ -299,6 +307,25 @@ export class CreateBookingHandler {
           subscription?.limits,
         );
 
+        // CR-5: write to outbox INSIDE the transaction instead of publishing
+        // directly after commit. If the process crashes after commit but before
+        // publish, the OutboxPublisherCron picks up the unpublished row.
+        const createdEvent = new BookingCreatedEvent({
+          bookingId: booking.id,
+          clientId: booking.clientId,
+          employeeId: booking.employeeId ?? '',
+          organizationId,
+          scheduledAt: booking.scheduledAt,
+          serviceId: booking.serviceId,
+        });
+        await tx.outboxEvent.create({
+          data: {
+            aggregateId: booking.id,
+            eventType: createdEvent.eventName,
+            payload: createdEvent.toEnvelope() as unknown as Prisma.InputJsonValue,
+          },
+        });
+
         return { ...booking, invoiceId: invoice?.id ?? null };
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
@@ -323,17 +350,6 @@ export class CreateBookingHandler {
         }).catch(() => { /* logged by eventBus */ });
       }
     }
-
-    // Notify staff about new booking
-    const createdEvent = new BookingCreatedEvent({
-      bookingId: booking.id,
-      clientId: booking.clientId,
-      employeeId: booking.employeeId ?? '',
-      organizationId,
-      scheduledAt: booking.scheduledAt,
-      serviceId: booking.serviceId,
-    });
-    this.eventBus.publish(createdEvent.eventName, createdEvent.toEnvelope()).catch(() => {});
 
     return booking;
   }
