@@ -3,11 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { TenantContextService } from './tenant-context.service';
 import { RlsHelper } from './rls.helper';
 import { TenantEnforcementMode } from './tenant.constants';
+import { SubdomainResolverService } from './subdomain-resolver.service';
 
 @Global()
 @Module({
-  providers: [TenantContextService, RlsHelper],
-  exports: [TenantContextService, RlsHelper],
+  providers: [TenantContextService, RlsHelper, SubdomainResolverService],
+  exports: [TenantContextService, RlsHelper, SubdomainResolverService],
 })
 export class TenantModule implements OnApplicationBootstrap {
   private readonly logger = new Logger(TenantModule.name);
