@@ -1,4 +1,4 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
+import { BadRequestException, Injectable, NestMiddleware } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response, NextFunction } from 'express';
 import { TenantContextService } from './tenant-context.service';
@@ -118,8 +118,11 @@ export class TenantResolverMiddleware implements NestMiddleware {
     // Priority:
     //   1. JWT claim (authenticated users)
     //   2. X-Org-Id header (super-admins only — never trusted from regular users)
-    //   3. X-Org-Id header on UNAUTHENTICATED public routes (mobile tenant-lock)
-    //   4. Subdomain resolver — maps <slug>.deqah.net to organizationId (Plan 09)
+    //   3. Subdomain resolver on public routes (CR-4) — maps <slug>.deqah.net to
+    //      organizationId. When a subdomain is present, X-Org-Id MUST either match
+    //      or be absent. Mismatch → 400 (cross-tenant header injection attack).
+    //   4. X-Org-Id header on UNAUTHENTICATED public routes with NO subdomain
+    //      (mobile tenant-lock: mobile hits raw API domain, no subdomain present).
     //   5. DEFAULT_ORGANIZATION_ID (permissive mode only)
     const fromSuperAdminHeader =
       req.user?.isSuperAdmin === true
@@ -143,17 +146,35 @@ export class TenantResolverMiddleware implements NestMiddleware {
     }
 
     const fromJwt = req.user?.organizationId;
+
+    // CR-4: Subdomain binding on public routes.
+    // Only resolve subdomain for unauthenticated public requests — JWT-authenticated
+    // requests always use the JWT claim, and super-admin override is handled above.
+    let fromSubdomain: string | null = null;
+    if (!req.user && isPublicRoute) {
+      const hostHeader =
+        (req.headers['x-forwarded-host'] as string | undefined) ??
+        req.hostname ??
+        (req.headers.host as string | undefined);
+      fromSubdomain = await this.subdomainResolver.resolve(hostHeader);
+
+      if (fromSubdomain) {
+        // Subdomain resolved — validate X-Org-Id header consistency.
+        const headerOrgId = this.parseUuidHeader(req.headers['x-org-id']);
+        if (headerOrgId !== undefined && headerOrgId !== fromSubdomain) {
+          // A forged / mismatched X-Org-Id is an attempted cross-tenant bypass.
+          throw new BadRequestException('X-Org-Id does not match the resolved subdomain organization');
+        }
+        // Subdomain wins; header is either absent or already matches.
+      }
+    }
+
+    // X-Org-Id on public routes: only honored when NO subdomain was resolved
+    // (i.e. mobile hitting the raw API domain without a tenant subdomain).
     const fromPublicHeader =
-      !req.user && isPublicRoute ? this.parseUuidHeader(req.headers['x-org-id']) : undefined;
-
-    const hostHeader =
-      (req.headers['x-forwarded-host'] as string | undefined) ??
-      req.hostname ??
-      (req.headers.host as string | undefined);
-
-    const fromSubdomain = !req.user
-      ? await this.subdomainResolver.resolve(hostHeader)
-      : null;
+      !req.user && isPublicRoute && !fromSubdomain
+        ? this.parseUuidHeader(req.headers['x-org-id'])
+        : undefined;
 
     const fromDefault =
       mode === 'permissive'
@@ -161,14 +182,7 @@ export class TenantResolverMiddleware implements NestMiddleware {
         : undefined;
 
     const organizationId =
-      fromSuperAdminHeader ?? fromJwt ?? fromPublicHeader ?? fromSubdomain ?? fromDefault;
-
-    // Public routes (e.g. /public/branding, /public/auth/*) are designed to work
-    // without a tenant context — handlers use requireOrganizationIdOrDefault() which
-    // falls back gracefully. Allow them through even in strict mode when no header/JWT.
-    if (!organizationId && isPublicRoute) {
-      return next();
-    }
+      fromSuperAdminHeader ?? fromJwt ?? fromSubdomain ?? fromPublicHeader ?? fromDefault;
 
     if (!organizationId) {
       throw new TenantResolutionError(

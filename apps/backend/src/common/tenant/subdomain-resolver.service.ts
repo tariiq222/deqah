@@ -1,8 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
-import { extractSubdomain, isReservedSubdomain, DEFAULT_RESERVED_SUBDOMAINS } from './subdomain.utils';
-import { SLUG_REGEX } from './slug-generator.util';
+import {
+  extractSubdomain,
+  isReservedSubdomain,
+  DEFAULT_RESERVED_SUBDOMAINS,
+} from './subdomain.utils';
+
+const SLUG_REGEX = /^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/;
 
 interface CacheEntry {
   id: string | null;
@@ -31,7 +36,10 @@ export class SubdomainResolverService {
     this.reserved = new Set([...DEFAULT_RESERVED_SUBDOMAINS, ...extra]);
   }
 
-  /** Returns the organizationId for the given host, or null when unresolved. */
+  /**
+   * Returns the organizationId for the given host, or null when unresolved.
+   * Organization is not a tenant-scoped model, so plain prisma.organization is fine.
+   */
   async resolve(host: string | undefined | null): Promise<string | null> {
     const subdomain = extractSubdomain(host, this.rootDomain);
     if (!subdomain) return null;
