@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { EmbeddingAdapter } from '../../../infrastructure/ai';
 import { TenantContextService } from '../../../common/tenant';
 import { EmbedDocumentDto } from './embed-document.dto';
@@ -27,6 +27,7 @@ export class EmbedDocumentHandler {
     private readonly prisma: PrismaService,
     private readonly embedding: EmbeddingAdapter,
     private readonly tenant: TenantContextService,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(dto: EmbedDocumentCommand) {
@@ -52,7 +53,7 @@ export class EmbedDocumentHandler {
     try {
       const vectors = await this.embedding.embed(chunks);
 
-      await this.prisma.$transaction(async (tx) => {
+      await this.rlsTx.withTransaction(async (tx) => {
         await tx.documentChunk.createMany({
           data: chunks.map((content, i) => ({
             organizationId,

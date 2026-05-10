@@ -3,7 +3,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { EventBusService } from '../../../infrastructure/events';
 import { MoyasarApiClient } from '../moyasar-api/moyasar-api.client';
 import { RefundCompletedEvent } from '../events/refund-completed.event';
@@ -27,6 +27,7 @@ export class ApproveRefundHandler {
     private readonly prisma: PrismaService,
     private readonly moyasarClient: MoyasarApiClient,
     private readonly eventBus: EventBusService,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(cmd: ApproveRefundCommand): Promise<RefundApprovalResult> {
@@ -71,7 +72,7 @@ export class ApproveRefundHandler {
       // together or not at all. Previously they were three sequential awaits;
       // a DB blip between any pair would leave books inconsistent with
       // Moyasar (real money refunded but invoice still ISSUED).
-      const { updated, invoice } = await this.prisma.$transaction(async (tx) => {
+      const { updated, invoice } = await this.rlsTx.withTransaction(async (tx) => {
         const updated = await tx.refundRequest.update({
           where: { id: cmd.refundRequestId },
           data: {

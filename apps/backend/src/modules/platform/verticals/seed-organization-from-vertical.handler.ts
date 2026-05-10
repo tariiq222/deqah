@@ -1,9 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 
 @Injectable()
 export class SeedOrganizationFromVerticalHandler {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly rlsTx: RlsTransactionService,
+  ) {}
 
   async execute(cmd: { organizationId: string; verticalSlug: string }) {
     const vertical = await this.prisma.vertical.findFirst({

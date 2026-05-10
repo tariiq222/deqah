@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { BookingStatus, RefundType } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
+import { RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { EventBusService } from '../../../infrastructure/events';
 import { GetBookingSettingsHandler } from '../get-booking-settings/get-booking-settings.handler';
@@ -16,6 +17,7 @@ export type ClientCancelCommand = ClientCancelBookingDto & {
 export class ClientCancelBookingHandler {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly rlsTx: RlsTransactionService,
     private readonly tenant: TenantContextService,
     private readonly settingsHandler: GetBookingSettingsHandler,
     private readonly eventBus: EventBusService,
@@ -48,15 +50,15 @@ export class ClientCancelBookingHandler {
     const hoursUntilBooking = (booking.scheduledAt.getTime() - Date.now()) / 3_600_000;
 
     if (hoursUntilBooking < settings.freeCancelBeforeHours) {
-      const [updated] = await this.prisma.$transaction([
-        this.prisma.booking.update({
+      const [updated] = await this.rlsTx.withTransaction((tx) => Promise.all([
+        tx.booking.update({
           where: { id: cmd.bookingId },
           data: {
             status: BookingStatus.CANCEL_REQUESTED,
             cancelNotes: cmd.reason ?? null,
           },
         }),
-        this.prisma.bookingStatusLog.create({
+        tx.bookingStatusLog.create({
           data: {
             organizationId,
             bookingId: cmd.bookingId,
@@ -66,7 +68,7 @@ export class ClientCancelBookingHandler {
             reason: cmd.reason ?? 'CLIENT_CANCEL_WINDOW_EXPIRED',
           },
         }),
-      ]);
+      ]));
       return { status: 'CANCEL_REQUESTED', booking: updated, requiresApproval: true };
     }
 
@@ -74,8 +76,8 @@ export class ClientCancelBookingHandler {
       ? settings.freeCancelRefundType
       : RefundType.NONE;
 
-    const [updated] = await this.prisma.$transaction([
-      this.prisma.booking.update({
+    const [updated] = await this.rlsTx.withTransaction((tx) => Promise.all([
+      tx.booking.update({
         where: { id: cmd.bookingId },
         data: {
           status: BookingStatus.CANCELLED,
@@ -84,7 +86,7 @@ export class ClientCancelBookingHandler {
           cancelledAt: new Date(),
         },
       }),
-      this.prisma.bookingStatusLog.create({
+      tx.bookingStatusLog.create({
         data: {
           organizationId,
           bookingId: cmd.bookingId,
@@ -94,7 +96,7 @@ export class ClientCancelBookingHandler {
           reason: cmd.reason ?? 'CLIENT_CANCEL',
         },
       }),
-    ]);
+    ]));
 
     const completedPayment = await this.prisma.payment.findFirst({
       where: { invoice: { bookingId: booking.id }, status: 'COMPLETED' },

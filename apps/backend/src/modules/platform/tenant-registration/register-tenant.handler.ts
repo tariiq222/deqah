@@ -1,7 +1,7 @@
 import { randomBytes } from 'crypto';
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { PasswordService } from '../../identity/shared/password.service';
 import { TokenService } from '../../identity/shared/token.service';
 import { TenantContextService } from '../../../common/tenant/tenant-context.service';
@@ -43,6 +43,7 @@ export class RegisterTenantHandler {
     private readonly cache: SubscriptionCacheService,
     private readonly mailer: PlatformMailerService,
     private readonly ownerProvisioning: OwnerProvisioningService,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(dto: RegisterTenantDto) {

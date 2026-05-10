@@ -5,6 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database';
+import { RlsTransactionService } from '../../../infrastructure/database';
 import { ZoomApiClient } from '../../../infrastructure/zoom/zoom-api.client';
 import { ZoomCredentialsService } from '../../../infrastructure/zoom/zoom-credentials.service';
 import { FeatureCheckService } from '../../platform/billing/feature-check.service';
@@ -31,6 +32,7 @@ export class CreateZoomMeetingHandler {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly rlsTx: RlsTransactionService,
     private readonly zoomApi: ZoomApiClient,
     private readonly zoomCredentials: ZoomCredentialsService,
     private readonly featureCheck: FeatureCheckService,
@@ -70,7 +72,7 @@ export class CreateZoomMeetingHandler {
     const key2 = hashToInt32(booking.id);
 
     // Step 4: advisory-locked critical section — holds lock + connection for Zoom API duration; bounded per-booking concurrency makes this acceptable.
-    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    return this.rlsTx.withTransaction(async (tx) => {
       // 4a: acquire per-(org, booking) advisory lock before any read/write
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${key1}::int, ${key2}::int)`;
 

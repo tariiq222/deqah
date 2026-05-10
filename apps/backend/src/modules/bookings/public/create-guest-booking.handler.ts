@@ -5,7 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaService } from '../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { PriceResolverService } from '../../org-experience/services/price-resolver.service';
 import { GetBookingSettingsHandler } from '../get-booking-settings/get-booking-settings.handler';
@@ -31,6 +31,7 @@ export class CreateGuestBookingHandler {
     private readonly priceResolver: PriceResolverService,
     private readonly settingsHandler: GetBookingSettingsHandler,
     private readonly subscriptionCache: SubscriptionCacheService,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(cmd: CreateGuestBookingCommand) {
@@ -98,7 +99,7 @@ export class CreateGuestBookingHandler {
     // Pull cached plan limits BEFORE the tx (cache uses its own connection).
     const subscription = await this.subscriptionCache.get(organizationId);
 
-    const result = await this.prisma.$transaction(async (tx) => {
+    const result = await this.rlsTx.withTransaction(async (tx) => {
       // Fix A — enforce single-use: insert UsedOtpSession or throw if already exists
       try {
         await tx.usedOtpSession.create({

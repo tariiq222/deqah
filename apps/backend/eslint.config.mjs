@@ -78,12 +78,23 @@ export default defineConfig([
 
       // `$allTenantsUnsafe` is reserved for CLI/bootstrap code (seed/scripts).
       // Application code must go through the CLS-gated `$allTenants` escape hatch.
+      //
+      // Direct `prisma.$transaction()` calls bypass RLS context injection.
+      // Use `RlsTransactionService.withTransaction()` or `.withBypassTransaction()`
+      // instead. For super-admin / cron paths add `{ bypassRls: true }` and a
+      // comment explaining why. The helper file itself is exempt via a file-level
+      // disable comment.
       "no-restricted-syntax": [
         "error",
         {
           selector: "MemberExpression[property.name='$allTenantsUnsafe']",
           message:
             "Use PrismaService.$allTenants only inside a SuperAdminContextInterceptor-protected request. $allTenantsUnsafe is reserved for seed/scripts code.",
+        },
+        {
+          selector: "CallExpression[callee.property.name='$transaction']",
+          message:
+            "Use RlsTransactionService.withTransaction() or .withBypassTransaction() instead of prisma.$transaction() to ensure RLS context is injected. Pass { bypassRls: true } only with a justification comment for super-admin/cron/webhook paths.",
         },
       ],
     },

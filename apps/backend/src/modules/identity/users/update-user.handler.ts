@@ -1,8 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { MembershipRole, UserGender, UserRole } from '@prisma/client';
-import { PrismaService } from '../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant/tenant-context.service';
-import { RlsHelper } from '../../../common/tenant/rls.helper';
 
 export interface UpdateUserCommand {
   userId: string;
@@ -35,7 +34,7 @@ export class UpdateUserHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenantCtx: TenantContextService,
-    private readonly rls: RlsHelper,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(cmd: UpdateUserCommand) {
@@ -49,8 +48,7 @@ export class UpdateUserHandler {
     });
     if (!user) throw new NotFoundException('User not found');
 
-    return this.prisma.$transaction(async (tx) => {
-      await this.rls.applyInTransaction(tx);
+    return this.rlsTx.withTransaction(async (tx) => {
       const updated = await tx.user.update({
         where: { id: cmd.userId },
         data: {

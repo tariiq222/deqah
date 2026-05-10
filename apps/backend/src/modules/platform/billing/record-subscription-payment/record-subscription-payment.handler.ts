@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../../../infrastructure/database/prisma.service';
+import { PrismaService, RlsTransactionService } from '../../../../infrastructure/database';
 import { SubscriptionCacheService } from '../subscription-cache.service';
 import { SubscriptionStateMachine } from '../subscription-state-machine';
 import { PlatformMailerService } from '../../../../infrastructure/mail';
@@ -26,6 +26,7 @@ export class RecordSubscriptionPaymentHandler {
     private readonly config: ConfigService,
     private readonly issueInvoice: IssueInvoiceHandler,
     private readonly eventBus: EventBusService,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(cmd: RecordSubscriptionPaymentCommand) {
@@ -50,7 +51,8 @@ export class RecordSubscriptionPaymentHandler {
     const nextPeriodStart =
       sub.currentPeriodEnd.getTime() < now.getTime() ? now : sub.currentPeriodEnd;
 
-    await this.prisma.$transaction(async (tx) => {
+    await this.rlsTx.withBypassTransaction(async (tx) => {
+      // bypassRls: Moyasar webhook — cross-org platform billing, no tenant CLS context
       await tx.subscriptionInvoice.update({
         where: { id: invoice.id },
         data: { status: 'PAID', paidAt: now, moyasarPaymentId: cmd.moyasarPaymentId },

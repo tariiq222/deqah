@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { RecurringFrequency } from '@prisma/client';
 import type { Booking } from '@prisma/client';
-import { PrismaService } from '../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { FeatureCheckService } from '../../platform/billing/feature-check.service';
 import { FeatureKey } from '@deqah/shared/constants/feature-keys';
@@ -31,6 +31,7 @@ export class CreateRecurringBookingHandler {
     private readonly prisma: PrismaService,
     private readonly tenant: TenantContextService,
     private readonly featureCheck: FeatureCheckService,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(dto: CreateRecurringBookingCommand) {
@@ -52,7 +53,7 @@ export class CreateRecurringBookingHandler {
     if (dto.skipConflicts) {
       return this.createBookings(this.prisma, dto, dates, recurringGroupId, organizationId);
     }
-    return this.prisma.$transaction((tx) =>
+    return this.rlsTx.withTransaction((tx) =>
       this.createBookings(tx as unknown as PrismaService, dto, dates, recurringGroupId, organizationId),
     );
   }

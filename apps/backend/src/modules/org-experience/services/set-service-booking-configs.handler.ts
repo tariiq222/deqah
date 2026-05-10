@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { PrismaService } from '../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { SetServiceBookingConfigsDto } from './set-service-booking-configs.dto';
 
@@ -13,6 +13,7 @@ export class SetServiceBookingConfigsHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenant: TenantContextService,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(cmd: SetServiceBookingConfigsCommand) {
@@ -23,17 +24,17 @@ export class SetServiceBookingConfigsHandler {
     if (!service) throw new NotFoundException('Service not found');
 
     // Upsert each booking type config; delete types not included in the payload.
-    await this.prisma.$transaction([
+    await this.rlsTx.withTransaction(async (tx) => {
       // Remove configs for types not present in the new payload
-      this.prisma.serviceBookingConfig.deleteMany({
+      await tx.serviceBookingConfig.deleteMany({
         where: {
           serviceId: cmd.serviceId,
           bookingType: { notIn: cmd.types.map((t) => t.bookingType) },
         },
-      }),
+      });
       // Upsert each config
-      ...cmd.types.map((t) =>
-        this.prisma.serviceBookingConfig.upsert({
+      await Promise.all(cmd.types.map((t) =>
+        tx.serviceBookingConfig.upsert({
           where: {
             serviceId_bookingType: {
               serviceId: cmd.serviceId,
@@ -56,8 +57,8 @@ export class SetServiceBookingConfigsHandler {
             updatedAt: new Date(),
           },
         }),
-      ),
-    ]);
+      ));
+    });
 
     return this.prisma.serviceBookingConfig.findMany({
       where: { serviceId: cmd.serviceId },

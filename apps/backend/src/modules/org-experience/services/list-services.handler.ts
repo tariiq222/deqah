@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { toListResponse } from '../../../common/dto';
 import { ListServicesDto } from './list-services.dto';
@@ -11,6 +11,7 @@ export class ListServicesHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenant: TenantContextService,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(dto: ListServicesCommand) {
@@ -34,19 +35,21 @@ export class ListServicesHandler {
       }),
     };
 
-    const [items, total] = await this.prisma.$transaction([
-      this.prisma.service.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          category: true,
-          durationOptions: { orderBy: { sortOrder: 'asc' } },
-        },
-      }),
-      this.prisma.service.count({ where }),
-    ]);
+    const [items, total] = await this.rlsTx.withTransaction((tx) =>
+      Promise.all([
+        tx.service.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            category: true,
+            durationOptions: { orderBy: { sortOrder: 'asc' } },
+          },
+        }),
+        tx.service.count({ where }),
+      ]),
+    );
 
     return toListResponse(items, total, page, limit);
   }

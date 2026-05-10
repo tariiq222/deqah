@@ -13,6 +13,7 @@ function mapDbConflict(err: unknown): never {
   throw err;
 }
 import { PrismaService } from '../../../infrastructure/database';
+import { RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { GetBookingSettingsHandler } from '../get-booking-settings/get-booking-settings.handler';
 import { RescheduleBookingDto } from './reschedule-booking.dto';
@@ -29,6 +30,7 @@ export type RescheduleBookingCommand = Omit<RescheduleBookingDto, 'newScheduledA
 export class RescheduleBookingHandler {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly rlsTx: RlsTransactionService,
     private readonly tenant: TenantContextService,
     private readonly settingsHandler: GetBookingSettingsHandler,
     private readonly zoomMeetingService: ZoomMeetingService,
@@ -60,8 +62,7 @@ export class RescheduleBookingHandler {
     const newEndsAt = new Date(newScheduledAt.getTime() + durationMins * 60_000);
 
     // Serialize conflict check + update + status log inside one transaction.
-    const [updated] = await this.prisma.$transaction(
-      async (tx) => {
+    const [updated] = await this.rlsTx.withTransaction(async (tx) => {
         const conflict = await tx.booking.findFirst({
           where: {
             organizationId,
@@ -93,9 +94,7 @@ export class RescheduleBookingHandler {
             },
           }),
         ]);
-      },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-    ).catch(mapDbConflict) as [Awaited<ReturnType<typeof this.prisma.booking.update>>, unknown];
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }).catch(mapDbConflict) as [Awaited<ReturnType<typeof this.prisma.booking.update>>, unknown];
 
     if (booking.zoomMeetingId) {
       // Best effort update

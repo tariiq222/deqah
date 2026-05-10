@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { AvailabilityWindow, UpdateAvailabilityDto } from './update-availability.dto';
 
 export { AvailabilityWindow, AvailabilityException } from './update-availability.dto';
@@ -38,7 +38,10 @@ function validateWindows(windows: AvailabilityWindow[]): void {
 
 @Injectable()
 export class UpdateAvailabilityHandler {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly rlsTx: RlsTransactionService,
+  ) {}
 
   async execute(cmd: UpdateAvailabilityCommand) {
     const { employeeId, windows, exceptions = [] } = cmd;
@@ -54,8 +57,8 @@ export class UpdateAvailabilityHandler {
 
     const organizationId = employee.organizationId;
 
-    const [createdWindows, updatedExceptions] = await this.prisma.$transaction(
-      async (tx: Parameters<Parameters<typeof this.prisma.$transaction>[0]>[0]) => {
+    const [createdWindows, updatedExceptions] = await this.rlsTx.withTransaction(
+      async (tx) => {
         await tx.employeeAvailability.deleteMany({ where: { employeeId } });
 
         await tx.employeeAvailability.createMany({

@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { BookingStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
+import { RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { EventBusService } from '../../../infrastructure/events';
 import { BookingCancelRejectedEvent } from '../events/booking-cancel-rejected.event';
@@ -19,6 +20,7 @@ export interface RejectCancelBookingCommand {
 export class RejectCancelBookingHandler {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly rlsTx: RlsTransactionService,
     private readonly tenant: TenantContextService,
     private readonly eventBus: EventBusService,
   ) {}
@@ -37,8 +39,8 @@ export class RejectCancelBookingHandler {
       );
     }
 
-    const [updated] = await this.prisma.$transaction([
-      this.prisma.booking.update({
+    const [updated] = await this.rlsTx.withTransaction((tx) => Promise.all([
+      tx.booking.update({
         where: { id: cmd.bookingId },
         data: {
           status: BookingStatus.CONFIRMED,
@@ -46,7 +48,7 @@ export class RejectCancelBookingHandler {
           cancelNotes: null,
         },
       }),
-      this.prisma.bookingStatusLog.create({
+      tx.bookingStatusLog.create({
         data: {
           organizationId,
           bookingId: cmd.bookingId,
@@ -56,7 +58,7 @@ export class RejectCancelBookingHandler {
           reason: cmd.rejectReason,
         },
       }),
-    ]);
+    ]));
 
     const event = new BookingCancelRejectedEvent({
       bookingId: booking.id,

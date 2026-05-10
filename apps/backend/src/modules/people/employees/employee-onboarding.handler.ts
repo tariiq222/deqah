@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { OnboardingStatus } from '@prisma/client';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import { RlsHelper } from '../../../common/tenant/rls.helper';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { EmployeeOnboardingDto } from './employee-onboarding.dto';
 
 export type EmployeeOnboardingCommand = EmployeeOnboardingDto & {
@@ -27,7 +26,7 @@ const RELATION_CONFIG = {
 export class EmployeeOnboardingHandler {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly rls: RlsHelper,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(cmd: EmployeeOnboardingCommand) {
@@ -39,8 +38,7 @@ export class EmployeeOnboardingHandler {
       throw new NotFoundException(`Employee ${cmd.employeeId} not found`);
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      await this.rls.applyInTransaction(tx);
+    return this.rlsTx.withTransaction(async (tx) => {
       switch (cmd.step) {
         case 'profile': {
           await tx.employee.update({

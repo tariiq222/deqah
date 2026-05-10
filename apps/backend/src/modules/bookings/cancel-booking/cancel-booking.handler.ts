@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { BookingStatus, RefundType } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
+import { RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { EventBusService } from '../../../infrastructure/events';
 import { BookingCancelledEvent } from '../events/booking-cancelled.event';
@@ -24,6 +25,7 @@ const CANCELLABLE_STATUSES: BookingStatus[] = [
 export class CancelBookingHandler {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly rlsTx: RlsTransactionService,
     private readonly tenant: TenantContextService,
     private readonly eventBus: EventBusService,
     private readonly settingsHandler: GetBookingSettingsHandler,
@@ -63,7 +65,7 @@ export class CancelBookingHandler {
       ? settings.freeCancelRefundType
       : RefundType.NONE;
 
-    const updated = await this.prisma.$transaction(async (tx) => {
+    const updated = await this.rlsTx.withTransaction(async (tx) => {
       const cancelledBooking = await tx.booking.update({
         where: { id: cmd.bookingId },
         data: {

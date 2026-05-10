@@ -2,7 +2,7 @@ import { ConflictException, Injectable, UnprocessableEntityException } from '@ne
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
 import { TenantContextService } from '../../../../common/tenant/tenant-context.service';
-import { PrismaService } from '../../../../infrastructure/database/prisma.service';
+import { PrismaService, RlsTransactionService } from '../../../../infrastructure/database';
 import { MoyasarSubscriptionClient } from '../../../finance/moyasar-api/moyasar-subscription.client';
 import { AddSavedCardDto } from '../dto/saved-card.dto';
 import { SubscriptionCacheService } from '../subscription-cache.service';
@@ -17,6 +17,7 @@ export class AddSavedCardHandler {
     private readonly cache: SubscriptionCacheService,
     private readonly moyasar: MoyasarSubscriptionClient,
     private readonly config: ConfigService,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(cmd: AddSavedCardDto) {
@@ -65,7 +66,7 @@ export class AddSavedCardHandler {
     const shouldRearmDunning = subscription?.status === 'PAST_DUE';
     const rearmAt = new Date();
 
-    const created = await this.prisma.$transaction(async (tx) => {
+    const created = await this.rlsTx.withTransaction(async (tx) => {
       if (shouldDefault) {
         await tx.savedCard.updateMany({
           where: { organizationId, isDefault: true },

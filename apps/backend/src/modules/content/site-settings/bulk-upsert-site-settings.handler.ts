@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { BulkUpsertSiteSettingsDto } from './bulk-upsert-site-settings.dto';
 
@@ -9,14 +9,15 @@ export class BulkUpsertSiteSettingsHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenant: TenantContextService,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(dto: BulkUpsertSiteSettingsDto): Promise<{ updated: number }> {
     const organizationId = this.tenant.requireOrganizationIdOrDefault();
 
-    await this.prisma.$transaction(
-      dto.entries.map((e) =>
-        this.prisma.siteSetting.upsert({
+    await this.rlsTx.withTransaction((tx) =>
+      Promise.all(dto.entries.map((e) =>
+        tx.siteSetting.upsert({
           where: { organizationId_key: { organizationId, key: e.key } },
           create: {
             organizationId,
@@ -35,7 +36,7 @@ export class BulkUpsertSiteSettingsHandler {
             valueMedia: e.valueMedia ?? null,
           },
         }),
-      ),
+      )),
     );
     return { updated: dto.entries.length };
   }

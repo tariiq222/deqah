@@ -56,6 +56,7 @@ export class TenantGucInterceptor implements NestInterceptor {
     }
 
     return from(
+      // eslint-disable-next-line no-restricted-syntax -- TenantGucInterceptor is the request-level RLS wrapper; it injects set_config on the outer tx before handing off to the handler chain
       this.prisma.$transaction(async (tx) => {
         await tx.$queryRaw(
           Prisma.sql`SELECT set_config('app.current_org_id', ${orgId}, true)`,

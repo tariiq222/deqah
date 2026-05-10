@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BookingStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
+import { RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { fetchBookingOrFail } from '../booking-lifecycle.helper';
 
@@ -13,6 +14,7 @@ export interface ExpireBookingCommand {
 export class ExpireBookingHandler {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly rlsTx: RlsTransactionService,
     private readonly tenant: TenantContextService,
   ) {}
 
@@ -25,12 +27,12 @@ export class ExpireBookingHandler {
       'expired',
     );
 
-    const [updated] = await this.prisma.$transaction([
-      this.prisma.booking.update({
+    const [updated] = await this.rlsTx.withTransaction((tx) => Promise.all([
+      tx.booking.update({
         where: { id: cmd.bookingId, organizationId },
         data: { status: BookingStatus.EXPIRED, expiresAt: new Date() },
       }),
-      this.prisma.bookingStatusLog.create({
+      tx.bookingStatusLog.create({
         data: {
           organizationId,
           bookingId: cmd.bookingId,
@@ -39,7 +41,7 @@ export class ExpireBookingHandler {
           changedBy: cmd.changedBy,
         },
       }),
-    ]);
+    ]));
     return updated;
   }
 }

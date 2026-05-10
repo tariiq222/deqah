@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { toListResponse } from '../../../common/dto';
 import { ListCategoriesDto } from './list-categories.dto';
@@ -12,6 +12,7 @@ export class ListCategoriesHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenant: TenantContextService,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(dto: ListCategoriesQuery) {
@@ -32,16 +33,18 @@ export class ListCategoriesHandler {
       }),
     };
 
-    const [items, total] = await this.prisma.$transaction([
-      this.prisma.serviceCategory.findMany({
-        where,
-        skip,
-        take: limit,
-        include: { _count: { select: { services: true } } },
-        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-      }),
-      this.prisma.serviceCategory.count({ where }),
-    ]);
+    const [items, total] = await this.rlsTx.withTransaction((tx) =>
+      Promise.all([
+        tx.serviceCategory.findMany({
+          where,
+          skip,
+          take: limit,
+          include: { _count: { select: { services: true } } },
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+        }),
+        tx.serviceCategory.count({ where }),
+      ]),
+    );
 
     return toListResponse(items, total, page, limit);
   }
