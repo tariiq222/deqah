@@ -27,7 +27,7 @@ export class VerifyOtpHandler {
       this.logger.warn('systemContext bypass activated', { context: 'VerifyOtpHandler' });
       this.cls.set(SYSTEM_CONTEXT_CLS_KEY, true);
 
-      const result = await this.prisma.otpCode.updateMany({
+      const otpRecord = await this.prisma.otpCode.findFirst({
         where: {
           organizationId: orgId,
           identifier: dto.identifier,
@@ -35,16 +35,7 @@ export class VerifyOtpHandler {
           consumedAt: null,
           expiresAt: { gt: new Date() },
         },
-        data: { consumedAt: new Date() },
-      });
-
-      if (result.count === 0) {
-        throw new BadRequestException('Invalid or expired OTP code');
-      }
-
-      const otpRecord = await this.prisma.otpCode.findFirst({
-        where: { organizationId: orgId, identifier: dto.identifier, consumedAt: { not: null } },
-        orderBy: { consumedAt: 'desc' },
+        orderBy: { createdAt: 'desc' },
       });
 
       if (!otpRecord) {
@@ -60,14 +51,26 @@ export class VerifyOtpHandler {
         throw new BadRequestException('Too many failed attempts. Please request a new code.');
       }
 
-      await this.prisma.otpCode.update({
-        where: { id: otpRecord.id },
-        data: { attempts: { increment: 1 } },
-      });
-
       const codeMatch = await bcrypt.compare(dto.code, otpRecord.codeHash);
       if (!codeMatch) {
+        await this.prisma.otpCode.update({
+          where: { id: otpRecord.id },
+          data: { attempts: { increment: 1 } },
+        });
         throw new UnauthorizedException('Invalid OTP code');
+      }
+
+      const consumed = await this.prisma.otpCode.updateMany({
+        where: {
+          id: otpRecord.id,
+          consumedAt: null,
+          expiresAt: { gt: new Date() },
+        },
+        data: { consumedAt: new Date() },
+      });
+
+      if (consumed.count === 0) {
+        throw new BadRequestException('OTP already used or expired');
       }
 
       // Verification marks the client as verified for this org (SaaS-02h)

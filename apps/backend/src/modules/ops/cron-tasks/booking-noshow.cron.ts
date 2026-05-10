@@ -26,6 +26,7 @@ export class BookingNoShowCron {
   ) {}
 
   async execute(): Promise<void> {
+    // SAFE: cron job running as platform-level op; sets SUPER_ADMIN_CONTEXT explicitly.
     await this.cls.run(async () => {
       this.cls.set(SUPER_ADMIN_CONTEXT_CLS_KEY, true);
 

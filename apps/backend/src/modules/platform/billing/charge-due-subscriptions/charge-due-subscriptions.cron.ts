@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClsService } from 'nestjs-cls';
+import { Prisma } from '@prisma/client';
 import { withCronLeader } from '../../../../common/helpers/cron-leader.helper';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { SUPER_ADMIN_CONTEXT_CLS_KEY } from '../../../../common/tenant/tenant.constants';
@@ -10,7 +11,7 @@ import { RecordSubscriptionPaymentFailureHandler } from '../record-subscription-
 import { LaunchFlags } from '../feature-flags/launch-flags';
 import { ComputeOverageCron } from '../compute-overage/compute-overage.cron';
 
-const PLATFORM_VAT_RATE = 0.15;
+const PLATFORM_VAT_RATE = new Prisma.Decimal('0.15');
 
 interface PriceSource {
   priceMonthly: unknown;
@@ -92,10 +93,11 @@ export class ChargeDueSubscriptionsCron {
       this.flags.planVersioningEnabled && sub.planVersion
         ? sub.planVersion
         : sub.plan;
-    const flatAmount =
+    const flatAmount = new Prisma.Decimal(
       sub.billingCycle === 'ANNUAL'
-        ? Number(priceSource.priceAnnual)
-        : Number(priceSource.priceMonthly);
+        ? String(priceSource.priceAnnual)
+        : String(priceSource.priceMonthly),
+    );
 
     const { lines: overageDetail, totalOverage } = await this.overage.computeForSubscription({
       subscriptionId: sub.id,
@@ -106,11 +108,11 @@ export class ChargeDueSubscriptionsCron {
         ? (sub.planVersion.limits as Record<string, number | boolean>)
         : undefined,
     });
-    const overageAmount = totalOverage;
+    const overageAmount = new Prisma.Decimal(totalOverage);
     const flatLine = {
       kind: 'FLAT_FEE' as const,
       description: `Subscription ${sub.billingCycle.toLowerCase()}`,
-      amount: flatAmount,
+      amount: flatAmount.toDecimalPlaces(2).toNumber(),
     };
     const overageLines = overageDetail.map((l) => ({
       kind: 'OVERAGE' as const,
@@ -122,16 +124,16 @@ export class ChargeDueSubscriptionsCron {
       amount: l.amount,
       description: `Overage: ${l.metric} (${l.overage} × ${l.rate} SAR)`,
     }));
-    const subtotal = flatAmount + overageAmount;
-    const vatAmt = Number((subtotal * PLATFORM_VAT_RATE).toFixed(2));
+    const subtotal = flatAmount.plus(overageAmount).toDecimalPlaces(2);
+    const vatAmt = subtotal.mul(PLATFORM_VAT_RATE).toDecimalPlaces(2).toNumber();
     const lineItems = [
       flatLine,
       ...overageLines,
-      { kind: 'VAT' as const, rate: PLATFORM_VAT_RATE, amount: vatAmt },
+      { kind: 'VAT' as const, rate: Number(PLATFORM_VAT_RATE), amount: vatAmt },
     ];
 
     // Apply BillingCredit FIFO before invoicing (gross total after VAT).
-    const grossTotal = Number((subtotal + vatAmt).toFixed(2));
+    const grossTotal = subtotal.add(new Prisma.Decimal(vatAmt)).toDecimalPlaces(2).toNumber();
 
     const credits = await this.prisma.$allTenants.billingCredit.findMany({
       where: {
@@ -141,17 +143,18 @@ export class ChargeDueSubscriptionsCron {
       orderBy: { grantedAt: 'asc' },
     });
 
-    let remaining = grossTotal;
+    let remaining = new Prisma.Decimal(grossTotal);
     const creditsApplied: { id: string; amount: number }[] = [];
     for (const credit of credits) {
-      if (remaining <= 0) break;
-      const take = Math.min(remaining, Number(credit.amount));
-      if (take <= 0) continue;
-      creditsApplied.push({ id: credit.id, amount: take });
-      remaining = Number((remaining - take).toFixed(2));
+      if (remaining.lte(0)) break;
+      const creditAmount = new Prisma.Decimal(credit.amount.toString());
+      const take = Prisma.Decimal.min(remaining, creditAmount);
+      if (take.lte(0)) continue;
+      creditsApplied.push({ id: credit.id, amount: take.toNumber() });
+      remaining = remaining.sub(take).toDecimalPlaces(2);
     }
 
-    const total = Number(remaining.toFixed(2));
+    const total = remaining.toDecimalPlaces(2).toNumber();
 
     // Create invoice
     const invoice = await this.prisma.$allTenants.subscriptionInvoice.create({
@@ -159,8 +162,8 @@ export class ChargeDueSubscriptionsCron {
         subscriptionId: sub.id,
         organizationId: sub.organizationId,
         amount: total,
-        flatAmount,
-        overageAmount,
+        flatAmount: flatAmount.toDecimalPlaces(2).toNumber(),
+        overageAmount: overageAmount.toDecimalPlaces(2).toNumber(),
         lineItems,
         status: 'DUE',
         billingCycle: sub.billingCycle as never,

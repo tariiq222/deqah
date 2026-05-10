@@ -24,7 +24,8 @@ export class ValidateCouponService {
     if (coupon.expiresAt && coupon.expiresAt < new Date()) {
       throw new BadRequestException(`Coupon ${input.code} has expired`);
     }
-    if (coupon.minOrderAmt !== null && input.subtotal < Number(coupon.minOrderAmt)) {
+    const subtotalDec = new Prisma.Decimal(input.subtotal.toString());
+    if (coupon.minOrderAmt != null && subtotalDec.lessThan(new Prisma.Decimal(coupon.minOrderAmt.toString()))) {
       throw new BadRequestException(`Order does not meet minimum for coupon`);
     }
     if (coupon.serviceIds.length > 0 && !coupon.serviceIds.includes(input.serviceId)) {
@@ -45,10 +46,11 @@ export class ValidateCouponService {
         throw new BadRequestException(`Coupon limit per user reached`);
       }
     }
+    const discountValueDec = new Prisma.Decimal(coupon.discountValue.toString());
     const discount =
       coupon.discountType === 'PERCENTAGE'
-        ? input.subtotal * Number(coupon.discountValue) / 100
-        : Math.min(Number(coupon.discountValue), input.subtotal);
-    return { couponId: coupon.id, discount: Number(discount.toFixed(2)) };
+        ? subtotalDec.times(discountValueDec).div(100).toDecimalPlaces(2).toNumber()
+        : Prisma.Decimal.min(discountValueDec, subtotalDec).toNumber();
+    return { couponId: coupon.id, discount };
   }
 }

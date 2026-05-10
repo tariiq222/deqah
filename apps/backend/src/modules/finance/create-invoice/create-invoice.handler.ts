@@ -25,9 +25,12 @@ export class CreateInvoiceHandler {
     const subtotal = dto.subtotal;
     const discountAmt = dto.discountAmt ?? 0;
     const vatRate = dto.vatRate ?? DEFAULT_VAT_RATE;
-    const vatBase = subtotal - discountAmt;
-    const vatAmt = new Prisma.Decimal(vatBase * vatRate).toDecimalPlaces(2).toNumber();
-    const total = new Prisma.Decimal(vatBase + vatAmt).toDecimalPlaces(2).toNumber();
+    const subtotalDec = new Prisma.Decimal(subtotal.toString());
+    const discountAmtDec = new Prisma.Decimal(discountAmt.toString());
+    const vatRateDec = new Prisma.Decimal(vatRate.toString());
+    const vatBaseDec = subtotalDec.minus(discountAmtDec);
+    const vatAmt = vatBaseDec.times(vatRateDec).toDecimalPlaces(2).toNumber();
+    const total = vatBaseDec.plus(vatAmt).toDecimalPlaces(2).toNumber();
 
     const existing = await this.prisma.invoice.findUnique({
       where: { bookingId: dto.bookingId ?? '' },

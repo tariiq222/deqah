@@ -3,7 +3,6 @@ import { ClsService } from 'nestjs-cls';
 import { PrismaService } from '../../../infrastructure/database';
 import { SUPER_ADMIN_CONTEXT_CLS_KEY } from '../../../common/tenant/tenant.constants';
 import { withCronLeader } from '../../../common/helpers/cron-leader.helper';
-import { withCronLeader } from '../../../common/helpers/cron-leader.helper';
 
 @Injectable()
 export class RefreshTokenCleanupCron {

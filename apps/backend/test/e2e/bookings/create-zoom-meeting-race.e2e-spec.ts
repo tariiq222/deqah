@@ -13,6 +13,7 @@ import { CreateZoomMeetingHandler } from '../../../src/modules/bookings/create-z
 import { ZoomApiClient } from '../../../src/infrastructure/zoom/zoom-api.client';
 import { ZoomCredentialsService } from '../../../src/infrastructure/zoom/zoom-credentials.service';
 import { FeatureCheckService } from '../../../src/modules/platform/billing/feature-check.service';
+import { RlsTransactionService } from '../../../src/infrastructure/database';
 import { SUPER_ADMIN_CONTEXT_CLS_KEY } from '../../../src/common/tenant/tenant.constants';
 import { ZoomMeetingStatus } from '@prisma/client';
 
@@ -184,6 +185,7 @@ describe('CreateZoomMeetingHandler — advisory lock race prevention', () => {
     // the mock ZoomApiClient + FeatureCheckService.
     handler = new CreateZoomMeetingHandler(
       h.prisma,
+      h.app.get(RlsTransactionService),
       mockZoomApi as unknown as ZoomApiClient,
       h.app.get(ZoomCredentialsService),
       mockFeatureCheck as unknown as FeatureCheckService,

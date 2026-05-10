@@ -55,11 +55,7 @@ describe('VerifyOtpHandler', () => {
       hCaptchaToken: 'test-token',
     })).rejects.toThrow('Invalid or expired OTP code');
 
-    expect(prismaMock.otpCode.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({ organizationId: 'org-B' }),
-      }),
-    );
+    expect(prismaMock.otpCode.updateMany).not.toHaveBeenCalled();
   });
 
   it('accepts NULL/NULL (legacy/platform flow)', async () => {

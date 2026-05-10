@@ -29,6 +29,7 @@ export class BookingExpiryCron {
    * that activates the new cross-tenant cron.
    */
   private async legacyExpire(): Promise<void> {
+    // SAFE: cron job running as platform-level op; sets SUPER_ADMIN_CONTEXT explicitly.
     await this.cls.run(async () => {
       this.cls.set(SUPER_ADMIN_CONTEXT_CLS_KEY, true);
       await withCronLeader(this.prisma, 'booking-expiry', async () => {
@@ -48,6 +49,7 @@ export class BookingExpiryCron {
   }
 
   private async enhancedExpire(): Promise<void> {
+    // SAFE: cron job running as platform-level op; sets SUPER_ADMIN_CONTEXT explicitly.
     await this.cls.run(async () => {
       this.cls.set(SUPER_ADMIN_CONTEXT_CLS_KEY, true);
       this.logger.log('systemContext: booking-expiry tick');

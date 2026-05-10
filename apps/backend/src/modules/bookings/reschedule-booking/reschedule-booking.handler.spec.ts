@@ -42,7 +42,7 @@ describe('RescheduleBookingHandler — DB exclusion constraint error mapping', (
     const rlsTx = {
       withTransaction: jest.fn().mockRejectedValueOnce(exclusionError),
       withBypassTransaction: jest.fn(),
-    } as unknown as import('../../../../infrastructure/database').RlsTransactionService;
+    } as unknown as import('../../../infrastructure/database').RlsTransactionService;
 
     await expect(
       new RescheduleBookingHandler(

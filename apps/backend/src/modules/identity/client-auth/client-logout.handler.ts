@@ -25,10 +25,6 @@ export class ClientLogoutHandler {
           data: { revokedAt: new Date() },
         });
 
-        await this.prisma.user.updateMany({
-          where: { id: revoked.userId },
-          data: { tokenVersion: { increment: 1 } },
-        });
         return;
       }
     }

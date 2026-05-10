@@ -2,7 +2,7 @@ import { TokenService } from './token.service';
 
 const mockUser = {
   id: 'user-1', email: 'admin@clinic.sa',
-  role: 'ADMIN', customRoleId: null, customRole: null,
+  role: 'ADMIN', customRoleId: null, customRole: null, tokenVersion: 0,
 };
 
 const tenantClaims = {
@@ -108,7 +108,7 @@ describe('TokenService.issueTokenPair', () => {
     const jwt = buildJwt();
     const service = new TokenService(jwt as never, buildConfig() as never, buildPrisma() as never);
     await service.issueTokenPair(
-      { id: 'u1', email: 'a@b.com', role: 'ADMIN', customRoleId: null, customRole: null },
+      { id: 'u1', email: 'a@b.com', role: 'ADMIN', customRoleId: null, customRole: null, tokenVersion: 0 },
       { organizationId: 'org1', membershipId: 'm1', membershipRole: 'ADMIN' },
     );
     const payload = jwt.sign.mock.calls[0][0] as { membershipRole?: string };

@@ -5,7 +5,6 @@ import { TenantContextService } from '../../../../common/tenant/tenant-context.s
 import { ProrationPreviewDto } from '../dto/change-plan.dto';
 import { computeProrationAmountSar } from './proration-calculator';
 import { LaunchFlags } from '../feature-flags/launch-flags';
-import { Decimal } from '@prisma/client/runtime/library';
 
 type PreviewAction = 'UPGRADE_NOW' | 'SCHEDULE_DOWNGRADE';
 
