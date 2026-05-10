@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { Suspense } from 'react';
+import enMessages from '@/messages/en.json';
 import OrgBillingPage from '@/app/(admin)/billing/[orgId]/page';
 
 vi.mock('@/features/billing/get-org-billing/org-billing-detail', () => ({
@@ -15,7 +16,7 @@ function wrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return (
     <QueryClientProvider client={qc}>
-      <NextIntlClientProvider locale="en" messages={{}}>
+      <NextIntlClientProvider locale="en" messages={enMessages}>
         <Suspense fallback={<div>Loading…</div>}>
           {children}
         </Suspense>
@@ -37,7 +38,7 @@ describe('OrgBillingPage', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Organization billing')).toBeInTheDocument();
+      expect(screen.getByText('Tenant billing')).toBeInTheDocument();
       expect(screen.getByText('org-123')).toBeInTheDocument();
     });
   });
@@ -50,7 +51,7 @@ describe('OrgBillingPage', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: /← back to subscriptions/i })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /subscriptions/i })).toBeInTheDocument();
     });
   });
 

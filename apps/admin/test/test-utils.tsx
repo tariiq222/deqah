@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import type { ReactElement, ReactNode } from 'react';
 import { vi } from 'vitest';
 import { adminRequest } from '@/lib/api-client';
+import enMessages from '@/messages/en.json';
 
 type Messages = Parameters<typeof NextIntlClientProvider>[0]['messages'];
 
@@ -13,7 +14,7 @@ export interface RenderOpts extends Omit<RenderOptions, 'wrapper'> {
 }
 
 export function renderWithProviders(ui: ReactElement, opts: RenderOpts = {}) {
-  const { messages = {}, locale = 'en', ...rest } = opts;
+  const { messages = enMessages as Messages, locale = 'en', ...rest } = opts;
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false, gcTime: 0 },

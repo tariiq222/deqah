@@ -4,6 +4,7 @@ import { ZohoOAuthService } from './zoho-oauth.service';
 import { ZohoApiClient } from './zoho-api.client';
 import { ZohoAuditService } from './zoho-audit.service';
 import { ZohoWebhookVerifier } from './zoho-webhook.verifier';
+import { ZohoBootstrapService } from './zoho-bootstrap.service';
 
 /**
  * Shared, stateless Zoho infrastructure — used by both the per-tenant
@@ -19,6 +20,7 @@ import { ZohoWebhookVerifier } from './zoho-webhook.verifier';
     ZohoApiClient,
     ZohoAuditService,
     ZohoWebhookVerifier,
+    ZohoBootstrapService,
   ],
   exports: [
     ZohoCredentialsService,
@@ -26,6 +28,7 @@ import { ZohoWebhookVerifier } from './zoho-webhook.verifier';
     ZohoApiClient,
     ZohoAuditService,
     ZohoWebhookVerifier,
+    ZohoBootstrapService,
   ],
 })
 export class ZohoInfrastructureModule {}

@@ -72,6 +72,11 @@ export class CreateZohoInvoiceHandler {
       },
     });
 
+    // Use the Deqah invoice id as the Zoho invoice number so both systems
+    // show the same reference. Zoho auto-numbering must be OFF on the org
+    // (disabled during OAuth connect via setAutoGenerateInvoiceNumber).
+    const deqahInvoiceNumber = invoice.id;
+
     const { zohoContactId } = await this.upsertContact.execute({
       organizationId: input.organizationId,
       clientId: invoice.clientId,
@@ -89,6 +94,7 @@ export class CreateZohoInvoiceHandler {
       apiCtx,
       {
         customer_id: zohoContactId,
+        invoice_number: deqahInvoiceNumber,
         reference_number: invoice.id,
         notes: invoice.notes ?? undefined,
         line_items: [

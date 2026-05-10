@@ -72,6 +72,10 @@ export interface SubscriptionInvoiceRow {
   refundedAt: string | null;
   voidedReason: string | null;
   createdAt: string;
+  /** Zoho invoice portal URL — null when not yet mirrored. */
+  zohoInvoiceUrl?: string | null;
+  /** Zoho-hosted PDF download URL — null when not yet mirrored. */
+  zohoPdfUrl?: string | null;
 }
 
 export interface BillingMetrics {

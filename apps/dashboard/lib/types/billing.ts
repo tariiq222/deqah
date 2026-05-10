@@ -108,7 +108,7 @@ export interface SubscriptionInvoice {
   receiptUrl?: string | null
 }
 
-// Phase 7 — tenant invoice list, detail, and PDF download.
+// Phase 7 — tenant invoice list and detail (Zoho is the single invoicing system).
 export interface Invoice {
   id: string
   invoiceNumber: string | null
@@ -119,6 +119,10 @@ export interface Invoice {
   periodEnd: string
   issuedAt: string | null
   paidAt: string | null
+  /** Zoho invoice portal URL — null when mirror not yet ready. */
+  zohoInvoiceUrl: string | null
+  /** Zoho-hosted PDF download URL — null when mirror not yet ready. */
+  zohoPdfUrl: string | null
 }
 
 export interface InvoiceListResponse {
@@ -130,10 +134,6 @@ export interface InvoiceListFilters {
   status?: InvoiceStatus
   cursor?: string
   limit?: number
-}
-
-export interface DownloadInvoiceResponse {
-  url: string
 }
 
 // Phase 5 — usage counters

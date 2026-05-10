@@ -24,9 +24,4 @@ process.env.ZOOM_PROVIDER_ENCRYPTION_KEY ??= Buffer.alloc(32, 2).toString('base6
 process.env.ZOHO_PROVIDER_ENCRYPTION_KEY ??= Buffer.alloc(32, 5).toString('base64');
 process.env.MOYASAR_TENANT_ENCRYPTION_KEY ??= Buffer.alloc(32, 3).toString('base64');
 process.env.EMAIL_PROVIDER_ENCRYPTION_KEY ??= Buffer.alloc(32, 4).toString('base64');
-// Phase 7 — invoice PDF renderer reads platform identity at module init.
-process.env.PLATFORM_VAT_NUMBER ??= '300000000000003';
-process.env.PLATFORM_COMPANY_NAME_AR ??= 'منصة دِقة';
-process.env.PLATFORM_COMPANY_NAME_EN ??= 'Deqah Platform';
-process.env.PLATFORM_COMPANY_ADDRESS ??= 'Riyadh, Saudi Arabia';
 process.env.MINIO_INVOICE_BUCKET ??= 'deqah-invoices';

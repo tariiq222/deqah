@@ -117,6 +117,8 @@ export class ZohoApiClient {
       line_items: ZohoLineItem[];
       date?: string;
       due_date?: string;
+      /** Pass Deqah's own invoice number so Zoho records it verbatim. */
+      invoice_number?: string;
       reference_number?: string;
       notes?: string;
       payment_terms?: number;
@@ -166,6 +168,23 @@ export class ZohoApiClient {
     invoiceId: string,
   ): Promise<{ message: string }> {
     return this.request(ctx, 'POST', `/invoice/v3/invoices/${invoiceId}/status/void`);
+  }
+
+  // ───────── Settings / Preferences ─────────
+
+  /**
+   * Toggles Zoho's auto-numbering for invoices.
+   * Set enabled=false so Deqah's invoice number is used verbatim instead of
+   * Zoho generating its own sequential number. Call once per org after connect.
+   * Failure is non-fatal — log warn and continue.
+   */
+  async setAutoGenerateInvoiceNumber(
+    ctx: ZohoTenantContext,
+    enabled: boolean,
+  ): Promise<void> {
+    await this.request<unknown>(ctx, 'PUT', '/invoice/v3/settings/preferences/invoice', {
+      jsonBody: { auto_generate_invoice_number: enabled },
+    });
   }
 
   // ───────── Customer payments ─────────

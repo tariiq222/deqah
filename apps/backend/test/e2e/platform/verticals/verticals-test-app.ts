@@ -59,9 +59,6 @@ const CONFIG_MAP: Record<string, string | number> = {
   EMAIL_PROVIDER_ENCRYPTION_KEY: Buffer.alloc(32, 4).toString('base64'),
   MOYASAR_PLATFORM_SECRET_KEY: 'test-moyasar-platform-key',
   MOYASAR_PLATFORM_WEBHOOK_SECRET: 'test-moyasar-webhook-secret',
-  PLATFORM_VAT_NUMBER: '300000000000003',
-  PLATFORM_COMPANY_NAME_AR: 'ديقة',
-  PLATFORM_COMPANY_NAME_EN: 'Deqah',
   ADMIN_HOSTS: 'admin.deqah.app',
   // Tenant middleware: 'off' so TenantResolverMiddleware fast-paths for all routes.
   TENANT_ENFORCEMENT: 'off',

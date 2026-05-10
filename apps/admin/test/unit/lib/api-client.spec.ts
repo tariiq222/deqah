@@ -114,7 +114,7 @@ describe('api-client', () => {
         }),
       );
       const call = mockFetch.mock.calls[0] as [string, RequestInit];
-      const headers = call[1].headers as { data: Record<string, string> };
+      const headers = call[1].headers as unknown as { data: Record<string, string> };
       expect(headers.data['Content-Type']).toBe('application/json');
     });
 
@@ -242,7 +242,7 @@ describe('api-client', () => {
       await publicRequest('/foo', { headers: { 'X-Custom': 'header' } } as RequestInit);
 
       const call = mockFetch.mock.calls[0] as [string, RequestInit];
-      const headers = call[1].headers as { data: Record<string, string> };
+      const headers = call[1].headers as unknown as { data: Record<string, string> };
       expect(headers.data['X-Custom']).toBe('header');
       expect(headers.data['Content-Type']).toBe('application/json');
     });

@@ -1,3 +1,4 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsEnum,
@@ -31,23 +32,62 @@ export class ListInvoicesQueryDto {
   status?: SubscriptionInvoiceStatus;
 }
 
-export interface InvoiceListItemDto {
-  id: string;
+export class InvoiceListItemDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
   /** null while DRAFT/DUE pre-issuance; non-null once issued. */
-  invoiceNumber: string | null;
-  status: SubscriptionInvoiceStatus;
+  @ApiPropertyOptional({ nullable: true })
+  invoiceNumber!: string | null;
+
+  @ApiProperty({ enum: SubscriptionInvoiceStatus })
+  status!: SubscriptionInvoiceStatus;
+
   /** VAT-inclusive total, fixed-2 string. */
-  amount: string;
-  currency: string;
-  periodStart: string;
-  periodEnd: string;
+  @ApiProperty({ example: '299.00' })
+  amount!: string;
+
+  @ApiProperty({ example: 'SAR' })
+  currency!: string;
+
+  @ApiProperty({ format: 'date-time' })
+  periodStart!: string;
+
+  @ApiProperty({ format: 'date-time' })
+  periodEnd!: string;
+
   /** null = not yet issued. */
-  issuedAt: string | null;
-  paidAt: string | null;
+  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  issuedAt!: string | null;
+
+  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  paidAt!: string | null;
+
+  /** Zoho invoice portal URL — null when not yet mirrored. */
+  @ApiPropertyOptional({
+    description: 'Zoho-hosted invoice URL',
+    nullable: true,
+    example: 'https://invoice.zoho.com/portal/deqah/invoice/...',
+  })
+  zohoInvoiceUrl!: string | null;
+
+  /** Zoho-hosted PDF download URL — null when not yet mirrored. */
+  @ApiPropertyOptional({
+    description: 'Zoho-hosted PDF URL',
+    nullable: true,
+    example: 'https://invoice.zoho.com/portal/deqah/invoice/.../pdf',
+  })
+  zohoPdfUrl!: string | null;
 }
 
-export interface InvoiceDetailDto extends InvoiceListItemDto {
-  invoiceHash: string | null;
-  previousHash: string | null;
-  pdfStorageKey: string | null;
+export class InvoiceDetailDto extends InvoiceListItemDto {
+  @ApiPropertyOptional({ nullable: true })
+  invoiceHash!: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  previousHash!: string | null;
+
+  /** @deprecated Local PDF storage removed. Use zohoPdfUrl instead. */
+  @ApiPropertyOptional({ nullable: true, deprecated: true })
+  pdfStorageKey!: string | null;
 }

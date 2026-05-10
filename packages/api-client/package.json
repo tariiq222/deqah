@@ -14,7 +14,8 @@
     "@deqah/shared": "workspace:*"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "typescript": "^5.4.0",

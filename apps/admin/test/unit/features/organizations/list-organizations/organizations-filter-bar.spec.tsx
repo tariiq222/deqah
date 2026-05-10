@@ -28,13 +28,13 @@ describe('OrganizationsFilterBar', () => {
   it('renders search input', () => {
     render(<OrganizationsFilterBar {...defaultProps} />);
 
-    expect(screen.getByPlaceholderText(/search/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/org_/i)).toBeInTheDocument();
   });
 
   it('calls onSearchChange when typing in search', () => {
     render(<OrganizationsFilterBar {...defaultProps} />);
 
-    const input = screen.getByPlaceholderText(/search/i);
+    const input = screen.getByPlaceholderText(/org_/i);
     fireEvent.change(input, { target: { value: 'clinic' } });
 
     expect(defaultProps.onSearchChange).toHaveBeenCalledWith('clinic');

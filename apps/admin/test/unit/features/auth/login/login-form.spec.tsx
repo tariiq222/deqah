@@ -26,6 +26,15 @@ vi.mock('@hcaptcha/react-hcaptcha', () => ({
   default: vi.fn(),
 }));
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const React = require('react');
+vi.mock('@/features/auth/login/captcha-field', () => ({
+  CaptchaField: function MockCaptchaField({ onVerify }: { onVerify: (token: string) => void }) {
+    React.useEffect(() => { onVerify('dev-bypass'); }, [onVerify]);
+    return React.createElement('div', null, 'Dev mode — captcha skipped');
+  },
+}));
+
 const loginMessages = {
   title: 'Deqah Super-admin',
   description: 'Platform staff only. Sign in with your Deqah account.',
@@ -75,7 +84,7 @@ describe('LoginForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLogin.mockReset();
-    vi.mocked(useRouter).mockReturnValue({ push: vi.fn() } as ReturnType<typeof useRouter>);
+    vi.mocked(useRouter).mockReturnValue({ push: vi.fn() } as unknown as ReturnType<typeof useRouter>);
     vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams() as ReturnType<typeof useSearchParams>);
   });
 
@@ -110,7 +119,7 @@ describe('LoginForm', () => {
 
   it('successful super-admin login stores token and redirects', async () => {
     const pushMock = vi.fn();
-    vi.mocked(useRouter).mockReturnValue({ push: pushMock } as ReturnType<typeof useRouter>);
+    vi.mocked(useRouter).mockReturnValue({ push: pushMock } as unknown as ReturnType<typeof useRouter>);
 
     mockLogin.mockResolvedValueOnce({
       user: { id: 'u-1', isSuperAdmin: true },
@@ -140,7 +149,7 @@ describe('LoginForm', () => {
   it('shows error when user is not a super-admin', async () => {
     const { toast } = await import('sonner');
     const pushMock = vi.fn();
-    vi.mocked(useRouter).mockReturnValue({ push: pushMock } as ReturnType<typeof useRouter>);
+    vi.mocked(useRouter).mockReturnValue({ push: pushMock } as unknown as ReturnType<typeof useRouter>);
 
     mockLogin.mockResolvedValueOnce({
       user: { id: 'u-1', isSuperAdmin: false },
@@ -166,7 +175,7 @@ describe('LoginForm', () => {
   it('shows error when accessToken is missing', async () => {
     const { toast } = await import('sonner');
     const pushMock = vi.fn();
-    vi.mocked(useRouter).mockReturnValue({ push: pushMock } as ReturnType<typeof useRouter>);
+    vi.mocked(useRouter).mockReturnValue({ push: pushMock } as unknown as ReturnType<typeof useRouter>);
 
     mockLogin.mockResolvedValueOnce({
       user: { id: 'u-1', isSuperAdmin: true },
@@ -192,7 +201,7 @@ describe('LoginForm', () => {
   it('shows generic error on API exception', async () => {
     const { toast } = await import('sonner');
     const pushMock = vi.fn();
-    vi.mocked(useRouter).mockReturnValue({ push: pushMock } as ReturnType<typeof useRouter>);
+    vi.mocked(useRouter).mockReturnValue({ push: pushMock } as unknown as ReturnType<typeof useRouter>);
 
     mockLogin.mockRejectedValueOnce(new Error('network_error'));
 
@@ -212,7 +221,7 @@ describe('LoginForm', () => {
 
   it('redirects to next param after successful login', async () => {
     const pushMock = vi.fn();
-    vi.mocked(useRouter).mockReturnValue({ push: pushMock } as ReturnType<typeof useRouter>);
+    vi.mocked(useRouter).mockReturnValue({ push: pushMock } as unknown as ReturnType<typeof useRouter>);
     vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams('next=/organizations') as ReturnType<typeof useSearchParams>);
 
     mockLogin.mockResolvedValueOnce({
@@ -239,7 +248,7 @@ describe('LoginForm', () => {
     );
 
     const pushMock = vi.fn();
-    vi.mocked(useRouter).mockReturnValue({ push: pushMock } as ReturnType<typeof useRouter>);
+    vi.mocked(useRouter).mockReturnValue({ push: pushMock } as unknown as ReturnType<typeof useRouter>);
 
     renderLoginForm();
     const user = userEvent.setup();
@@ -253,7 +262,7 @@ describe('LoginForm', () => {
     expect(button).toBeDisabled();
     expect(button).toHaveTextContent('Signing in…');
 
-    resolveLogin!({ user: { id: 'u-1', isSuperAdmin: true }, accessToken: 'token' });
+    resolveLogin!({ user: { id: 'u-1', isSuperAdmin: true } as LoginResponse['user'], accessToken: 'token', refreshToken: '', expiresIn: 3600 });
     await waitFor(() => expect(button).not.toBeDisabled());
   });
 });

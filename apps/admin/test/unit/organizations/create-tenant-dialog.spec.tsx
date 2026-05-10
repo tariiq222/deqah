@@ -1,13 +1,64 @@
+import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import enMessages from '@/messages/en.json';
 import { CreateTenantDialog } from '@/features/organizations/create-tenant/create-tenant-dialog';
 import { adminRequest } from '@/lib/api-client';
 
 vi.mock('@/lib/api-client', () => ({ adminRequest: vi.fn() }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+
+// Radix Dialog presence causes infinite loops in jsdom — use plain HTML wrappers
+vi.mock('@deqah/ui/primitives/dialog', () => ({
+  Dialog: function MockDialog({ children, open }: { children: React.ReactNode; open?: boolean }) {
+    if (!open) return null;
+    return React.createElement('div', { 'data-slot': 'dialog' }, children);
+  },
+  DialogContent: function MockDialogContent({ children }: { children: React.ReactNode }) {
+    return React.createElement('div', { role: 'dialog', 'data-slot': 'dialog-content' }, children);
+  },
+  DialogHeader: function MockDialogHeader({ children }: { children: React.ReactNode }) {
+    return React.createElement('div', { 'data-slot': 'dialog-header' }, children);
+  },
+  DialogBody: function MockDialogBody({ children }: { children: React.ReactNode }) {
+    return React.createElement('div', { 'data-slot': 'dialog-body' }, children);
+  },
+  DialogTitle: function MockDialogTitle({ children }: { children: React.ReactNode }) {
+    return React.createElement('h2', null, children);
+  },
+  DialogDescription: function MockDialogDescription({ children }: { children: React.ReactNode }) {
+    return React.createElement('p', null, children);
+  },
+  DialogFooter: function MockDialogFooter({ children }: { children: React.ReactNode }) {
+    return React.createElement('div', { 'data-slot': 'dialog-footer' }, children);
+  },
+  DialogClose: function MockDialogClose({ children }: { children: React.ReactNode }) {
+    return React.createElement('div', null, children);
+  },
+}));
+
+
+vi.mock('@deqah/ui/primitives/select', () => ({
+  Select: function MockSelect({ children, value, onValueChange }: { children: React.ReactNode; value?: string; onValueChange?: (v: string) => void }) {
+    return (
+      <select
+        value={value ?? ''}
+        onChange={(e) => onValueChange?.(e.target.value)}
+      >
+        {children}
+      </select>
+    );
+  },
+  SelectTrigger: function({ children }: { children: React.ReactNode }) { return <>{children}</>; },
+  SelectValue: function({ placeholder }: { placeholder?: string }) { return <option value="">{placeholder}</option>; },
+  SelectContent: function({ children }: { children: React.ReactNode }) { return <>{children}</>; },
+  SelectItem: function({ children, value }: { children: React.ReactNode; value: string }) {
+    return <option value={value}>{children}</option>;
+  },
+}));
 
 vi.mock('@/features/verticals/list-verticals/use-list-verticals', () => ({
   useListVerticals: () => ({
@@ -45,6 +96,7 @@ const messages = {
       step3: 'Plan & Billing',
       step4: 'Review',
       slug: 'Slug',
+      slugLabel: 'Slug',
       slugPlaceholder: 'riyadh-clinic',
       nameAr: 'Arabic name',
       nameEn: 'English name',
@@ -85,8 +137,18 @@ function renderDialog() {
   });
   const invalidateSpy = vi.spyOn(client, 'invalidateQueries');
   const onOpenChange = vi.fn();
+  const mergedMessages = {
+    ...enMessages,
+    organizations: {
+      ...enMessages.organizations,
+      create: {
+        ...enMessages.organizations.create,
+        ...messages.organizations.create,
+      },
+    },
+  };
   render(
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" messages={mergedMessages}>
       <QueryClientProvider client={client}>
         <CreateTenantDialog open onOpenChange={onOpenChange} />
       </QueryClientProvider>

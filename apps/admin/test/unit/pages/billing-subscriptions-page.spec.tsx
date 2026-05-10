@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import enMessages from '@/messages/en.json';
 import BillingSubscriptionsPage from '@/app/(admin)/billing/page';
 
 const mockUseListSubscriptions = vi.hoisted(() => vi.fn());
@@ -66,7 +67,7 @@ function wrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return (
     <QueryClientProvider client={qc}>
-      <NextIntlClientProvider locale="en" messages={{}}>
+      <NextIntlClientProvider locale="en" messages={enMessages}>
         {children}
       </NextIntlClientProvider>
     </QueryClientProvider>
@@ -85,8 +86,8 @@ describe('BillingSubscriptionsPage', () => {
 
   it('renders page title and description', () => {
     render(<BillingSubscriptionsPage />, { wrapper });
-    expect(screen.getByText('Billing — Subscriptions')).toBeInTheDocument();
-    expect(screen.getByText(/Every SaaS subscription on the platform/i)).toBeInTheDocument();
+    expect(screen.getByText('Billing')).toBeInTheDocument();
+    expect(screen.getByText(/SaaS subscriptions across all tenants/i)).toBeInTheDocument();
   });
 
   it('renders filter bar and table', () => {
@@ -122,6 +123,6 @@ describe('BillingSubscriptionsPage', () => {
 
   it('renders link to invoices page', () => {
     render(<BillingSubscriptionsPage />, { wrapper });
-    expect(screen.getByRole('link', { name: /all invoices/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /invoices/i })).toBeInTheDocument();
   });
 });

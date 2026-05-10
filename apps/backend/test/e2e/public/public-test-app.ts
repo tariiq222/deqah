@@ -101,9 +101,6 @@ export async function createPublicTestApp(): Promise<PublicTestApp> {
     MOYASAR_TENANT_ENCRYPTION_KEY: Buffer.alloc(32, 3).toString('base64'),
     MOYASAR_PLATFORM_SECRET_KEY: 'test-moyasar-platform-key',
     MOYASAR_PLATFORM_WEBHOOK_SECRET: 'test-moyasar-webhook-secret',
-    PLATFORM_VAT_NUMBER: '300000000000003',
-    PLATFORM_COMPANY_NAME_AR: 'ديقة',
-    PLATFORM_COMPANY_NAME_EN: 'Deqah',
     TENANT_ENFORCEMENT: 'permissive',
     DEFAULT_ORGANIZATION_ID: '00000000-0000-0000-0000-000000000001',
   };

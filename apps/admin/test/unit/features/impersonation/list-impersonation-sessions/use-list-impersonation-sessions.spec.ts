@@ -11,14 +11,14 @@ vi.mock('@tanstack/react-query', () => ({
 
 describe('useListImpersonationSessions', () => {
   it('exports correct impersonationSessionsKey function', () => {
-    const params = { page: 1, active: 'true' };
+    const params = { page: 1, perPage: 20, active: 'true' as const };
     const key = impersonationSessionsKey(params);
 
     expect(key).toEqual(['impersonation-sessions', 1, 'true']);
   });
 
   it('impersonationSessionsKey handles empty active filter', () => {
-    const params = { page: 1 };
+    const params = { page: 1, perPage: 20 };
     const key = impersonationSessionsKey(params);
 
     expect(key).toContain(1);

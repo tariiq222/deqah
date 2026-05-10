@@ -24,7 +24,22 @@ function buildPayment(organizationId: string, id: string = 'pay-1'): Record<stri
   return { id, organizationId, invoiceId: 'inv-1', status: PaymentStatus.COMPLETED };
 }
 
-function buildPrisma(invoiceOverride?: Record<string, unknown> | null, configOverride?: Record<string, unknown> | null) {
+interface MockPrisma {
+  payment: {
+    findFirst: jest.Mock;
+    upsert: jest.Mock;
+  };
+  invoice: {
+    findFirst: jest.Mock;
+    update: jest.Mock;
+  };
+  organizationPaymentConfig: {
+    findUnique: jest.Mock;
+  };
+  $transaction: jest.Mock;
+}
+
+function buildPrisma(invoiceOverride?: Record<string, unknown> | null, configOverride?: Record<string, unknown> | null): MockPrisma {
   const paymentFindFirst = jest.fn().mockResolvedValue(null);
   const paymentUpsert = jest.fn().mockImplementation(({ create }: { create: Record<string, unknown> }) =>
     Promise.resolve(buildPayment(create.organizationId as string)),
@@ -34,7 +49,7 @@ function buildPrisma(invoiceOverride?: Record<string, unknown> | null, configOve
   );
   const invoiceUpdate = jest.fn().mockResolvedValue({ status: 'PAID' });
 
-  const prisma = {
+  const prisma: MockPrisma = {
     payment: {
       findFirst: paymentFindFirst,
       upsert: paymentUpsert,
@@ -48,12 +63,12 @@ function buildPrisma(invoiceOverride?: Record<string, unknown> | null, configOve
         configOverride === null ? null : configOverride ?? buildPaymentConfig(ORG_A),
       ),
     },
-    $transaction: jest.fn(async <T>(fn: (tx: typeof prisma) => Promise<T>): Promise<T> => {
-      return fn(prisma as never);
+    $transaction: jest.fn(async <T>(fn: (tx: MockPrisma) => Promise<T>): Promise<T> => {
+      return fn(prisma);
     }),
   };
 
-  return prisma as unknown as ReturnType<typeof buildPrisma> & { $transaction: typeof prisma.$transaction };
+  return prisma;
 }
 
 const buildEventBus = () => ({ publish: jest.fn().mockResolvedValue(undefined) });

@@ -16,13 +16,13 @@ const mockOrg: OrganizationRow = {
   status: 'ACTIVE',
   createdAt: '2024-01-15T10:00:00Z',
   verticalId: null,
+  trialEndsAt: null,
+  suspendedAt: null,
+  suspendedReason: null,
   subscription: {
-    id: 'sub-1',
     status: 'ACTIVE',
     plan: {
-      id: 'plan-1',
       slug: 'basic',
-      nameAr: 'الأساسية',
       nameEn: 'Basic',
     },
   },

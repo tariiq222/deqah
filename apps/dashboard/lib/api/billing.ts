@@ -7,7 +7,6 @@ import { api, ApiError } from "@/lib/api"
 import type {
   AddSavedCardInput,
   ChangePlanInput,
-  DownloadInvoiceResponse,
   DowngradeBlockedBody,
   Invoice,
   InvoiceListFilters,
@@ -92,7 +91,7 @@ export const billingApi = {
   removeSavedCard: (id: string) =>
     api.delete<{ ok: true }>(`/dashboard/billing/saved-cards/${id}`),
 
-  // Phase 7 — invoices
+  // Phase 7 — invoices (Zoho is the single invoicing system; use zohoInvoiceUrl / zohoPdfUrl from items)
   listInvoices: (filters: InvoiceListFilters = {}) =>
     api.get<InvoiceListResponse>('/dashboard/billing/invoices', {
       ...(filters.status ? { status: filters.status } : {}),
@@ -102,9 +101,6 @@ export const billingApi = {
 
   getInvoice: (id: string) =>
     api.get<Invoice>(`/dashboard/billing/invoices/${id}`),
-
-  downloadInvoice: (id: string) =>
-    api.get<DownloadInvoiceResponse>(`/dashboard/billing/invoices/${id}/download`),
 
   // Phase 5 — usage counters
   getUsage: () =>

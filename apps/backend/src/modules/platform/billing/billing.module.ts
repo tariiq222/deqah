@@ -38,9 +38,6 @@ import { ResumeSubscriptionHandler } from "./resume-subscription/resume-subscrip
 import { RecordSubscriptionPaymentHandler } from "./record-subscription-payment/record-subscription-payment.handler";
 import { IssueInvoiceHandler } from "./issue-invoice/issue-invoice.handler";
 import { InvoiceNumberingService } from "./issue-invoice/invoice-numbering.service";
-import { GenerateInvoicePdfHandler } from "./generate-invoice-pdf/generate-invoice-pdf.handler";
-import { DownloadInvoiceHandler } from "./generate-invoice-pdf/download-invoice.handler";
-import { PdfRendererService } from "./generate-invoice-pdf/pdf-renderer.service";
 import { ListInvoicesHandler } from "./list-invoices/list-invoices.handler";
 import { GetInvoiceHandler } from "./get-invoice/get-invoice.handler";
 import { RecordSubscriptionPaymentFailureHandler } from "./record-subscription-payment-failure/record-subscription-payment-failure.handler";
@@ -89,9 +86,6 @@ const HANDLERS = [
   MoyasarSubscriptionClient,
   IssueInvoiceHandler,
   InvoiceNumberingService,
-  GenerateInvoicePdfHandler,
-  DownloadInvoiceHandler,
-  PdfRendererService,
   ListInvoicesHandler,
   GetInvoiceHandler,
 ];

@@ -2649,8 +2649,8 @@
             "type": "string"
           },
           "slug": {
-            "description": "Lowercase kebab-case tenant slug",
-            "example": "riyadh-clinic",
+            "description": "Subdomain slug; 3–30 chars, lowercase, [a-z0-9-], no leading/trailing hyphen, not reserved",
+            "example": "sawa-clinic",
             "type": "string"
           },
           "trialDays": {
@@ -3443,6 +3443,157 @@
         "required": [
           "email",
           "role"
+        ],
+        "type": "object"
+      },
+      "InvoiceDetailDto": {
+        "properties": {
+          "amount": {
+            "example": "299.00",
+            "type": "string"
+          },
+          "currency": {
+            "example": "SAR",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "invoiceHash": {
+            "nullable": true,
+            "type": "object"
+          },
+          "invoiceNumber": {
+            "nullable": true,
+            "type": "object"
+          },
+          "issuedAt": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "object"
+          },
+          "paidAt": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "object"
+          },
+          "pdfStorageKey": {
+            "deprecated": true,
+            "nullable": true,
+            "type": "object"
+          },
+          "periodEnd": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "periodStart": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "previousHash": {
+            "nullable": true,
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "DUE",
+              "PAID",
+              "FAILED",
+              "VOID"
+            ],
+            "type": "string"
+          },
+          "zohoInvoiceUrl": {
+            "description": "Zoho-hosted invoice URL",
+            "example": "https://invoice.zoho.com/portal/deqah/invoice/...",
+            "nullable": true,
+            "type": "object"
+          },
+          "zohoPdfUrl": {
+            "description": "Zoho-hosted PDF URL",
+            "example": "https://invoice.zoho.com/portal/deqah/invoice/.../pdf",
+            "nullable": true,
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "amount",
+          "currency",
+          "periodStart",
+          "periodEnd"
+        ],
+        "type": "object"
+      },
+      "InvoiceListItemDto": {
+        "properties": {
+          "amount": {
+            "example": "299.00",
+            "type": "string"
+          },
+          "currency": {
+            "example": "SAR",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "invoiceNumber": {
+            "nullable": true,
+            "type": "object"
+          },
+          "issuedAt": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "object"
+          },
+          "paidAt": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "object"
+          },
+          "periodEnd": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "periodStart": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "DUE",
+              "PAID",
+              "FAILED",
+              "VOID"
+            ],
+            "type": "string"
+          },
+          "zohoInvoiceUrl": {
+            "description": "Zoho-hosted invoice URL",
+            "example": "https://invoice.zoho.com/portal/deqah/invoice/...",
+            "nullable": true,
+            "type": "object"
+          },
+          "zohoPdfUrl": {
+            "description": "Zoho-hosted PDF URL",
+            "example": "https://invoice.zoho.com/portal/deqah/invoice/.../pdf",
+            "nullable": true,
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "amount",
+          "currency",
+          "periodStart",
+          "periodEnd"
         ],
         "type": "object"
       },
@@ -13818,7 +13969,30 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "$ref": "#/components/schemas/InvoiceListItemDto"
+                      },
+                      "type": "array"
+                    },
+                    "nextCursor": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "nextCursor"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Cursor-paginated list of invoices with Zoho URLs"
           },
           "400": {
             "content": {
@@ -13887,7 +14061,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceDetailDto"
+                }
+              }
+            },
+            "description": "Invoice detail with Zoho URLs"
           },
           "400": {
             "content": {
@@ -13936,75 +14117,6 @@
           }
         ],
         "summary": "Get a single billing invoice",
-        "tags": [
-          "Dashboard / Billing"
-        ]
-      }
-    },
-    "/api/v1/dashboard/billing/invoices/{id}/download": {
-      "get": {
-        "operationId": "BillingController_downloadInvoice",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            },
-            "description": "Validation failed"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            },
-            "description": "Missing or invalid authentication"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            },
-            "description": "Action denied by permission policy"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            },
-            "description": "Unhandled server error"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get a presigned URL to download the invoice PDF",
         "tags": [
           "Dashboard / Billing"
         ]

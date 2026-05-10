@@ -16,6 +16,7 @@ const makeRow = (overrides: Record<string, unknown> = {}) => ({
 
 const buildPrisma = () => ({
   subscriptionInvoice: { findMany: jest.fn() },
+  zohoInvoiceLink: { findMany: jest.fn().mockResolvedValue([]) },
 });
 
 const buildTenant = (organizationId = 'org-A') => ({
@@ -85,5 +86,41 @@ describe('ListInvoicesHandler', () => {
 
     expect(out.items).toHaveLength(2);
     expect(out.nextCursor).toBe('inv-2');
+  });
+
+  it('enriches items with zohoInvoiceUrl and zohoPdfUrl from ZohoInvoiceLink', async () => {
+    const prisma = buildPrisma();
+    prisma.subscriptionInvoice.findMany.mockResolvedValue([makeRow({ id: 'inv-1' })]);
+    prisma.zohoInvoiceLink.findMany.mockResolvedValue([
+      {
+        deqahInvoiceId: 'inv-1',
+        invoiceUrl: 'https://invoice.zoho.sa/portal/inv/1',
+        pdfUrl: 'https://invoice.zoho.sa/portal/inv/1/pdf',
+      },
+    ]);
+    const handler = new ListInvoicesHandler(
+      prisma as never,
+      buildTenant('org-A') as never,
+    );
+
+    const out = await handler.execute({ limit: 20 });
+
+    expect(out.items[0].zohoInvoiceUrl).toBe('https://invoice.zoho.sa/portal/inv/1');
+    expect(out.items[0].zohoPdfUrl).toBe('https://invoice.zoho.sa/portal/inv/1/pdf');
+  });
+
+  it('sets zohoInvoiceUrl and zohoPdfUrl to null when no Zoho mirror exists', async () => {
+    const prisma = buildPrisma();
+    prisma.subscriptionInvoice.findMany.mockResolvedValue([makeRow()]);
+    prisma.zohoInvoiceLink.findMany.mockResolvedValue([]);
+    const handler = new ListInvoicesHandler(
+      prisma as never,
+      buildTenant() as never,
+    );
+
+    const out = await handler.execute({ limit: 20 });
+
+    expect(out.items[0].zohoInvoiceUrl).toBeNull();
+    expect(out.items[0].zohoPdfUrl).toBeNull();
   });
 });

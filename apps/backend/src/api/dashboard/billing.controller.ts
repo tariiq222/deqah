@@ -10,7 +10,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { ApiOkResponse } from "@nestjs/swagger";
+import { ApiExtraModels, ApiOkResponse, getSchemaPath } from "@nestjs/swagger";
 import { ApiOperation, ApiTags, ApiBearerAuth } from "@nestjs/swagger";
 import { JwtGuard } from "../../common/guards/jwt.guard";
 import { CaslGuard, CheckPermissions } from "../../common/guards/casl.guard";
@@ -41,8 +41,7 @@ import { CancelScheduledDowngradeHandler } from "../../modules/platform/billing/
 import { RetryFailedPaymentHandler } from "../../modules/platform/billing/retry-failed-payment/retry-failed-payment.handler";
 import { ListInvoicesHandler } from "../../modules/platform/billing/list-invoices/list-invoices.handler";
 import { GetInvoiceHandler } from "../../modules/platform/billing/get-invoice/get-invoice.handler";
-import { DownloadInvoiceHandler } from "../../modules/platform/billing/generate-invoice-pdf/download-invoice.handler";
-import { ListInvoicesQueryDto } from "../../modules/platform/billing/dto/invoice.dto";
+import { InvoiceDetailDto, InvoiceListItemDto, ListInvoicesQueryDto } from "../../modules/platform/billing/dto/invoice.dto";
 import { GetUsageHandler } from "../../modules/platform/billing/get-usage/get-usage.handler";
 import { UsageRowDto } from "../../modules/platform/billing/get-usage/get-usage.dto";
 import { TenantContextService } from "../../common/tenant/tenant-context.service";
@@ -53,6 +52,7 @@ import { ChangePlanHandler } from "../../modules/platform/billing/change-plan/ch
 @ApiStandardResponses()
 @Controller("dashboard/billing")
 @UseGuards(JwtGuard, CaslGuard)
+@ApiExtraModels(InvoiceListItemDto, InvoiceDetailDto)
 export class BillingController {
   constructor(
     private readonly listPlans: ListPlansHandler,
@@ -74,7 +74,6 @@ export class BillingController {
     private readonly retryFailedPayment: RetryFailedPaymentHandler,
     private readonly listInvoicesHandler: ListInvoicesHandler,
     private readonly getInvoiceHandler: GetInvoiceHandler,
-    private readonly downloadInvoiceHandler: DownloadInvoiceHandler,
     private readonly getUsage: GetUsageHandler,
     private readonly tenant: TenantContextService,
     private readonly changePlan: ChangePlanHandler,
@@ -236,6 +235,17 @@ export class BillingController {
   @Get("invoices")
   @CheckPermissions({ action: 'read', subject: 'Invoice' })
   @ApiOperation({ summary: "List billing invoices for current organization" })
+  @ApiOkResponse({
+    description: 'Cursor-paginated list of invoices with Zoho URLs',
+    schema: {
+      type: 'object',
+      required: ['items', 'nextCursor'],
+      properties: {
+        items: { type: 'array', items: { $ref: getSchemaPath(InvoiceListItemDto) } },
+        nextCursor: { type: 'string', nullable: true },
+      },
+    },
+  })
   listInvoices(@Query() query: ListInvoicesQueryDto) {
     return this.listInvoicesHandler.execute(query);
   }
@@ -243,14 +253,8 @@ export class BillingController {
   @Get("invoices/:id")
   @CheckPermissions({ action: 'read', subject: 'Invoice' })
   @ApiOperation({ summary: "Get a single billing invoice" })
+  @ApiOkResponse({ type: InvoiceDetailDto, description: 'Invoice detail with Zoho URLs' })
   getInvoice(@Param("id") id: string) {
     return this.getInvoiceHandler.execute(id);
-  }
-
-  @Get("invoices/:id/download")
-  @CheckPermissions({ action: 'read', subject: 'Invoice' })
-  @ApiOperation({ summary: "Get a presigned URL to download the invoice PDF" })
-  downloadInvoice(@Param("id") id: string) {
-    return this.downloadInvoiceHandler.execute(id);
   }
 }

@@ -633,7 +633,9 @@
       "open": "Open",
       "emptySubscriptions": "No subscriptions match the current filters.",
       "emptyInvoices": "No invoices match the current filters.",
-      "priceMonthly": "{amount} SAR/mo"
+      "priceMonthly": "{amount} SAR/mo",
+      "viewInZoho": "View in Zoho",
+      "downloadPdf": "Download PDF"
     },
     "filters": {
       "status": "Status",

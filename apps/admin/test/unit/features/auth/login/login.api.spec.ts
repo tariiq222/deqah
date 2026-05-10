@@ -20,22 +20,22 @@ describe('login.api', () => {
   });
 
   it('calls authApi.login with correct body', async () => {
-    const { login, LoginResponse } = await import('@/features/auth/login/login.api');
-    const mockResponse: LoginResponse = { accessToken: 'tok', refreshToken: 'ref', user: { id: '1', email: 'a@b.com' } };
+    const { login } = await import('@/features/auth/login/login.api');
+    const mockResponse = { accessToken: 'tok', refreshToken: 'ref', expiresIn: 3600, user: { id: '1', email: 'a@b.com' } };
     mockAuthApi.login.mockResolvedValue(mockResponse);
 
-    const result = await login({ email: 'a@b.com', password: 'secret', captchaToken: 'cap' });
+    const result = await login({ email: 'a@b.com', password: 'secret', hCaptchaToken: 'cap' });
 
-    expect(mockAuthApi.login).toHaveBeenCalledWith({ email: 'a@b.com', password: 'secret', captchaToken: 'cap' });
+    expect(mockAuthApi.login).toHaveBeenCalledWith({ email: 'a@b.com', password: 'secret', hCaptchaToken: 'cap' });
     expect(result).toEqual(mockResponse);
   });
 
   it('returns typed LoginResponse', async () => {
     const { login } = await import('@/features/auth/login/login.api');
-    const mockResponse = { accessToken: 'tok', refreshToken: 'ref', user: { id: '2', email: 'x@y.com' } };
+    const mockResponse = { accessToken: 'tok', refreshToken: 'ref', expiresIn: 3600, user: { id: '2', email: 'x@y.com' } };
     mockAuthApi.login.mockResolvedValue(mockResponse);
 
-    const result = await login({ email: 'x@y.com', password: 'pass', captchaToken: '' });
+    const result = await login({ email: 'x@y.com', password: 'pass', hCaptchaToken: '' });
 
     expect(result.accessToken).toBe('tok');
   });

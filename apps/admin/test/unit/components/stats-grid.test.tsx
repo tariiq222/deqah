@@ -26,7 +26,7 @@ describe('StatsGrid', () => {
 
   it('renders skeleton when isLoading is true', () => {
     const { container } = render(<StatsGrid stats={stats} isLoading={true} />);
-    const skeletons = container.querySelectorAll('[data-slot="skeleton"]');
+    const skeletons = container.querySelectorAll('.animate-pulse');
     expect(skeletons.length).toBe(4);
   });
 

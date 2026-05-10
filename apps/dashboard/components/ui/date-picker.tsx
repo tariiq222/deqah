@@ -43,6 +43,8 @@ export interface DatePickerProps {
   required?: boolean
   /** Override layout direction */
   dir?: "rtl" | "ltr"
+  /** Suppress Next.js hydration mismatch warning on dynamic date values */
+  suppressHydrationWarning?: boolean
 }
 
 export function DatePicker({

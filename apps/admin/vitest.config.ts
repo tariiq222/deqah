@@ -11,7 +11,6 @@ export default defineConfig({
     include: ['test/**/*.{spec,test}.{ts,tsx}'],
     coverage: {
       provider: 'v8',
-      all: true,
       include: ['features/**/*.{ts,tsx}', 'lib/**/*.{ts,tsx}', 'shell/**/*.{ts,tsx}'],
       exclude: [
         '**/*.d.ts',

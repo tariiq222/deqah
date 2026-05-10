@@ -1,7 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { NextIntlClientProvider } from 'next-intl';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
+import enMessages from '@/messages/en.json';
 import { BrandingForm } from '@/features/platform-branding/branding-form';
 
 const mockGetPlatformBrand = vi.hoisted(() => vi.fn());
@@ -14,7 +16,11 @@ vi.mock('@/features/platform-branding/platform-branding.api', () => ({
 
 function wrap(ui: React.ReactNode) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
+  return render(
+    <NextIntlClientProvider locale="en" messages={enMessages}>
+      <QueryClientProvider client={qc}>{ui}</QueryClientProvider>
+    </NextIntlClientProvider>,
+  );
 }
 
 const defaultBrand = {

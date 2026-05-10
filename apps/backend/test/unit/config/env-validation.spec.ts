@@ -21,9 +21,6 @@ describe('envValidationSchema', () => {
     MOYASAR_TENANT_ENCRYPTION_KEY: ENC_KEY_32,
     EMAIL_PROVIDER_ENCRYPTION_KEY: ENC_KEY_32,
     ZOHO_PROVIDER_ENCRYPTION_KEY: ENC_KEY_32,
-    PLATFORM_VAT_NUMBER: '300000000000003',
-    PLATFORM_COMPANY_NAME_AR: 'منصة دِقة',
-    PLATFORM_COMPANY_NAME_EN: 'Deqah Platform',
     SUPER_ADMIN_PASSWORD: 'TestAdmin@2026Test!!',
   };
 
@@ -50,6 +47,7 @@ describe('envValidationSchema', () => {
       ZOHO_OAUTH_CLIENT_ID: 'zoho-client-id',
       ZOHO_OAUTH_CLIENT_SECRET: 'zoho-client-secret',
       ZOHO_OAUTH_REDIRECT_URI: 'https://api.example.com/zoho/callback',
+      PLATFORM_ROOT_DOMAIN: 'deqah.net',
     };
     const r = envValidationSchema.validate(env, { abortEarly: false });
     expect(r.error).toBeDefined();
@@ -88,13 +86,11 @@ describe('envValidationSchema', () => {
       API_PUBLIC_URL: 'https://api.example.com',
       MOYASAR_PLATFORM_SECRET_KEY: 'sk_live_platform_key_test',
       MOYASAR_PLATFORM_WEBHOOK_SECRET: 'real-webhook-secret-value',
-      PLATFORM_VAT_NUMBER: '300000000000003',
-      PLATFORM_COMPANY_NAME_AR: 'منصة دِقة',
-      PLATFORM_COMPANY_NAME_EN: 'Deqah Platform',
       SUPER_ADMIN_PASSWORD: 'RealSuperAdminPass2026!',
       ZOHO_OAUTH_CLIENT_ID: 'zoho-client-id-long',
       ZOHO_OAUTH_CLIENT_SECRET: 'zoho-client-secret-long',
       ZOHO_OAUTH_REDIRECT_URI: 'https://api.example.com/zoho/callback',
+      PLATFORM_ROOT_DOMAIN: 'deqah.net',
     };
     const r = envValidationSchema.validate(env, { abortEarly: false });
     expect(r.error).toBeUndefined();

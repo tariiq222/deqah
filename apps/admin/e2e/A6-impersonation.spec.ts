@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { type APIRequestContext } from '@playwright/test';
+import { type APIRequestContext, type Page } from '@playwright/test';
 import { loginAsSuperAdmin } from './helpers/auth';
 
 // ---------------------------------------------------------------------------
 // Helper: read the super-admin bearer token from localStorage after login.
 // ---------------------------------------------------------------------------
-async function getSuperAdminToken(page: Parameters<Parameters<typeof test>[1]>[0]['page']): Promise<string> {
+async function getSuperAdminToken(page: Page): Promise<string> {
   const token = await page.evaluate(() => window.localStorage.getItem('admin.accessToken'));
   if (!token) throw new Error('admin.accessToken not found in localStorage — login may have failed');
   return token;

@@ -10,6 +10,7 @@ export { ZohoCredentialsService } from './zoho-credentials.service';
 export { ZohoOAuthService } from './zoho-oauth.service';
 export { ZohoApiClient, type ZohoTenantContext } from './zoho-api.client';
 export { ZohoWebhookVerifier } from './zoho-webhook.verifier';
+export { ZohoBootstrapService } from './zoho-bootstrap.service';
 export type {
   ZohoIntegrationConfig,
   ZohoIntegrationStatus,

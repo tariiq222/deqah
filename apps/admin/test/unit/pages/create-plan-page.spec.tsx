@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
+import enMessages from '@/messages/en.json';
 import CreatePlanPage from '@/app/(admin)/plans/new/page';
 
 vi.mock('@/features/plans/create-plan/use-create-plan', () => ({
@@ -29,7 +30,7 @@ function wrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return (
     <QueryClientProvider client={qc}>
-      <NextIntlClientProvider locale="en" messages={{}}>
+      <NextIntlClientProvider locale="en" messages={enMessages}>
         {children}
       </NextIntlClientProvider>
     </QueryClientProvider>

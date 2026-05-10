@@ -230,7 +230,7 @@ describe('plan-limits', () => {
 
   describe('mergeLimits', () => {
     it('returns empty object when both args are undefined', () => {
-      expect(mergeLimits(undefined, undefined)).toEqual({});
+      expect(mergeLimits(undefined, undefined as unknown as PlanLimits)).toEqual({});
     });
 
     it('returns raw when edited is undefined', () => {

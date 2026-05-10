@@ -1,16 +1,18 @@
 import { render, screen } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 import { InvoicesTable } from "@/app/(dashboard)/subscription/invoices/components/invoices-table"
 import type { Invoice } from "@/lib/types/billing"
 
-const { useLocale, useDownloadBillingInvoice } = vi.hoisted(() => ({
+const { useLocale } = vi.hoisted(() => ({
   useLocale: vi.fn(),
-  useDownloadBillingInvoice: vi.fn(),
 }))
 
 vi.mock("@/components/locale-provider", () => ({ useLocale }))
-vi.mock("@/hooks/use-billing-invoices", () => ({ useDownloadBillingInvoice }))
+vi.mock("@hugeicons/react", () => ({
+  HugeiconsIcon: ({ className }: { className?: string }) => (
+    <span data-testid="icon" className={className} />
+  ),
+}))
 
 function setupLocale() {
   useLocale.mockReturnValue({
@@ -29,16 +31,14 @@ const baseInvoice = (overrides: Partial<Invoice> = {}): Invoice => ({
   periodEnd: "2026-04-30T00:00:00.000Z",
   issuedAt: "2026-04-30T12:00:00.000Z",
   paidAt: "2026-04-30T12:01:00.000Z",
+  zohoInvoiceUrl: null,
+  zohoPdfUrl: null,
   ...overrides,
 })
 
 describe("InvoicesTable", () => {
   it("renders one row per invoice with all 5 statuses", () => {
     setupLocale()
-    useDownloadBillingInvoice.mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-    })
     const invoices: Invoice[] = [
       baseInvoice({ id: "1", status: "DRAFT", invoiceNumber: null, issuedAt: null }),
       baseInvoice({ id: "2", status: "DUE" }),
@@ -58,12 +58,8 @@ describe("InvoicesTable", () => {
     expect(screen.getByText("billing.invoices.status.void")).toBeInTheDocument()
   })
 
-  it("disables download when invoice has not been issued (issuedAt = null)", () => {
+  it("disables view-invoice button when invoice has not been issued (issuedAt = null)", () => {
     setupLocale()
-    useDownloadBillingInvoice.mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-    })
 
     render(
       <InvoicesTable
@@ -74,33 +70,73 @@ describe("InvoicesTable", () => {
     )
 
     const button = screen.getByRole("button", {
-      name: "billing.invoices.action.download",
+      name: "billing.invoices.action.viewInvoice",
     })
     expect(button).toBeDisabled()
     expect(screen.getByText("billing.invoices.notIssued")).toBeInTheDocument()
   })
 
-  it("triggers the download mutation when the button is clicked", async () => {
+  it("disables view-invoice button when zoho mirror not ready", () => {
     setupLocale()
-    const mutate = vi.fn()
-    useDownloadBillingInvoice.mockReturnValue({ mutate, isPending: false })
 
-    render(<InvoicesTable invoices={[baseInvoice({ id: "inv-1" })]} />)
+    render(
+      <InvoicesTable
+        invoices={[
+          baseInvoice({ id: "inv-1", zohoInvoiceUrl: null }),
+        ]}
+      />,
+    )
 
     const button = screen.getByRole("button", {
-      name: "billing.invoices.action.download",
+      name: "billing.invoices.action.viewInvoice",
     })
-    await userEvent.click(button)
+    expect(button).toBeDisabled()
+  })
 
-    expect(mutate).toHaveBeenCalledWith("inv-1")
+  it("renders zoho invoice link when zohoInvoiceUrl is present", () => {
+    setupLocale()
+
+    render(
+      <InvoicesTable
+        invoices={[
+          baseInvoice({
+            id: "inv-1",
+            zohoInvoiceUrl: "https://invoice.zoho.com/inv-1",
+          }),
+        ]}
+      />,
+    )
+
+    const link = screen.getByRole("link", {
+      name: "billing.invoices.action.viewInvoice",
+    })
+    expect(link).toHaveAttribute("href", "https://invoice.zoho.com/inv-1")
+    expect(link).toHaveAttribute("target", "_blank")
+  })
+
+  it("renders download PDF link when zohoPdfUrl is present", () => {
+    setupLocale()
+
+    render(
+      <InvoicesTable
+        invoices={[
+          baseInvoice({
+            id: "inv-1",
+            zohoInvoiceUrl: "https://invoice.zoho.com/inv-1",
+            zohoPdfUrl: "https://invoice.zoho.com/inv-1.pdf",
+          }),
+        ]}
+      />,
+    )
+
+    const link = screen.getByRole("link", {
+      name: "billing.invoices.action.downloadPdf",
+    })
+    expect(link).toHaveAttribute("href", "https://invoice.zoho.com/inv-1.pdf")
   })
 
   it("shows skeleton rows when isLoading is true", () => {
     setupLocale()
-    useDownloadBillingInvoice.mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-    })
 
     const { container } = render(<InvoicesTable invoices={[]} isLoading />)
 

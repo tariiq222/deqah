@@ -11,7 +11,7 @@ vi.mock('@tanstack/react-query', () => ({
 
 describe('useListSubscriptions', () => {
   it('exports correct subscriptionsListKey function', () => {
-    const params = { page: 1, perPage: 20, status: 'ACTIVE', planId: 'plan-1' };
+    const params = { page: 1, perPage: 20, status: 'ACTIVE' as const, planId: 'plan-1' };
     const key = subscriptionsListKey(params);
 
     expect(key).toEqual(['billing', 'subscriptions', 'list', 1, 'ACTIVE', 'plan-1']);

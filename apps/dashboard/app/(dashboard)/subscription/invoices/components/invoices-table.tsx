@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { Download04Icon } from "@hugeicons/core-free-icons"
+import { Link02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Badge,
@@ -19,7 +19,6 @@ import {
   TooltipTrigger,
 } from "@deqah/ui"
 import { useLocale } from "@/components/locale-provider"
-import { useDownloadBillingInvoice } from "@/hooks/use-billing-invoices"
 import { formatLocaleDate } from "@/lib/date"
 import type { Invoice, InvoiceStatus } from "@/lib/types/billing"
 
@@ -46,7 +45,6 @@ function formatDate(iso: string | null, locale: "ar" | "en"): string {
 
 export function InvoicesTable({ invoices, isLoading }: Props) {
   const { t, locale } = useLocale()
-  const download = useDownloadBillingInvoice()
 
   const skeletonRows = useMemo(() => Array.from({ length: 5 }), [])
 
@@ -86,7 +84,7 @@ export function InvoicesTable({ invoices, isLoading }: Props) {
             <TableHead>{t("billing.invoices.column.period")}</TableHead>
             <TableHead>{t("billing.invoices.column.amount")}</TableHead>
             <TableHead>{t("billing.invoices.column.status")}</TableHead>
-            <TableHead className="w-[88px] text-end">
+            <TableHead className="w-[110px] text-end">
               {t("billing.invoices.column.actions")}
             </TableHead>
           </TableRow>
@@ -94,7 +92,7 @@ export function InvoicesTable({ invoices, isLoading }: Props) {
         <TableBody>
           {invoices.map(inv => {
             const issued = inv.issuedAt !== null
-            const disabled = !issued || download.isPending
+            const hasZoho = Boolean(inv.zohoInvoiceUrl)
             return (
               <TableRow key={inv.id}>
                 <TableCell className="font-numeric">
@@ -117,35 +115,74 @@ export function InvoicesTable({ invoices, isLoading }: Props) {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-end">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="size-9 rounded-sm"
-                          disabled={disabled}
-                          aria-label={t("billing.invoices.action.download")}
-                          onClick={() => {
-                            if (!disabled) download.mutate(inv.id)
-                          }}
-                        >
-                          <HugeiconsIcon
-                            icon={Download04Icon}
-                            strokeWidth={1.8}
-                            className="size-4"
-                          />
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {!issued
-                        ? t("billing.invoices.action.notIssuedYet")
-                        : download.isPending
-                          ? t("billing.invoices.action.downloading")
-                          : t("billing.invoices.action.download")}
-                    </TooltipContent>
-                  </Tooltip>
+                  <div className="flex items-center justify-end gap-1">
+                    {/* Primary: View invoice in Zoho */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-9 rounded-sm"
+                            disabled={!issued || !hasZoho}
+                            aria-label={t("billing.invoices.action.viewInvoice")}
+                            asChild={issued && hasZoho}
+                          >
+                            {issued && hasZoho ? (
+                              <a
+                                href={inv.zohoInvoiceUrl!}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <HugeiconsIcon
+                                  icon={Link02Icon}
+                                  strokeWidth={1.8}
+                                  className="size-4"
+                                />
+                              </a>
+                            ) : (
+                              <HugeiconsIcon
+                                icon={Link02Icon}
+                                strokeWidth={1.8}
+                                className="size-4"
+                              />
+                            )}
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {!issued
+                          ? t("billing.invoices.action.notIssuedYet")
+                          : !hasZoho
+                            ? t("billing.invoices.action.mirrorPending")
+                            : t("billing.invoices.action.viewInvoice")}
+                      </TooltipContent>
+                    </Tooltip>
+                    {/* Secondary: Download PDF from Zoho */}
+                    {inv.zohoPdfUrl && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-9 rounded-sm px-2 text-xs"
+                            asChild
+                          >
+                            <a
+                              href={inv.zohoPdfUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {t("billing.invoices.action.downloadPdf")}
+                            </a>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {t("billing.invoices.action.downloadFromZoho")}
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             )

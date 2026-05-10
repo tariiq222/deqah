@@ -71,9 +71,6 @@ describe('Subdomain isolation — /public/branding', () => {
       process.env.ZOHO_PROVIDER_ENCRYPTION_KEY ?? Buffer.alloc(32, 5).toString('base64');
     process.env.MOYASAR_PLATFORM_SECRET_KEY = 'test-moyasar-platform-key';
     process.env.MOYASAR_PLATFORM_WEBHOOK_SECRET = 'test-moyasar-webhook-secret';
-    process.env.PLATFORM_VAT_NUMBER = '300000000000003';
-    process.env.PLATFORM_COMPANY_NAME_AR = 'ديقة';
-    process.env.PLATFORM_COMPANY_NAME_EN = 'Deqah';
     process.env.TENANT_ENFORCEMENT = 'strict';
     process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-000000000001';
 
@@ -107,7 +104,7 @@ describe('Subdomain isolation — /public/branding', () => {
       .compile();
 
     app = mod.createNestApplication();
-    app.set('trust proxy', 1);
+    app.getHttpAdapter().getInstance().set('trust proxy', 1);
     await app.init();
 
     // Seed Org A with a red primary colour.

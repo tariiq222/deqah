@@ -11,14 +11,14 @@ vi.mock('@tanstack/react-query', () => ({
 
 describe('useSearchUsers', () => {
   it('exports correct usersSearchKey function', () => {
-    const params = { page: 1, search: 'test', organizationId: 'org-1' };
+    const params = { page: 1, perPage: 20, search: 'test', organizationId: 'org-1' };
     const key = usersSearchKey(params);
 
     expect(key).toEqual(['users', 'search', 1, 'test', 'org-1']);
   });
 
   it('usersSearchKey handles empty optional params', () => {
-    const params = { page: 1 };
+    const params = { page: 1, perPage: 20 };
     const key = usersSearchKey(params);
 
     expect(key).toContain(1);

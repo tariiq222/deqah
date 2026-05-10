@@ -112,11 +112,17 @@ export class InvoiceTenantHandler {
     });
     const zohoCustomerId = created.contact.contact_id;
 
+    // Use the Deqah invoice number (or id fallback) so Zoho records the same
+    // number. Requires Zoho auto-numbering to be OFF on the platform org
+    // (applied at boot via ZohoBootstrapService).
+    const deqahInvoiceNumber = invoice.invoiceNumber ?? invoice.id;
+
     const zohoInvoice = await api.createInvoice(
       ctx,
       {
         customer_id: zohoCustomerId,
-        reference_number: invoice.invoiceNumber ?? invoice.id,
+        invoice_number: deqahInvoiceNumber,
+        reference_number: deqahInvoiceNumber,
         date: input.paidAt.toISOString().slice(0, 10),
         line_items: this.mapLineItems(invoice.lineItems, Number(invoice.amount)),
         payment_terms: 0,

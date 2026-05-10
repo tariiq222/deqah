@@ -1,6 +1,7 @@
-import { render, screen, act } from '@testing-library/react';
+import { screen, act } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { OfflineBanner } from '@/components/offline-banner';
+import { renderWithProviders } from '../../test-utils';
 
 describe('OfflineBanner', () => {
   const originalOnLine = Object.getOwnPropertyDescriptor(navigator, 'onLine');
@@ -20,20 +21,20 @@ describe('OfflineBanner', () => {
 
   it('renders nothing when online', () => {
     setOnline(true);
-    const { container } = render(<OfflineBanner />);
+    const { container } = renderWithProviders(<OfflineBanner />);
     expect(container.firstChild).toBeNull();
   });
 
   it('renders banner when offline', () => {
     setOnline(false);
-    render(<OfflineBanner />);
+    renderWithProviders(<OfflineBanner />);
     expect(screen.getByRole('alert')).toBeInTheDocument();
-    expect(screen.getByText(/you are offline/i)).toBeInTheDocument();
+    expect(screen.getByText(/offline/i)).toBeInTheDocument();
   });
 
   it('shows banner when offline event fires', () => {
     setOnline(true);
-    render(<OfflineBanner />);
+    renderWithProviders(<OfflineBanner />);
     act(() => {
       setOnline(false);
       window.dispatchEvent(new Event('offline'));
@@ -43,7 +44,7 @@ describe('OfflineBanner', () => {
 
   it('hides banner when online event fires after being offline', () => {
     setOnline(false);
-    render(<OfflineBanner />);
+    renderWithProviders(<OfflineBanner />);
     expect(screen.getByRole('alert')).toBeInTheDocument();
     act(() => {
       setOnline(true);

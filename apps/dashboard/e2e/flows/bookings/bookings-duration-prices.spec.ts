@@ -168,7 +168,7 @@ test.describe('Bookings - Duration & Price Variations', () => {
       secondPrice = await summaryAfter.textContent() || ''
     }
 
-    expect(priceDurations.length).toBeGreaterThan(0)
+    expect(count).toBeGreaterThan(0)
   })
 
   test('should show custom employee price for duration', async ({ page }) => {

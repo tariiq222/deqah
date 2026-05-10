@@ -3,6 +3,7 @@ import { GetInvoiceHandler } from './get-invoice.handler';
 
 const buildPrisma = () => ({
   subscriptionInvoice: { findFirst: jest.fn() },
+  zohoInvoiceLink: { findUnique: jest.fn().mockResolvedValue(null) },
 });
 
 const buildTenant = (organizationId = 'org-A') => ({
@@ -62,6 +63,8 @@ describe('GetInvoiceHandler', () => {
       invoiceHash: 'a'.repeat(64),
       previousHash: '0',
       pdfStorageKey: 'invoices/org-A/inv-1.pdf',
+      zohoInvoiceUrl: null,
+      zohoPdfUrl: null,
     });
   });
 });

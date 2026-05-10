@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
+import { ExternalLink, FileDown } from 'lucide-react';
 import { Badge } from '@deqah/ui/primitives/badge';
 import { Button } from '@deqah/ui/primitives/button';
 import { Skeleton } from '@deqah/ui/primitives/skeleton';
@@ -13,6 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from '@deqah/ui/primitives/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@deqah/ui/primitives/tooltip';
 import { formatAdminDate } from '@/lib/date';
 import type {
   OrganizationBillingIdentity,
@@ -99,9 +106,41 @@ export function InvoicesTable({ items, isLoading }: Props) {
                   {formatAdminDate(inv.dueDate, locale)}
                 </TableCell>
                 <TableCell className="text-end">
-                  <Button asChild variant="ghost" size="sm">
-                    <Link href={`/billing/${inv.organizationId}`}>{t('open')}</Link>
-                  </Button>
+                  <div className="flex items-center justify-end gap-1">
+                    {inv.zohoInvoiceUrl ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button asChild variant="ghost" size="icon" className="size-9 rounded-sm">
+                              <a href={inv.zohoInvoiceUrl} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="size-4" />
+                                <span className="sr-only">{t('viewInZoho')}</span>
+                              </a>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t('viewInZoho')}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : null}
+                    {inv.zohoPdfUrl ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button asChild variant="ghost" size="icon" className="size-9 rounded-sm">
+                              <a href={inv.zohoPdfUrl} target="_blank" rel="noopener noreferrer">
+                                <FileDown className="size-4" />
+                                <span className="sr-only">{t('downloadPdf')}</span>
+                              </a>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t('downloadPdf')}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : null}
+                    <Button asChild variant="ghost" size="sm">
+                      <Link href={`/billing/${inv.organizationId}`}>{t('open')}</Link>
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

@@ -3,20 +3,22 @@ import { bootHarness, IsolationHarness } from '../../tenant-isolation/isolation-
 import { IssueInvoiceHandler } from '../../../src/modules/platform/billing/issue-invoice/issue-invoice.handler';
 import { ListInvoicesHandler } from '../../../src/modules/platform/billing/list-invoices/list-invoices.handler';
 import { GetInvoiceHandler } from '../../../src/modules/platform/billing/get-invoice/get-invoice.handler';
-import { DownloadInvoiceHandler } from '../../../src/modules/platform/billing/generate-invoice-pdf/download-invoice.handler';
 
 /**
- * Phase 7 — tenant-isolation e2e for invoice listing, retrieval, download,
+ * Phase 7 — tenant-isolation e2e for invoice listing, retrieval,
  * hash-chain integrity, and per-org numbering. `SubscriptionInvoice` is not
  * in `SCOPED_MODELS`; this spec is the canonical guard against any handler
  * regressing from explicit `organizationId` filtering.
+ *
+ * Note: the local PDF download endpoint was removed when Zoho became the
+ * single invoicing system. Isolation for the GET /invoices/:id endpoint
+ * is preserved below.
  */
 describe('Phase 7 — tenant-billing-invoices', () => {
   let h: IsolationHarness;
   let issue: IssueInvoiceHandler;
   let list: ListInvoicesHandler;
   let get: GetInvoiceHandler;
-  let download: DownloadInvoiceHandler;
 
   let orgA: string;
   let orgB: string;
@@ -27,15 +29,11 @@ describe('Phase 7 — tenant-billing-invoices', () => {
   let invB1: string;
 
   beforeAll(async () => {
-    process.env.PLATFORM_VAT_NUMBER ??= '300000000000003';
-    process.env.PLATFORM_COMPANY_NAME_AR ??= 'منصة دِقة';
-    process.env.PLATFORM_COMPANY_NAME_EN ??= 'Deqah Platform';
     process.env.MINIO_INVOICE_BUCKET ??= 'deqah-invoices';
     h = await bootHarness();
     issue = h.app.get(IssueInvoiceHandler);
     list = h.app.get(ListInvoicesHandler);
     get = h.app.get(GetInvoiceHandler);
-    download = h.app.get(DownloadInvoiceHandler);
 
     const ts = Date.now();
     const a = await h.createOrg(`p7-org-a-${ts}`, 'منظمة أ');
@@ -129,12 +127,6 @@ describe('Phase 7 — tenant-billing-invoices', () => {
   it("get returns 404 for another org's invoice", async () => {
     await expect(
       h.runAs({ organizationId: orgA }, () => get.execute(invB1)),
-    ).rejects.toThrow(NotFoundException);
-  });
-
-  it("download returns 404 for another org's invoice", async () => {
-    await expect(
-      h.runAs({ organizationId: orgA }, () => download.execute(invB1)),
     ).rejects.toThrow(NotFoundException);
   });
 

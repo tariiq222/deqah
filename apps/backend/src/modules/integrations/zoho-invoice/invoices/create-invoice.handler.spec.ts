@@ -212,4 +212,17 @@ describe('CreateZohoInvoiceHandler — tenant isolation + idempotency', () => {
     });
     expect(result.zohoInvoiceId).toBe('zinv_1');
   });
+
+  it('passes invoice_number = invoice.id in the Zoho create payload', async () => {
+    const { handler, linkFindUnique, createInvoice } = makeHandler();
+    linkFindUnique.mockResolvedValue(null);
+
+    await handler.execute({ organizationId: TENANT_A, invoiceId: INVOICE_ID, config });
+
+    expect(createInvoice).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({ invoice_number: INVOICE_ID }),
+      expect.any(Object),
+    );
+  });
 });

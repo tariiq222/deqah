@@ -6,6 +6,9 @@ import type { InvoiceDetailDto } from '../dto/invoice.dto';
 /**
  * Phase 7 — fetch a single invoice by id, scoped to the current tenant.
  * Returns 404 (not 403) for cross-org access.
+ *
+ * Enriched with Zoho invoice URL and PDF URL from the ZohoInvoiceLink mirror
+ * row (scope=SAAS_TENANT) so callers can link to the Zoho-hosted invoice.
  */
 @Injectable()
 export class GetInvoiceHandler {
@@ -21,6 +24,17 @@ export class GetInvoiceHandler {
     });
     if (!row) throw new NotFoundException();
 
+    const zohoLink = await this.prisma.zohoInvoiceLink.findUnique({
+      where: {
+        zoho_link_org_scope_invoice: {
+          organizationId,
+          scope: 'SAAS_TENANT',
+          deqahInvoiceId: invoiceId,
+        },
+      },
+      select: { invoiceUrl: true, pdfUrl: true },
+    });
+
     return {
       id: row.id,
       invoiceNumber: row.invoiceNumber,
@@ -34,6 +48,8 @@ export class GetInvoiceHandler {
       invoiceHash: row.invoiceHash,
       previousHash: row.previousHash,
       pdfStorageKey: row.pdfStorageKey,
+      zohoInvoiceUrl: zohoLink?.invoiceUrl ?? null,
+      zohoPdfUrl: zohoLink?.pdfUrl ?? null,
     };
   }
 }

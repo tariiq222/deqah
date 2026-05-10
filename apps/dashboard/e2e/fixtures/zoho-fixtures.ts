@@ -32,11 +32,11 @@ export const test = base.extend<ZohoFixtures>({
     await use(result);
   },
 
-  apiCtx: async ({ request, loginResult }, use) => {
+  apiCtx: async ({ playwright: pw, loginResult }, use) => {
     // The default `request` context shares cookies with the browser context.
     // For API-only assertions we prefer using a separate context with the
     // Bearer header explicitly set.
-    const ctx = await base.request.newContext({
+    const ctx = await pw.request.newContext({
       baseURL: PWConfig.backendBaseUrl,
       extraHTTPHeaders: {
         Authorization: `Bearer ${loginResult.accessToken}`,

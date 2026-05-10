@@ -31,6 +31,7 @@ describe("moyasar-config api", () => {
     const payload = {
       publishableKey: "pk_test_12345678901234567890",
       secretKey: "sk_test_12345678901234567890",
+      webhookSecret: "whsec_test_12345678901234567890",
       isLive: false,
     }
     patchMock.mockResolvedValueOnce({})

@@ -4,12 +4,6 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "assets": [
-      {
-        "include": "modules/platform/billing/generate-invoice-pdf/fonts/*.ttf",
-        "outDir": "dist"
-      }
-    ],
     "watchAssets": true
   }
 }

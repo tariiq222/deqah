@@ -633,7 +633,9 @@
       "open": "فتح",
       "emptySubscriptions": "لا توجد اشتراكات تطابق الفلاتر الحالية.",
       "emptyInvoices": "لا توجد فواتير تطابق الفلاتر الحالية.",
-      "priceMonthly": "{amount} SAR/شهرياً"
+      "priceMonthly": "{amount} SAR/شهرياً",
+      "viewInZoho": "عرض في زوهو",
+      "downloadPdf": "تنزيل PDF"
     },
     "filters": {
       "status": "الحالة",

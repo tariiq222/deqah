@@ -69,7 +69,7 @@ test.describe('Tenant Login Flow', () => {
     if (await devLoginButton.isVisible()) {
       await devLoginButton.click();
       await page.waitForURL('/', { timeout: 10000 });
-      await expect(page.locator('body')).toContain(/لوحة التحكم|داشبورد|Dashboard|overview/i);
+      await expect(page.locator('body')).toContainText(/لوحة التحكم|داشبورد|Dashboard|overview/i);
     }
   });
 
@@ -86,13 +86,13 @@ test.describe('Tenant Login Flow', () => {
       test.skip();
     }
 
-    await page.fill('#email', devEmail)
-    await page.fill('#password', devPassword)
+    await page.fill('#email', devEmail!)
+    await page.fill('#password', devPassword!)
 
     await page.click('button[type="submit"]')
 
     await page.waitForURL('/', { timeout: 15000 })
-    await expect(page.locator('body')).toContain(/لوحة التحكم|داشبورد|Dashboard|overview/i)
+    await expect(page.locator('body')).toContainText(/لوحة التحكم|داشبورد|Dashboard|overview/i)
   })
 
   test('should logout and return to login', async ({ page }) => {

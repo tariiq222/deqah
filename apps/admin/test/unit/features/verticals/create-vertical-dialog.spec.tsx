@@ -1,10 +1,13 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { UseMutationResult } from '@tanstack/react-query';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { CreateVerticalDialog } from '@/features/verticals/create-vertical/create-vertical-dialog';
 import { useCreateVertical } from '@/features/verticals/create-vertical/use-create-vertical';
+import type { VerticalRow } from '@/features/verticals/types';
+import type { CreateVerticalCommand } from '@/features/verticals/create-vertical/create-vertical.api';
 
 vi.mock('@deqah/ui/primitives/select', () => ({
   Select: function({ children, value, onValueChange }: { children: React.ReactNode; value: string; onValueChange: (v: string) => void }) {
@@ -33,18 +36,24 @@ vi.mock('@/features/verticals/create-vertical/use-create-vertical', () => ({
   })),
 }));
 
+import { NextIntlClientProvider } from 'next-intl';
+import enMessages from '@/messages/en.json';
+
 function wrap(ui: React.ReactNode) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
+  return render(
+    <NextIntlClientProvider locale="en" messages={enMessages}>
+      <QueryClientProvider client={qc}>{ui}</QueryClientProvider>
+    </NextIntlClientProvider>,
+  );
 }
 
 describe('CreateVerticalDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useCreateVertical).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-    });
+    vi.mocked(useCreateVertical).mockReturnValue(
+      { mutate: vi.fn(), isPending: false } as unknown as UseMutationResult<VerticalRow, unknown, CreateVerticalCommand, unknown>,
+    );
   });
 
   it('renders dialog when open', async () => {
@@ -162,10 +171,9 @@ describe('CreateVerticalDialog', () => {
   it('resets form after successful creation', async () => {
     const user = userEvent.setup();
     const mutateFn = vi.fn();
-    vi.mocked(useCreateVertical).mockReturnValue({
-      mutate: mutateFn,
-      isPending: false,
-    });
+    vi.mocked(useCreateVertical).mockReturnValue(
+      { mutate: mutateFn, isPending: false } as unknown as UseMutationResult<VerticalRow, unknown, CreateVerticalCommand, unknown>,
+    );
 
     const onOpenChange = vi.fn();
 
@@ -193,10 +201,9 @@ describe('CreateVerticalDialog', () => {
   });
 
   it('shows creating state when mutation is pending', async () => {
-    vi.mocked(useCreateVertical).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: true,
-    });
+    vi.mocked(useCreateVertical).mockReturnValue(
+      { mutate: vi.fn(), isPending: true } as unknown as UseMutationResult<VerticalRow, unknown, CreateVerticalCommand, unknown>,
+    );
 
     const onOpenChange = vi.fn();
 

@@ -7,6 +7,7 @@ import {
   type ZohoIntegrationConfig,
 } from '../../../../infrastructure/zoho';
 import { ZohoConfigService } from '../zoho-config.service';
+import type { ZohoTenantContext } from '../../../../infrastructure/zoho';
 
 interface CallbackInput {
   code?: string;
@@ -89,6 +90,21 @@ export class OAuthCallbackHandler {
         zohoOrganizationId: only.organization_id,
         zohoOrganizationName: only.name,
       });
+      // Disable Zoho's own invoice numbering so Deqah's invoice_number
+      // is recorded verbatim. Non-fatal: log warn and continue on failure.
+      try {
+        const apiCtx: ZohoTenantContext = {
+          organizationId: state.organizationId,
+          zohoOrganizationId: only.organization_id,
+          refreshToken,
+          dataCenter,
+        };
+        await this.api.setAutoGenerateInvoiceNumber(apiCtx, false);
+      } catch (err) {
+        this.logger.warn(
+          `Could not disable Zoho auto-numbering for org ${state.organizationId}: ${(err as Error).message}`,
+        );
+      }
       return {
         organizationId: state.organizationId,
         pendingOrganizationSelection: false,

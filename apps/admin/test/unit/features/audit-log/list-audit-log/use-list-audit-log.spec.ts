@@ -13,6 +13,7 @@ describe('useListAuditLog', () => {
   it('exports correct auditLogListKey function', () => {
     const params = {
       page: 1,
+      perPage: 20,
       actionType: 'USER_CREATED',
       organizationId: 'org-1',
     };
@@ -28,6 +29,7 @@ describe('useListAuditLog', () => {
   it('auditLogListKey handles all optional params', () => {
     const params = {
       page: 1,
+      perPage: 20,
       actionType: 'USER_CREATED',
       organizationId: 'org-1',
       superAdminUserId: 'admin-1',
