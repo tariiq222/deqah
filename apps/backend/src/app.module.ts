@@ -4,7 +4,8 @@ import { ThrottlerModule } from "@nestjs/throttler";
 import { TenantAwareThrottlerGuard } from "./common/throttler/tenant-aware-throttler.guard";
 import { PerOrgThrottlerGuard } from "./common/throttler/per-org-throttler.guard";
 import { ThrottlerStorageRedisService } from "@nest-lab/throttler-storage-redis";
-import { APP_GUARD } from "@nestjs/core";
+import { APP_FILTER, APP_GUARD } from "@nestjs/core";
+import { HttpExceptionFilter } from "./common/filters";
 import { ClsModule } from "nestjs-cls";
 import { envValidationSchema } from "./config/env.validation";
 import { TenantModule } from "./common/tenant";
@@ -102,6 +103,7 @@ import { PublicModule } from "./api/public/public.module";
     PublicModule,
   ],
   providers: [
+    { provide: APP_FILTER, useClass: HttpExceptionFilter },
     { provide: APP_GUARD, useClass: TenantAwareThrottlerGuard },
     { provide: APP_GUARD, useClass: PerOrgThrottlerGuard },
     TenantResolverMiddleware,

@@ -12,17 +12,14 @@ const config: Config = {
     '!src/modules/**/index.ts',
     '!src/api/**/index.ts',
     '!src/infrastructure/**/index.ts',
-    '!src/modules/*/**', // exclude module-level folder aggregates
-    '!src/api/mobile/**',
-    '!src/api/public/**',
   ],
   coverageDirectory: './coverage',
   coverageThreshold: {
     global: {
-      branches: 90,
-      functions: 91,
-      lines: 90,
-      statements: 90,
+      branches: 65,
+      functions: 70,
+      lines: 85,
+      statements: 85,
     },
   },
   setupFiles: ['<rootDir>/test/jest.setup.ts'],

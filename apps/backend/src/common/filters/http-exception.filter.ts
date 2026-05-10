@@ -4,10 +4,14 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
+  Injectable,
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import * as Sentry from '@sentry/node';
+import { ClsService } from 'nestjs-cls';
+import { TENANT_CLS_KEY } from '../tenant/tenant.constants';
+import { TenantContext } from '../tenant/tenant-context.service';
 import { RequestContextStorage } from '../http/request-context';
 
 interface ErrorResponse {
@@ -22,9 +26,12 @@ interface ErrorResponse {
 
 const RESERVED_KEYS = new Set(['statusCode', 'error', 'message', 'requestId', 'timestamp', 'path']);
 
+@Injectable()
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger('ExceptionFilter');
+
+  constructor(private readonly cls: ClsService) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
@@ -84,6 +91,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
           scope.setUser({ id: requestContext.userId });
         }
         scope.setTag('route', `${req.method} ${(req as Request & { route?: { path: string } }).route?.path ?? req.path}`);
+        const tenant = this.cls.get<TenantContext>(TENANT_CLS_KEY);
+        scope.setTag('organizationId', tenant?.organizationId ?? 'unknown');
+        const requestId = req.headers['x-request-id'];
+        if (typeof requestId === 'string') scope.setTag('requestId', requestId);
         Sentry.captureException(exception);
       });
     }

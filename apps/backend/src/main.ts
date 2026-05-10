@@ -13,7 +13,6 @@ import { LoggingInterceptor, AuditInterceptor, TenantGucInterceptor } from './co
 import { PrismaService } from './infrastructure/database';
 import { TenantContextService } from './common/tenant/tenant-context.service';
 import { ClsService } from 'nestjs-cls';
-import { HttpExceptionFilter } from './common/filters';
 import { configureCors } from './cors';
 
 async function bootstrap(): Promise<void> {
@@ -48,8 +47,6 @@ async function bootstrap(): Promise<void> {
       new TenantGucInterceptor(app.get(PrismaService), app.get(TenantContextService), app.get(ClsService)),
     );
   }
-  app.useGlobalFilters(new HttpExceptionFilter());
-
   // ─── Swagger / OpenAPI ──────────────────────────────────────────────────────
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Deqah API')
