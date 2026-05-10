@@ -50,12 +50,12 @@ export const test = base.extend<ZohoFixtures>({
   authedPage: async ({ page, loginResult }, use) => {
     // addInitScript runs on EVERY page load (including `about:blank`).
     // Set localStorage unconditionally so AuthGate picks up the token.
+    // CR-9: refresh token is httpOnly cookie (ck_refresh); not stored in localStorage.
     await page.addInitScript(
-      ({ access, refresh }) => {
+      ({ access }) => {
         window.localStorage.setItem('deqah.accessToken', access);
-        window.localStorage.setItem('deqah.refreshToken', refresh);
       },
-      { access: loginResult.accessToken, refresh: loginResult.refreshToken },
+      { access: loginResult.accessToken },
     );
     await use(page);
   },

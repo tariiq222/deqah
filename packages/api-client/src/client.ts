@@ -9,8 +9,9 @@ export const ORG_SUSPENDED_CODE = 'ORG_SUSPENDED'
 export interface ClientConfig {
   baseUrl: string
   getAccessToken: () => string | null
+  /** @deprecated CR-9: refresh token is now an httpOnly cookie; this callback is no longer invoked */
   getRefreshToken?: () => string | null
-  onTokenRefreshed: (accessToken: string, refreshToken: string) => void
+  onTokenRefreshed: (accessToken: string) => void
   onAuthFailure: () => void
   // Optional callback fired when the backend returns 401 + ORG_SUSPENDED.
   // Hosts (dashboard) typically clear local auth state and full-reload to
@@ -26,12 +27,13 @@ export function initClient(cfg: ClientConfig): void {
 
 async function doRefresh(): Promise<string> {
   if (!config) throw new Error('api-client not initialized')
-  const refreshToken = config.getRefreshToken?.()
+  // CR-9: refresh token is an httpOnly cookie (ck_refresh); credentials: 'include'
+  // sends it automatically. No token in body — empty object for compatibility.
   const res = await fetch(`${config.baseUrl}/auth/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify(refreshToken ? { refreshToken } : {}),
+    body: JSON.stringify({}),
   })
   if (!res.ok) {
     config.onAuthFailure()
@@ -40,9 +42,9 @@ async function doRefresh(): Promise<string> {
   const raw = (await res.json()) as unknown
   const data =
     raw && typeof raw === 'object' && 'success' in raw && 'data' in raw
-      ? ((raw as { data: { accessToken: string; refreshToken: string } }).data)
-      : (raw as { accessToken: string; refreshToken: string })
-  config.onTokenRefreshed(data.accessToken, data.refreshToken)
+      ? ((raw as { data: { accessToken: string } }).data)
+      : (raw as { accessToken: string })
+  config.onTokenRefreshed(data.accessToken)
   return data.accessToken
 }
 

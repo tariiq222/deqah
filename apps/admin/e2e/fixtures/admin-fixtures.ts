@@ -12,7 +12,6 @@ const PASSWORD = process.env.PW_SUPER_ADMIN_PASSWORD ?? 'Admin@2026';
 
 interface LoginResult {
   accessToken: string;
-  refreshToken: string;
 }
 
 async function loginSuperAdmin(ctx: APIRequestContext): Promise<LoginResult> {
@@ -23,7 +22,8 @@ async function loginSuperAdmin(ctx: APIRequestContext): Promise<LoginResult> {
     throw new Error(`Super-admin login failed: ${res.status()} ${await res.text()}`);
   }
   const body = await res.json();
-  return { accessToken: body.accessToken, refreshToken: body.refreshToken };
+  // CR-9: refresh token is now httpOnly cookie (ck_refresh); not in response body
+  return { accessToken: body.accessToken };
 }
 
 type AdminFixtures = {
@@ -51,16 +51,16 @@ export const test = base.extend<AdminFixtures>({
     await ctx.dispose();
   },
 
-  authedPage: async ({ page, loginResult, baseURL }, use) => {
+  authedPage: async ({ page, loginResult }, use) => {
     // addInitScript runs on EVERY page load (including `about:blank`).
     // We unconditionally set localStorage — the init script runs before
     // React hydrates so AuthGate picks up the token on first render.
+    // CR-9: refresh token is httpOnly cookie set by the server; no localStorage entry needed.
     await page.addInitScript(
-      ({ access, refresh }) => {
+      ({ access }) => {
         window.localStorage.setItem('admin.accessToken', access);
-        window.localStorage.setItem('admin.refreshToken', refresh);
       },
-      { access: loginResult.accessToken, refresh: loginResult.refreshToken },
+      { access: loginResult.accessToken },
     );
     await use(page);
   },

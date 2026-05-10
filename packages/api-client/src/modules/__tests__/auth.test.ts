@@ -33,20 +33,17 @@ const fakeAuth: AuthResponse = {
 }
 
 let storedAccess: string | null = null
-let storedRefresh: string | null = null
 let onAuthFailure = vi.fn()
 
 beforeEach(() => {
   storedAccess = null
-  storedRefresh = null
   onAuthFailure = vi.fn()
   initClient({
     baseUrl: 'http://api.test',
     getAccessToken: () => storedAccess,
-    getRefreshToken: () => storedRefresh,
-    onTokenRefreshed: (a, r) => {
+    // CR-9: getRefreshToken is deprecated; refresh token is now httpOnly cookie
+    onTokenRefreshed: (a) => {
       storedAccess = a
-      storedRefresh = r
     },
     onAuthFailure,
   })
@@ -113,23 +110,23 @@ describe('authApi.login', () => {
 })
 
 describe('authApi.refreshToken', () => {
-  it('POSTs /auth/refresh with the refresh token in body and returns a TokenPair (no user)', async () => {
+  it('POSTs /auth/refresh with empty body (CR-9: token is httpOnly cookie) and returns a TokenPair', async () => {
     const fakeTokenPair = {
       accessToken: 'new.access',
-      refreshToken: 'new.refresh',
       expiresIn: 900,
     }
     vi.mocked(fetch).mockResolvedValueOnce(
       mockJsonResponse({ success: true, data: fakeTokenPair }),
     )
 
-    const result = await authApi.refreshToken('old.refresh')
+    const result = await authApi.refreshToken()
 
-    expect(result).toEqual(fakeTokenPair)
+    expect(result.accessToken).toBe('new.access')
+    expect(result.expiresIn).toBe(900)
     const [, init] = vi.mocked(fetch).mock.calls[0]!
-    expect(JSON.parse(init?.body as string)).toEqual({
-      refreshToken: 'old.refresh',
-    })
+    expect(init?.credentials).toBe('include')
+    // CR-9: no refresh token in body — it's sent automatically as httpOnly cookie
+    expect(JSON.parse(init?.body as string)).toEqual({})
   })
 })
 

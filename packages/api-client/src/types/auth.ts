@@ -50,7 +50,8 @@ export interface UserPayload {
 
 export interface TokenPair {
   accessToken: string
-  refreshToken: string
+  /** @deprecated CR-9: refresh token is now an httpOnly cookie (ck_refresh) and is no longer in the response body */
+  refreshToken?: string
   expiresIn: number
 }
 

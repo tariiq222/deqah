@@ -12,7 +12,8 @@ export type Persona =
 
 export interface LoginResult {
   accessToken: string;
-  refreshToken: string;
+  /** @deprecated CR-9: refresh token is now an httpOnly cookie (ck_refresh); not returned in body */
+  refreshToken?: string;
   userId: string;
   organizationId: string | null;
 }
@@ -30,12 +31,11 @@ export async function loginViaApi(
   }
   const body = (await res.json()) as {
     accessToken: string;
-    refreshToken: string;
     user: { id: string; organizationId: string | null };
   };
+  // CR-9: refresh token is now an httpOnly cookie set by the server; not in response body.
   return {
     accessToken: body.accessToken,
-    refreshToken: body.refreshToken,
     userId: body.user.id,
     organizationId: body.user.organizationId,
   };
@@ -70,6 +70,7 @@ export async function writePersonaStorageState(
     const origin = new URL(appBaseUrl).origin;
 
     if (opts.kind === 'localStorage') {
+      // CR-9: refresh token is httpOnly cookie (ck_refresh); not stored in localStorage.
       const state = {
         cookies: [],
         origins: [
@@ -77,7 +78,6 @@ export async function writePersonaStorageState(
             origin,
             localStorage: [
               { name: 'deqah.accessToken', value: result.accessToken },
-              { name: 'deqah.refreshToken', value: result.refreshToken },
             ],
           },
         ],

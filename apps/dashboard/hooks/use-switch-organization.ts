@@ -3,7 +3,8 @@
  *
  * Calls POST /auth/switch-org with the target organizationId. On success:
  *   1. Replaces the in-memory access token with the fresh one.
- *   2. Persists the new refresh token (same storage key as login).
+ *   2. The backend sets a rotated ck_refresh httpOnly cookie automatically
+ *      (CR-9: refresh token is never stored in localStorage).
  *   3. Flushes ALL TanStack Query caches — org context changed, so
  *      bookings / clients / employees / etc. must be refetched.
  *   4. Refreshes the router so server components re-render with the new JWT.
@@ -15,11 +16,8 @@ import { api, setAccessToken } from "@/lib/api"
 
 interface SwitchOrgResponse {
   accessToken: string
-  refreshToken: string
   expiresIn: number
 }
-
-const REFRESH_KEY = "deqah_refresh_token"
 
 export function useSwitchOrganization() {
   const queryClient = useQueryClient()
@@ -30,9 +28,6 @@ export function useSwitchOrganization() {
       api.post<SwitchOrgResponse>("/auth/switch-org", { organizationId }),
     onSuccess: (data) => {
       setAccessToken(data.accessToken)
-      if (typeof window !== "undefined") {
-        localStorage.setItem(REFRESH_KEY, data.refreshToken)
-      }
       // Org changed → every tenant-scoped query is stale.
       queryClient.clear()
       router.refresh()

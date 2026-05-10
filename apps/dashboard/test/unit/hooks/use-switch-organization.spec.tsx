@@ -3,8 +3,9 @@
  *
  * Covers:
  *  1. POSTs to /auth/switch-org with { organizationId }
- *  2. On success: replaces access token, persists refresh token,
- *     flushes the query cache, and calls router.refresh()
+ *  2. On success: replaces access token, flushes the query cache, and
+ *     calls router.refresh(). Refresh token is NOT stored in localStorage
+ *     (CR-9: it is delivered by the backend as httpOnly cookie ck_refresh).
  *  3. Propagates errors (mutation.error path)
  */
 
@@ -48,10 +49,9 @@ describe("useSwitchOrganization", () => {
     localStorage.clear()
   })
 
-  it("on success, swaps tokens, clears cache, and refreshes router", async () => {
+  it("on success, swaps access token, clears cache, and refreshes router", async () => {
     mockApiPost.mockResolvedValueOnce({
       accessToken: "new-acc",
-      refreshToken: "new-ref",
       expiresIn: 900,
     })
 
@@ -70,7 +70,8 @@ describe("useSwitchOrganization", () => {
       organizationId: "org-target",
     })
     expect(mockSetAccessToken).toHaveBeenCalledWith("new-acc")
-    expect(localStorage.getItem("deqah_refresh_token")).toBe("new-ref")
+    // CR-9: refresh token is NOT stored in localStorage — backend sets ck_refresh httpOnly cookie
+    expect(localStorage.getItem("deqah_refresh_token")).toBeNull()
     expect(clearSpy).toHaveBeenCalled()
     expect(mockRouterRefresh).toHaveBeenCalled()
   })
