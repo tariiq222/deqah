@@ -35,7 +35,8 @@ export function OrgStep({ form, set }: Props) {
     if (!slugDirtyRef.current && form.nameAr) {
       set('slug')(generateSubdomainSafeSlug(form.nameAr));
     }
-  }, [form.nameAr, set]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.nameAr]);
 
   const slugValidation = form.slug ? validateSlug(form.slug) : null;
 
