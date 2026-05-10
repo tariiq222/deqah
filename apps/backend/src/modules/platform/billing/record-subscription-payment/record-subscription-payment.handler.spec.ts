@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { RecordSubscriptionPaymentHandler } from './record-subscription-payment.handler';
 import { SubscriptionStateMachine } from '../subscription-state-machine';
+import { RlsTransactionService } from '../../../../infrastructure/database';
 
 const FUTURE_PERIOD_END = new Date('2026-06-01T00:00:00.000Z');
 
@@ -66,6 +67,11 @@ const buildEventBus = () => ({
   publish: jest.fn().mockResolvedValue(undefined),
 });
 
+const buildRlsTx = (prisma: ReturnType<typeof buildPrisma>) =>
+  ({
+    withBypassTransaction: jest.fn((fn: (tx: unknown) => Promise<unknown>) => fn(prisma._txPrisma)),
+  }) as unknown as RlsTransactionService;
+
 describe('RecordSubscriptionPaymentHandler', () => {
   it('throws NotFoundException for unknown invoice', async () => {
     const prisma = buildPrisma();
@@ -78,6 +84,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildConfig() as never,
       buildIssueInvoice() as never,
       buildEventBus() as never,
+      buildRlsTx(prisma),
     );
 
     await expect(
@@ -101,6 +108,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildConfig() as never,
       buildIssueInvoice() as never,
       buildEventBus() as never,
+      buildRlsTx(prisma),
     );
 
     await handler.execute({ invoiceId: 'inv-1', moyasarPaymentId: 'pay-1' });
@@ -128,6 +136,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildConfig() as never,
       buildIssueInvoice() as never,
       buildEventBus() as never,
+      buildRlsTx(prisma),
     );
 
     await handler.execute({ invoiceId: 'inv-1', moyasarPaymentId: 'pay-1' });
@@ -154,6 +163,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildConfig() as never,
       buildIssueInvoice() as never,
       buildEventBus() as never,
+      buildRlsTx(prisma),
     );
 
     await handler.execute({ invoiceId: 'inv-1', moyasarPaymentId: 'pay-abc' });
@@ -181,6 +191,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildConfig() as never,
       buildIssueInvoice() as never,
       buildEventBus() as never,
+      buildRlsTx(prisma),
     );
 
     await handler.execute({ invoiceId: 'inv-1', moyasarPaymentId: 'pay-1' });
@@ -208,6 +219,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildConfig() as never,
       buildIssueInvoice() as never,
       buildEventBus() as never,
+      buildRlsTx(prisma),
     );
 
     await handler.execute({ invoiceId: 'inv-1', moyasarPaymentId: 'pay-1' });
@@ -240,6 +252,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildConfig() as never,
       buildIssueInvoice() as never,
       buildEventBus() as never,
+      buildRlsTx(prisma),
     );
 
     await handler.execute({ invoiceId: 'inv-1', moyasarPaymentId: 'pay-1' });
@@ -264,6 +277,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildConfig() as never,
       buildIssueInvoice() as never,
       buildEventBus() as never,
+      buildRlsTx(prisma),
     );
 
     await handler.execute({ invoiceId: 'inv-1', moyasarPaymentId: 'pay-1' });
@@ -304,6 +318,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildConfig() as never,
       buildIssueInvoice() as never,
       buildEventBus() as never,
+      buildRlsTx(prisma),
     );
 
     await handler.execute({ invoiceId: 'inv-1', moyasarPaymentId: 'pay-1' });
@@ -340,6 +355,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildConfig() as never,
       buildIssueInvoice() as never,
       buildEventBus() as never,
+      buildRlsTx(prisma),
     );
 
     await handler.execute({ invoiceId: 'inv-1', moyasarPaymentId: 'pay-1' });
@@ -378,6 +394,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildConfig() as never,
       buildIssueInvoice() as never,
       buildEventBus() as never,
+      buildRlsTx(prisma),
     );
 
     const beforeExecute = Date.now();
@@ -411,6 +428,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildConfig() as never,
       buildIssueInvoice() as never,
       buildEventBus() as never,
+      buildRlsTx(prisma),
     );
 
     await handler.execute({ invoiceId: 'inv-1', moyasarPaymentId: 'pay-1' });
