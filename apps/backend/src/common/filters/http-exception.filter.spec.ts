@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus, BadRequestException } from '@nestjs/common';
 import * as Sentry from '@sentry/node';
+import { ClsService } from 'nestjs-cls';
 import { HttpExceptionFilter } from './http-exception.filter';
 import { RequestContextStorage } from '../http/request-context';
 
@@ -8,9 +9,13 @@ jest.mock('@sentry/node', () => ({
   captureException: jest.fn(),
 }));
 
-const makeHost = (statusFn = jest.fn(), jsonFn = jest.fn()) => ({
+const makeClsService = (organizationId?: string): ClsService => ({
+  get: jest.fn().mockReturnValue(organizationId ? { organizationId } : undefined),
+} as unknown as ClsService);
+
+const makeHost = (statusFn = jest.fn(), jsonFn = jest.fn(), headers: Record<string, string> = {}) => ({
   switchToHttp: () => ({
-    getRequest: () => ({ method: 'GET', url: '/test', path: '/test' }),
+    getRequest: () => ({ method: 'GET', url: '/test', path: '/test', headers }),
     getResponse: () => ({
       status: (code: number) => { statusFn(code); return { json: jsonFn }; },
     }),
@@ -19,9 +24,11 @@ const makeHost = (statusFn = jest.fn(), jsonFn = jest.fn()) => ({
 
 describe('HttpExceptionFilter', () => {
   let filter: HttpExceptionFilter;
+  let mockCls: ClsService;
 
   beforeEach(() => {
-    filter = new HttpExceptionFilter();
+    mockCls = makeClsService();
+    filter = new HttpExceptionFilter(mockCls);
   });
 
   afterEach(() => {
@@ -163,7 +170,7 @@ describe('HttpExceptionFilter', () => {
 
       const host: any = {
         switchToHttp: () => ({
-          getRequest: () => ({ method: 'POST', url: '/api/v1/x', route: { path: '/api/v1/x' } }),
+          getRequest: () => ({ method: 'POST', url: '/api/v1/x', path: '/api/v1/x', route: { path: '/api/v1/x' }, headers: {} }),
           getResponse: () => ({ status: () => ({ json: jest.fn() }) }),
         }),
       };
@@ -182,10 +189,79 @@ describe('HttpExceptionFilter', () => {
       expect(Sentry.captureException).toHaveBeenCalled();
     });
 
+    it('tags organizationId from CLS on 5xx', () => {
+      const setTag = jest.fn();
+      const setUser = jest.fn();
+      (Sentry.withScope as jest.Mock).mockImplementation((cb: (scope: { setTag: jest.Mock; setUser: jest.Mock }) => void) =>
+        cb({ setTag, setUser }),
+      );
+
+      const clsWithOrg = makeClsService('org-abc-123');
+      const filterWithOrg = new HttpExceptionFilter(clsWithOrg);
+
+      const host: any = {
+        switchToHttp: () => ({
+          getRequest: () => ({ method: 'GET', url: '/api/v1/x', path: '/api/v1/x', route: { path: '/api/v1/x' }, headers: {} }),
+          getResponse: () => ({ status: () => ({ json: jest.fn() }) }),
+        }),
+      };
+
+      filterWithOrg.catch(new Error('boom'), host);
+
+      expect(Sentry.withScope).toHaveBeenCalledTimes(1);
+      expect(setTag).toHaveBeenCalledWith('organizationId', 'org-abc-123');
+      expect(Sentry.captureException).toHaveBeenCalled();
+    });
+
+    it('tags organizationId as "unknown" when CLS has no tenant on 5xx', () => {
+      const setTag = jest.fn();
+      const setUser = jest.fn();
+      (Sentry.withScope as jest.Mock).mockImplementation((cb: (scope: { setTag: jest.Mock; setUser: jest.Mock }) => void) =>
+        cb({ setTag, setUser }),
+      );
+
+      const host: any = {
+        switchToHttp: () => ({
+          getRequest: () => ({ method: 'GET', url: '/api/v1/x', path: '/api/v1/x', route: { path: '/api/v1/x' }, headers: {} }),
+          getResponse: () => ({ status: () => ({ json: jest.fn() }) }),
+        }),
+      };
+
+      // filter uses mockCls which returns undefined for get()
+      filter.catch(new Error('boom'), host);
+
+      expect(setTag).toHaveBeenCalledWith('organizationId', 'unknown');
+    });
+
+    it('sets requestId tag from x-request-id header when present on 5xx', () => {
+      const setTag = jest.fn();
+      const setUser = jest.fn();
+      (Sentry.withScope as jest.Mock).mockImplementation((cb: (scope: { setTag: jest.Mock; setUser: jest.Mock }) => void) =>
+        cb({ setTag, setUser }),
+      );
+
+      const host: any = {
+        switchToHttp: () => ({
+          getRequest: () => ({
+            method: 'GET',
+            url: '/api/v1/x',
+            path: '/api/v1/x',
+            route: { path: '/api/v1/x' },
+            headers: { 'x-request-id': 'header-req-id' },
+          }),
+          getResponse: () => ({ status: () => ({ json: jest.fn() }) }),
+        }),
+      };
+
+      filter.catch(new Error('boom'), host);
+
+      expect(setTag).toHaveBeenCalledWith('requestId', 'header-req-id');
+    });
+
     it('does not call Sentry.withScope on 4xx', () => {
       const host: any = {
         switchToHttp: () => ({
-          getRequest: () => ({ method: 'GET', url: '/x', route: { path: '/x' } }),
+          getRequest: () => ({ method: 'GET', url: '/x', path: '/x', route: { path: '/x' }, headers: {} }),
           getResponse: () => ({ status: () => ({ json: jest.fn() }) }),
         }),
       };
