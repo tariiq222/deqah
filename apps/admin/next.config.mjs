@@ -9,9 +9,9 @@ const securityHeaders = [
     value: [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' https://js.hcaptcha.com https://*.hcaptcha.com",
-      "style-src 'self' 'unsafe-inline' https://*.hcaptcha.com",
+      "style-src 'self' 'unsafe-inline' https://*.hcaptcha.com https://fonts.googleapis.com",
       "img-src 'self' data: blob: https:",
-      "font-src 'self' data:",
+      "font-src 'self' data: https://fonts.gstatic.com",
       "connect-src 'self' http://localhost:5100 https://*.deqah.net https://api.deqah.net https://*.hcaptcha.com https://hcaptcha.com",
       "frame-src https://*.hcaptcha.com https://hcaptcha.com",
       "frame-ancestors 'none'",
