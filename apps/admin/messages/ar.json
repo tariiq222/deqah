@@ -130,6 +130,51 @@
       "totalUsers": "المستخدمون",
       "bookings30d": "الحجوزات (30 يوم)",
       "lifetimeRevenue": "إجمالي الإيراد"
+    },
+    "financial": {
+      "mrr": "MRR الشهري",
+      "arr": "ARR السنوي",
+      "realizedMrr": "محصّل هذا الشهر",
+      "atRiskMrr": "MRR في خطر",
+      "churn30d": "تراجع (30 يوم)",
+      "scheduledDowngrades": "تخفيضات مجدولة",
+      "loadError": "فشل تحميل مقاييس الفوترة",
+      "ofMrr": "من MRR",
+      "suspendedCount": "معلّقة"
+    },
+    "operational": {
+      "activeOrgs": "منظمات نشطة",
+      "suspendedOrgs": "معلّقة",
+      "newThisMonth": "جديدة هذا الشهر",
+      "users": "المستخدمون",
+      "bookings30d": "الحجوزات (30 يوم)",
+      "loadError": "فشل تحميل مقاييس المنصة",
+      "ofTotal": "من الإجمالي"
+    },
+    "byPlan": {
+      "title": "الاشتراكات حسب الباقة",
+      "plan": "الباقة",
+      "activeCount": "نشط",
+      "mrr": "MRR",
+      "share": "الحصة",
+      "empty": "لا توجد باقات نشطة بعد",
+      "loadError": "فشل تحميل توزيع الباقات"
+    },
+    "statusDist": {
+      "title": "حالات الاشتراكات",
+      "loadError": "فشل تحميل حالات الاشتراكات",
+      "ACTIVE": "نشط",
+      "TRIALING": "تجربة",
+      "PAST_DUE": "متأخر الدفع",
+      "SUSPENDED": "معلّق",
+      "CANCELED": "ملغي"
+    },
+    "quickActions": {
+      "title": "روابط سريعة",
+      "organizations": "المنظمات",
+      "billing": "الفوترة",
+      "auditLog": "سجل التدقيق",
+      "settings": "الإعدادات"
     }
   },
   "notifications": {

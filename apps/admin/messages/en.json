@@ -130,6 +130,51 @@
       "totalUsers": "Users",
       "bookings30d": "Bookings 30d",
       "lifetimeRevenue": "Lifetime revenue"
+    },
+    "financial": {
+      "mrr": "Monthly MRR",
+      "arr": "Annual ARR",
+      "realizedMrr": "Realized this month",
+      "atRiskMrr": "At-risk MRR",
+      "churn30d": "Churn (30d)",
+      "scheduledDowngrades": "scheduled downgrades",
+      "loadError": "Failed to load billing metrics",
+      "ofMrr": "of MRR",
+      "suspendedCount": "suspended"
+    },
+    "operational": {
+      "activeOrgs": "Active orgs",
+      "suspendedOrgs": "Suspended",
+      "newThisMonth": "New this month",
+      "users": "Users",
+      "bookings30d": "Bookings (30d)",
+      "loadError": "Failed to load platform metrics",
+      "ofTotal": "of total"
+    },
+    "byPlan": {
+      "title": "Subscriptions by plan",
+      "plan": "Plan",
+      "activeCount": "Active",
+      "mrr": "MRR",
+      "share": "Share",
+      "empty": "No active plans yet",
+      "loadError": "Failed to load plan breakdown"
+    },
+    "statusDist": {
+      "title": "Subscription statuses",
+      "loadError": "Failed to load subscription statuses",
+      "ACTIVE": "Active",
+      "TRIALING": "Trialing",
+      "PAST_DUE": "Past due",
+      "SUSPENDED": "Suspended",
+      "CANCELED": "Canceled"
+    },
+    "quickActions": {
+      "title": "Quick actions",
+      "organizations": "Organizations",
+      "billing": "Billing",
+      "auditLog": "Audit log",
+      "settings": "Settings"
     }
   },
   "notifications": {
