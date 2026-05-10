@@ -265,6 +265,20 @@ export const envValidationSchema = Joi.object({
     otherwise: Joi.string().allow('').optional(),
   }),
 
+  // Subdomain tenant routing (Task 7)
+  // Root domain used to derive tenant slug from the Host header (e.g. sawa.<root> → "sawa").
+  // Required in production so the subdomain resolver can strip the apex and extract the slug.
+  // Optional in dev — consumer code defaults to "localhost" when unset.
+  PLATFORM_ROOT_DOMAIN: Joi.when('NODE_ENV', {
+    is: 'production',
+    then: Joi.string().required(),
+    otherwise: Joi.string().allow('').optional(),
+  }),
+
+  // Optional CSV of additional reserved subdomains merged with the built-in list.
+  // Example: "ops,beta" — prevents tenants from registering those slugs.
+  RESERVED_SUBDOMAINS: Joi.string().allow('').optional(),
+
 })
   .unknown(true)
   // Production safety net: refuse to boot if any sensitive value is still a
