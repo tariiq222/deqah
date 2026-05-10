@@ -98,12 +98,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Log in with email and password' })
   @ApiOkResponse({
-    description: 'Access + refresh tokens with user profile',
+    description: 'Access token with user profile (refresh token delivered as httpOnly cookie ck_refresh)',
     schema: {
       type: 'object',
       properties: {
         accessToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
-        refreshToken: { type: 'string', example: 'a1b2c3d4-...' },
         expiresIn: { type: 'number', example: 900 },
         user: {
           type: 'object',
@@ -158,8 +157,9 @@ export class AuthController {
     });
 
     if (!user) {
+      this.setRefreshCookie(res, tokens.refreshToken);
       return {
-        ...tokens,
+        accessToken: tokens.accessToken,
         user,
         expiresIn: this.parseTtlSeconds(this.config.get<string>('JWT_ACCESS_TTL') ?? '15m'),
       };
@@ -188,7 +188,7 @@ export class AuthController {
 
     this.setRefreshCookie(res, tokens.refreshToken);
     return {
-      ...tokens,
+      accessToken: tokens.accessToken,
       user: {
         ...user,
         firstName,
@@ -208,14 +208,13 @@ export class AuthController {
   @Post('refresh')
   @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Rotate a refresh token and issue new token pair' })
+  @ApiOperation({ summary: 'Rotate a refresh token and issue new access token (refresh token rotated via cookie)' })
   @ApiOkResponse({
-    description: 'New access + refresh token pair',
+    description: 'New access token (rotated refresh token delivered as httpOnly cookie ck_refresh)',
     schema: {
       type: 'object',
       properties: {
         accessToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
-        refreshToken: { type: 'string', example: 'a1b2c3d4-...' },
         expiresIn: { type: 'number', example: 900 },
       },
     },
@@ -264,7 +263,7 @@ export class AuthController {
       });
       this.setRefreshCookie(res, tokens.refreshToken);
       return {
-        ...tokens,
+        accessToken: tokens.accessToken,
         expiresIn: this.parseTtlSeconds(this.config.get<string>('JWT_ACCESS_TTL') ?? '15m'),
       };
     });
@@ -361,15 +360,15 @@ export class AuthController {
     summary: 'Switch active organization context',
     description:
       'SaaS-06 — issues a fresh access + refresh token pair scoped to the ' +
-      'target organization. Caller must have an ACTIVE membership in the target.',
+      'target organization. Caller must have an ACTIVE membership in the target. ' +
+      'Refresh token is delivered as httpOnly cookie ck_refresh.',
   })
   @ApiOkResponse({
-    description: 'New access + refresh token pair scoped to the target org',
+    description: 'New access token scoped to the target org (refresh token as httpOnly cookie ck_refresh)',
     schema: {
       type: 'object',
       properties: {
         accessToken: { type: 'string' },
-        refreshToken: { type: 'string' },
         expiresIn: { type: 'number', example: 900 },
       },
     },
@@ -383,13 +382,15 @@ export class AuthController {
   async switchOrgEndpoint(
     @UserId() userId: string,
     @Body() body: SwitchOrganizationDto,
+    @Res({ passthrough: true }) res: Response,
   ) {
     const tokens = await this.switchOrganization.execute({
       userId,
       targetOrganizationId: body.organizationId,
     });
+    this.setRefreshCookie(res, tokens.refreshToken);
     return {
-      ...tokens,
+      accessToken: tokens.accessToken,
       expiresIn: this.parseTtlSeconds(this.config.get<string>('JWT_ACCESS_TTL') ?? '15m'),
     };
   }
@@ -606,12 +607,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify OTP for dashboard login' })
   @ApiOkResponse({
-    description: 'Access + refresh tokens with user profile',
+    description: 'Access token with user profile (refresh token delivered as httpOnly cookie ck_refresh)',
     schema: {
       type: 'object',
       properties: {
         accessToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
-        refreshToken: { type: 'string', example: 'a1b2c3d4-...' },
         expiresIn: { type: 'number', example: 900 },
         user: {
           type: 'object',
@@ -636,8 +636,14 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Invalid OTP code', type: ApiErrorDto })
   @ApiResponse({ status: 400, description: 'Invalid or expired code', type: ApiErrorDto })
-  async verifyDashboardOtpEndpoint(@Body() dto: VerifyDashboardOtpDto) {
-    return this.verifyDashboardOtp.execute(dto);
+  async verifyDashboardOtpEndpoint(
+    @Body() dto: VerifyDashboardOtpDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.verifyDashboardOtp.execute(dto);
+    this.setRefreshCookie(res, result.refreshToken);
+    const { refreshToken: _rt, ...safeResult } = result;
+    return safeResult;
   }
 
   private setRefreshCookie(res: Response, token: string): void {
