@@ -1,4 +1,3 @@
-import { randomBytes } from 'crypto';
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
@@ -8,16 +7,8 @@ import { TenantContextService } from '../../../common/tenant/tenant-context.serv
 import { SubscriptionCacheService } from '../billing/subscription-cache.service';
 import { PlatformMailerService } from '../../../infrastructure/mail';
 import { OwnerProvisioningService } from '../../identity/owner-provisioning/owner-provisioning.service';
+import { generateSubdomainSafeSlug } from '../../../common/tenant/slug-generator.util';
 import type { RegisterTenantDto } from './register-tenant.dto';
-
-function slugify(text: string): string {
-  return text
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w؀-ۿ-]/g, '')
-    .toLowerCase()
-    .slice(0, 60);
-}
 
 function isPrismaUniqueOn(err: unknown, target: string): boolean {
   if (typeof err !== 'object' || err === null) return false;
@@ -63,7 +54,7 @@ export class RegisterTenantHandler {
     const trialDays = this.config.get<number>('SAAS_TRIAL_DAYS', 14);
     const now = new Date();
     const trialEndsAt = new Date(now.getTime() + trialDays * DAY_MS);
-    const baseSlug = slugify(dto.businessNameAr) || 'org';
+    const baseSlug = generateSubdomainSafeSlug(dto.businessNameAr);
 
     // Resolve billing cycle period
     const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
@@ -73,16 +64,18 @@ export class RegisterTenantHandler {
     // log a warning and proceed without seeding.
     const vertical = await this.resolveVertical(dto.verticalSlug);
 
-    // Generate a slug with a 6-hex random suffix to avoid races on the
-    // unique constraint. We retry up to 3 times on slug-only collisions
-    // before giving up. Email collisions surface as the proper 409.
-    const maxAttempts = 3;
+    // Try baseSlug first; on collision append a deterministic numeric suffix
+    // (attempt 2 → "-2", attempt 3 → "-3", …). Retry up to 50 times before
+    // giving up. Email collisions surface as the proper 409.
+    const maxAttempts = 50;
     let attempt = 0;
     let result: { orgId: string; userId: string; membershipId: string; subscriptionId: string } | undefined;
 
     while (attempt < maxAttempts) {
       attempt += 1;
-      const slug = `${baseSlug}-${randomBytes(3).toString('hex')}`;
+      const slug = attempt === 1
+        ? baseSlug
+        : `${baseSlug.slice(0, Math.max(1, 30 - String(attempt).length - 1))}-${attempt}`;
       try {
         result = await this.prisma.$transaction(async (tx) => {
           const org = await tx.organization.create({

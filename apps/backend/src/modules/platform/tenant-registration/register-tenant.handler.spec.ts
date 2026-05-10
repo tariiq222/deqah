@@ -124,6 +124,22 @@ describe('RegisterTenantHandler', () => {
       .rejects.toThrow(ConflictException);
   });
 
+  it('produces a slug matching SLUG_REGEX even for Arabic names', async () => {
+    const tx = makeTxMock();
+    const p = makePrisma({}, tx);
+    const handler = buildHandler(p);
+    await handler.execute({
+      name: 'Ali',
+      email: 'unique-arabic@example.com',
+      phone: '0501234567',
+      password: 'Pass@1234',
+      businessNameAr: 'عيادة سواء',
+      verticalSlug: 'general-clinic',
+    });
+    const createCall = (tx.organization.create as jest.Mock).mock.calls[0][0] as { data: { slug: string } };
+    expect(createCall.data.slug).toMatch(/^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/);
+  });
+
   it('throws NotFoundException when default plan not found', async () => {
     prisma.plan.findFirst = jest.fn().mockResolvedValue(null);
     const handler = buildHandler();
