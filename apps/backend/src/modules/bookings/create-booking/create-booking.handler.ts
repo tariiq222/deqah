@@ -40,7 +40,8 @@ function mapDbConflict(err: unknown): never {
   throw err;
 }
 
-const roundMoney = (amount: number): number => Number(amount.toFixed(2));
+const roundMoney = (amount: Prisma.Decimal | number): Prisma.Decimal =>
+  new Prisma.Decimal(amount.toString()).toDecimalPlaces(2);
 
 export type CreateBookingCommand = Omit<CreateBookingDto, 'scheduledAt' | 'expiresAt'> & {
   scheduledAt: Date;
@@ -212,7 +213,7 @@ export class CreateBookingHandler {
               serviceId: dto.serviceId,
               subtotal: Number(price),
             });
-            discountedPrice = parseFloat((Number(price) - result.discount).toFixed(2));
+            discountedPrice = new Prisma.Decimal(price.toString()).sub(new Prisma.Decimal(result.discount.toString())).toDecimalPlaces(2).toNumber();
             await tx.coupon.update({
               where: { id: result.couponId },
               data: { usedCount: { increment: 1 } },
@@ -225,15 +226,15 @@ export class CreateBookingHandler {
             if (coupon.expiresAt && coupon.expiresAt < new Date()) {
               throw new BadRequestException(`Coupon ${dto.couponCode} has expired`);
             }
-            if (coupon.minOrderAmt !== null && Number(price) < Number(coupon.minOrderAmt)) {
+            if (coupon.minOrderAmt !== null && new Prisma.Decimal(price.toString()).lessThan(new Prisma.Decimal(coupon.minOrderAmt.toString()))) {
               throw new BadRequestException(`Order total does not meet minimum for coupon`);
             }
-            const priceDec = new Prisma.Decimal(price);
+            const priceDec = new Prisma.Decimal(price.toString());
             const discountValueDec = new Prisma.Decimal(coupon.discountValue.toString());
-            const discount = coupon.discountType === 'PERCENTAGE'
-              ? priceDec.times(discountValueDec).div(100).toDecimalPlaces(2).toNumber()
-              : Math.min(Number(coupon.discountValue), Number(price));
-            discountedPrice = parseFloat((Number(price) - discount).toFixed(2));
+            const discount: Prisma.Decimal = coupon.discountType === 'PERCENTAGE'
+              ? priceDec.times(discountValueDec).div(100).toDecimalPlaces(2)
+              : Prisma.Decimal.min(discountValueDec, priceDec);
+            discountedPrice = priceDec.sub(discount).toDecimalPlaces(2).toNumber();
           }
         }
 
@@ -275,11 +276,11 @@ export class CreateBookingHandler {
             where: { organizationId },
             select: { vatRate: true },
           });
-          const vatRate = orgSettings?.vatRate ? Number(orgSettings.vatRate) : 0.15;
+          const vatRate = new Prisma.Decimal(orgSettings?.vatRate?.toString() ?? '0.15');
 
-          const subtotal = discountedPrice ?? price;
-          const vatAmt = roundMoney(subtotal * vatRate);
-          const total = roundMoney(subtotal + vatAmt);
+          const subtotalDec = new Prisma.Decimal((discountedPrice ?? price).toString());
+          const vatAmt = roundMoney(subtotalDec.mul(vatRate));
+          const total = roundMoney(subtotalDec.add(vatAmt));
 
           invoice = await tx.invoice.create({
             data: {
@@ -288,10 +289,10 @@ export class CreateBookingHandler {
               clientId: booking.clientId,
               employeeId: booking.employeeId,
               bookingId: booking.id,
-              subtotal,
-              vatRate,
-              vatAmt,
-              total,
+              subtotal: subtotalDec.toDecimalPlaces(2).toNumber(),
+              vatRate: vatRate.toNumber(),
+              vatAmt: vatAmt.toNumber(),
+              total: total.toNumber(),
               currency: booking.currency,
               status: 'ISSUED',
               issuedAt: new Date(),

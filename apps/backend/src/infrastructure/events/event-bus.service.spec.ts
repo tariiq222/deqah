@@ -1,6 +1,8 @@
 import type { Queue, Worker } from 'bullmq';
+import type { ClsService } from 'nestjs-cls';
 import { BullMqService } from '../queue/bull-mq.service';
 import { EventBusService, type DomainEventEnvelope } from './event-bus.service';
+import { SUPER_ADMIN_CONTEXT_CLS_KEY, TENANT_CLS_KEY } from '../../common/tenant/tenant.constants';
 
 /**
  * Unit contract for the event bus. BullMQ is stubbed via a fake
@@ -12,6 +14,7 @@ describe('EventBusService', () => {
   let fakeWorker: Pick<Worker, 'close'>;
   let workerProcessor: ((job: { name: string; data: unknown }) => Promise<void>) | undefined;
   let bullmq: jest.Mocked<Pick<BullMqService, 'getQueue' | 'createWorker'>>;
+  let cls: jest.Mocked<Pick<ClsService, 'run' | 'set'>>;
   let bus: EventBusService;
 
   beforeEach(() => {
@@ -26,7 +29,15 @@ describe('EventBusService', () => {
         return fakeWorker as Worker;
       }),
     };
-    bus = new EventBusService(bullmq as unknown as BullMqService);
+    // cls.run() must invoke the callback so dispatch logic executes
+    cls = {
+      run: jest.fn().mockImplementation((cb: () => Promise<void>) => cb()),
+      set: jest.fn(),
+    };
+    bus = new EventBusService(
+      bullmq as unknown as BullMqService,
+      cls as unknown as ClsService,
+    );
   });
 
   const makeEvent = (name: string): DomainEventEnvelope<{ bookingId: string }> => ({
@@ -94,5 +105,34 @@ describe('EventBusService', () => {
         data: makeEvent('booking.confirmed'),
       }),
     ).rejects.toThrow('boom');
+  });
+
+  it('sets tenant CLS context when payload carries organizationId', async () => {
+    bus.subscribe('booking.confirmed', async () => undefined);
+    expect(workerProcessor).toBeDefined();
+    await workerProcessor!({
+      name: 'booking.confirmed',
+      data: {
+        ...makeEvent('booking.confirmed'),
+        payload: { bookingId: 'bk-1', organizationId: 'org-123' },
+      },
+    });
+    expect(cls.set).toHaveBeenCalledWith(
+      TENANT_CLS_KEY,
+      expect.objectContaining({ organizationId: 'org-123' }),
+    );
+    expect(cls.set).not.toHaveBeenCalledWith(SUPER_ADMIN_CONTEXT_CLS_KEY, true);
+  });
+
+  it('sets super-admin CLS context for platform-level events with no organizationId', async () => {
+    bus.subscribe('platform.event', async () => undefined);
+    expect(workerProcessor).toBeDefined();
+    // makeEvent payload has no organizationId
+    await workerProcessor!({
+      name: 'platform.event',
+      data: makeEvent('platform.event'),
+    });
+    expect(cls.set).toHaveBeenCalledWith(SUPER_ADMIN_CONTEXT_CLS_KEY, true);
+    expect(cls.set).not.toHaveBeenCalledWith(TENANT_CLS_KEY, expect.anything());
   });
 });

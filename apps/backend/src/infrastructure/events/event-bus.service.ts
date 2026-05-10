@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { Job, Queue, Worker } from 'bullmq';
+import { ClsService } from 'nestjs-cls';
 import { BullMqService } from '../queue/bull-mq.service';
+import { SUPER_ADMIN_CONTEXT_CLS_KEY, TENANT_CLS_KEY } from '../../common/tenant/tenant.constants';
 
 /**
  * Minimal envelope every domain event must produce. The full `BaseEvent`
@@ -42,7 +44,10 @@ export class EventBusService {
   private readonly handlers = new Map<string, EventHandler[]>();
   private worker?: Worker;
 
-  constructor(private readonly bullmq: BullMqService) {}
+  constructor(
+    private readonly bullmq: BullMqService,
+    private readonly cls: ClsService,
+  ) {}
 
   /**
    * Publish a domain event. The job name is the event name so subscribers
@@ -84,9 +89,15 @@ export class EventBusService {
   }
 
   /**
-   * Run every handler registered for `eventName` sequentially. A failing
-   * handler throws, which causes BullMQ to retry the job per its policy —
-   * at-least-once delivery is the contract.
+   * Run every handler registered for `eventName` sequentially inside a CLS
+   * context. If the event payload carries an `organizationId` the handlers
+   * run with a tenant CLS context so scoped Prisma queries work correctly.
+   * Platform-level events (no tenant) run under the super-admin context so
+   * `$allTenants` queries succeed without throwing. Handlers in that path
+   * must not write tenant-scoped rows.
+   *
+   * A failing handler throws, which causes BullMQ to retry the job per its
+   * policy — at-least-once delivery is the contract.
    */
   private async dispatch(
     eventName: string,
@@ -94,8 +105,29 @@ export class EventBusService {
   ): Promise<void> {
     const list = this.handlers.get(eventName);
     if (!list || list.length === 0) return;
-    for (const handler of list) {
-      await handler(event);
-    }
+
+    const organizationId = (event.payload as Record<string, unknown>)?.organizationId as string | undefined;
+
+    await this.cls.run(async () => {
+      if (organizationId) {
+        // Tenant-scoped event: set CLS so scoped Prisma queries work inside handlers
+        this.cls.set(TENANT_CLS_KEY, {
+          organizationId,
+          membershipId: '',
+          id: '',
+          role: '',
+          isSuperAdmin: false,
+        });
+      } else {
+        // Platform-level event (no tenant): run in super-admin context so
+        // $allTenants queries work without throwing. Handlers must not write
+        // tenant-scoped rows.
+        this.cls.set(SUPER_ADMIN_CONTEXT_CLS_KEY, true);
+      }
+
+      for (const handler of list) {
+        await handler(event);
+      }
+    });
   }
 }
