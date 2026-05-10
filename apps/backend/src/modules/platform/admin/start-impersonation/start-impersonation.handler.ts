@@ -63,6 +63,9 @@ export class StartImpersonationHandler {
     const startedAt = new Date();
     const expiresAt = new Date(startedAt.getTime() + IMPERSONATION_TTL_MS);
 
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Creates an ImpersonationSession + SuperAdminActionLog for a target user in a foreign org;
+    // by definition this crosses tenant boundaries (super-admin org ≠ target org).
     const session = await this.prisma.$allTenants.$transaction(async (tx) => {
       const created = await tx.impersonationSession.create({
         data: {

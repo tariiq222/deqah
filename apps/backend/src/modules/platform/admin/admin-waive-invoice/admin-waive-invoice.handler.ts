@@ -22,6 +22,9 @@ export class AdminWaiveInvoiceHandler {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(cmd: AdminWaiveInvoiceCommand) {
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Voids a SubscriptionInvoice (DUE→VOID or FAILED→VOID) on a foreign tenant's billing record;
+    // invoice is scoped to the target org — the bypass lets the super-admin reach it.
     return this.prisma.$allTenants.$transaction(async (tx) => {
       const invoice = await tx.subscriptionInvoice.findUnique({
         where: { id: cmd.invoiceId },

@@ -67,12 +67,19 @@ export class TurnstileCaptchaVerifier implements CaptchaVerifier {
 
 export function createCaptchaVerifier(): CaptchaVerifier {
   const provider = process.env.CAPTCHA_PROVIDER ?? 'noop';
-  if (process.env.NODE_ENV === 'production' && provider === 'noop') {
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // Belt + suspenders: production always rejects the noop provider, even
+  // if E2E_TEST is accidentally set to 'true' in a misconfigured prod env.
+  if (isProduction && provider === 'noop') {
     throw new Error(
       'CAPTCHA_PROVIDER=noop is forbidden in production; set it to hcaptcha or turnstile',
     );
   }
   if (provider === 'hcaptcha') return new HCaptchaVerifier();
   if (provider === 'turnstile') return new TurnstileCaptchaVerifier();
+  // Default noop — safe in dev/test.
+  // E2E_TEST=true makes the bypass intent explicit for CI E2E jobs.
+  // The flag is only honoured in non-production (the guard above enforces this).
   return new NoopCaptchaVerifier();
 }

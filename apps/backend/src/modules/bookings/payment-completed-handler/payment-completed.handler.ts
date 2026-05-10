@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ClsService } from 'nestjs-cls';
 import { PrismaService } from '../../../infrastructure/database';
+import { RlsTransactionService } from '../../../infrastructure/database';
 import { EventBusService } from '../../../infrastructure/events';
 import { SYSTEM_CONTEXT_CLS_KEY } from '../../../common/tenant/tenant.constants';
 
@@ -24,6 +25,7 @@ export class PaymentCompletedEventHandler {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly rlsTx: RlsTransactionService,
     private readonly eventBus: EventBusService,
     private readonly cls: ClsService,
   ) {}
@@ -51,12 +53,12 @@ export class PaymentCompletedEventHandler {
               role: 'system',
               isSuperAdmin: false,
             });
-            await this.prisma.$transaction([
-              this.prisma.booking.update({
+            await this.rlsTx.withTransaction((tx) => Promise.all([
+              tx.booking.update({
                 where: { id: bookingId },
                 data: { status: 'CONFIRMED', confirmedAt: new Date() },
               }),
-              this.prisma.bookingStatusLog.create({
+              tx.bookingStatusLog.create({
                 data: {
                   organizationId,
                   bookingId,
@@ -66,7 +68,7 @@ export class PaymentCompletedEventHandler {
                   reason: `payment:${paymentId}`,
                 },
               }),
-            ]);
+            ]));
           });
         } catch (err) {
           this.logger.error(`Failed to confirm booking ${bookingId} after payment`, err);

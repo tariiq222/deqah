@@ -16,6 +16,9 @@ export class DeletePlanHandler {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(cmd: DeletePlanCommand) {
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Soft-deletes a platform-wide Plan row (isActive=false); Plan has no organizationId
+    // and is unreachable under RLS, so a bypass is required.
     return this.prisma.$allTenants.$transaction(async (tx) => {
       const plan = await tx.plan.findUnique({
         where: { id: cmd.planId },

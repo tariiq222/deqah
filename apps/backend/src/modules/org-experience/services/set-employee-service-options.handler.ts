@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { SetEmployeeServiceOptionsDto } from './set-employee-service-options.dto';
 
@@ -12,6 +12,7 @@ export class SetEmployeeServiceOptionsHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenant: TenantContextService,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(dto: SetEmployeeServiceOptionsCommand) {
@@ -27,31 +28,31 @@ export class SetEmployeeServiceOptionsHandler {
       throw new NotFoundException(`ServiceDurationOption(s) not found: ${invalid.join(', ')}`);
     }
 
-    const upserts = dto.options.map((opt) =>
-      this.prisma.employeeServiceOption.upsert({
-        where: {
-          employeeServiceId_durationOptionId: {
-            employeeServiceId: dto.employeeServiceId,
-            durationOptionId: opt.durationOptionId,
+    await this.rlsTx.withTransaction((tx) =>
+      Promise.all(dto.options.map((opt) =>
+        tx.employeeServiceOption.upsert({
+          where: {
+            employeeServiceId_durationOptionId: {
+              employeeServiceId: dto.employeeServiceId,
+              durationOptionId: opt.durationOptionId,
+            },
           },
-        },
-        create: {
-          employeeServiceId: dto.employeeServiceId,
-          organizationId,
-          durationOptionId: opt.durationOptionId,
-          priceOverride: opt.priceOverride ?? null,
-          durationOverride: opt.durationOverride ?? null,
-          isActive: opt.isActive ?? true,
-        },
-        update: {
-          priceOverride: opt.priceOverride ?? null,
-          durationOverride: opt.durationOverride ?? null,
-          ...(opt.isActive !== undefined && { isActive: opt.isActive }),
-        },
-      }),
+          create: {
+            employeeServiceId: dto.employeeServiceId,
+            organizationId,
+            durationOptionId: opt.durationOptionId,
+            priceOverride: opt.priceOverride ?? null,
+            durationOverride: opt.durationOverride ?? null,
+            isActive: opt.isActive ?? true,
+          },
+          update: {
+            priceOverride: opt.priceOverride ?? null,
+            durationOverride: opt.durationOverride ?? null,
+            ...(opt.isActive !== undefined && { isActive: opt.isActive }),
+          },
+        }),
+      )),
     );
-
-    await this.prisma.$transaction(upserts);
 
     return this.prisma.employeeServiceOption.findMany({
       where: { employeeServiceId: dto.employeeServiceId },

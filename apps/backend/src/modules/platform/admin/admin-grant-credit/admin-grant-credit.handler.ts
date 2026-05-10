@@ -16,6 +16,9 @@ export class AdminGrantCreditHandler {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(cmd: AdminGrantCreditCommand) {
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Grants a BillingCredit to a foreign tenant's Organization; the credit row is
+    // scoped to the target org, but the write must bypass the caller's RLS context.
     return this.prisma.$allTenants.$transaction(async (tx) => {
       const org = await tx.organization.findUnique({
         where: { id: cmd.organizationId },

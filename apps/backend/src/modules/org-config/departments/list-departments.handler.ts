@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { toListResponse } from '../../../common/dto';
 import { ListDepartmentsDto } from './list-departments.dto';
@@ -11,6 +11,7 @@ export class ListDepartmentsHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenant: TenantContextService,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(dto: ListDepartmentsQuery) {
@@ -30,16 +31,18 @@ export class ListDepartmentsHandler {
       }),
     };
 
-    const [items, total] = await this.prisma.$transaction([
-      this.prisma.department.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-        include: { categories: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } } },
-      }),
-      this.prisma.department.count({ where }),
-    ]);
+    const [items, total] = await this.rlsTx.withTransaction((tx) =>
+      Promise.all([
+        tx.department.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+          include: { categories: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } } },
+        }),
+        tx.department.count({ where }),
+      ]),
+    );
 
     return toListResponse(items, total, page, limit);
   }

@@ -20,6 +20,9 @@ export class SuspendOrganizationHandler {
   ) {}
 
   async execute(cmd: SuspendOrganizationCommand) {
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Suspends a foreign tenant's Organization row, revokes all active refresh tokens and
+    // impersonation sessions for that org; the acting super-admin's own tenant is uninvolved.
     await this.prisma.$allTenants.$transaction(async (tx) => {
       const org = await tx.organization.findUnique({
         where: { id: cmd.organizationId },

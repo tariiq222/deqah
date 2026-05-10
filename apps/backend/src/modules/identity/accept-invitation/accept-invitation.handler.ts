@@ -4,8 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../../../infrastructure/database';
-import { RlsHelper } from '../../../common/tenant/rls.helper';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { PasswordService } from '../shared/password.service';
 import type {
   AcceptInvitationCommand,
@@ -26,7 +25,7 @@ export class AcceptInvitationHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly password: PasswordService,
-    private readonly rls: RlsHelper,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(cmd: AcceptInvitationCommand): Promise<AcceptInvitationResult> {
@@ -58,8 +57,7 @@ export class AcceptInvitationHandler {
       throw new GoneException('Invitation cannot be accepted');
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      await this.rls.applyInTransaction(tx);
+    return this.rlsTx.withTransaction(async (tx) => {
       let userId: string;
       let userPreExisting: boolean;
 

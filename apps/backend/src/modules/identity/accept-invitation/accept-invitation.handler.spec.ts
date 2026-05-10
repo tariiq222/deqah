@@ -1,9 +1,8 @@
 import { Test } from '@nestjs/testing';
 import { BadRequestException, GoneException, NotFoundException } from '@nestjs/common';
 import { AcceptInvitationHandler } from './accept-invitation.handler';
-import { PrismaService } from '../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { PasswordService } from '../shared/password.service';
-import { RlsHelper } from '../../../common/tenant/rls.helper';
 
 function pendingInvite(overrides: Record<string, unknown> = {}) {
   return {
@@ -60,8 +59,10 @@ describe('AcceptInvitationHandler', () => {
           useValue: { hash: jest.fn().mockResolvedValue('hashed') },
         },
         {
-          provide: RlsHelper,
-          useValue: { applyInTransaction: jest.fn().mockResolvedValue(undefined) },
+          provide: RlsTransactionService,
+          useValue: {
+            withTransaction: jest.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(tx)),
+          },
         },
       ],
     }).compile();

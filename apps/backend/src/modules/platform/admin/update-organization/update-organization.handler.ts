@@ -18,6 +18,9 @@ export class UpdateOrganizationHandler {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(cmd: UpdateOrganizationCommand) {
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Updates nameAr/nameEn/verticalSlug/trialEndsAt on a foreign Organization row by id;
+    // the super-admin operates outside any tenant context.
     return this.prisma.$allTenants.$transaction(async (tx) => {
       const current = await tx.organization.findUnique({
         where: { id: cmd.organizationId },

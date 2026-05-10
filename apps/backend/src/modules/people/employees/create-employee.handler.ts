@@ -1,5 +1,5 @@
 import { Injectable, ConflictException } from '@nestjs/common';
-import { PrismaService } from '../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { EventBusService } from '../../../infrastructure/events';
 import { SubscriptionCacheService } from '../../platform/billing/subscription-cache.service';
@@ -16,6 +16,7 @@ export class CreateEmployeeHandler {
     private readonly tenant: TenantContextService,
     private readonly eventBus: EventBusService,
     private readonly subscriptionCache: SubscriptionCacheService,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(dto: CreateEmployeeCommand) {
@@ -29,7 +30,7 @@ export class CreateEmployeeHandler {
       if (existing) throw new ConflictException('Email already registered for this employee');
     }
 
-    const employee = await this.prisma.$transaction(async (tx) => {
+    const employee = await this.rlsTx.withTransaction(async (tx) => {
       const created = await tx.employee.create({
         data: {
           name: dto.name,

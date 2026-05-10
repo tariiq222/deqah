@@ -38,6 +38,9 @@ export class UpdatePlanHandler {
   ) {}
 
   async execute(cmd: UpdatePlanCommand) {
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Mutates a platform-wide Plan row (pricing, limits, visibility) — Plan is global and has no
+    // organizationId; a tenant-scoped transaction would fail the RLS policy.
     const result = await this.prisma.$allTenants.$transaction(async (tx) => {
       const existing = await tx.plan.findUnique({ where: { id: cmd.planId } });
       if (!existing) throw new NotFoundException('plan_not_found');

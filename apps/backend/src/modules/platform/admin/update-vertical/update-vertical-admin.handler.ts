@@ -24,6 +24,9 @@ export class UpdateVerticalAdminHandler {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(cmd: UpdateVerticalAdminCommand) {
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Mutates a platform-wide Vertical row (nameAr/En, templateFamily, sortOrder, etc.);
+    // Vertical is global with no organizationId and is blocked by RLS in a tenant context.
     return this.prisma.$allTenants.$transaction(async (tx) => {
       const existing = await tx.vertical.findUnique({ where: { id: cmd.verticalId } });
       if (!existing) throw new NotFoundException('vertical_not_found');

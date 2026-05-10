@@ -2,11 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
 import { OtpChannel, OtpPurpose } from '@prisma/client';
 import { ResetPasswordHandler } from './reset-password.handler';
-import { PrismaService } from '../../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../../infrastructure/database';
 import { OtpSessionService } from '../../otp/otp-session.service';
 import { PasswordService } from '../../shared/password.service';
 import { TenantContextService } from '../../../../common/tenant';
-import { RlsHelper } from '../../../../common/tenant/rls.helper';
 import { PasswordHistoryService } from '../shared/password-history.service';
 
 describe('ResetPasswordHandler', () => {
@@ -23,11 +22,9 @@ describe('ResetPasswordHandler', () => {
   };
 
   const mockPrisma: {
-    $transaction: jest.Mock;
     client: { findFirst: jest.Mock };
   } = {
     client: { findFirst: jest.fn() },
-    $transaction: jest.fn((cb: (tx: typeof mockTx) => Promise<void>) => cb(mockTx)),
   };
 
   const mockOtpSession = { verifySession: jest.fn() };
@@ -58,7 +55,12 @@ describe('ResetPasswordHandler', () => {
         { provide: PasswordService, useValue: mockPasswords },
         { provide: TenantContextService, useValue: { requireOrganizationIdOrDefault: () => 'org-test' } },
         { provide: PasswordHistoryService, useValue: mockPasswordHistory },
-        { provide: RlsHelper, useValue: { applyInTransaction: jest.fn().mockResolvedValue(undefined) } },
+        {
+          provide: RlsTransactionService,
+          useValue: {
+            withTransaction: jest.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(mockTx)),
+          },
+        },
       ],
     }).compile();
 

@@ -20,6 +20,9 @@ export class ReinstateOrganizationHandler {
   ) {}
 
   async execute(cmd: ReinstateOrganizationCommand) {
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Reinstates a suspended foreign Organization row; clears suspendedAt/suspendedReason
+    // on a tenant the super-admin does not belong to.
     await this.prisma.$allTenants.$transaction(async (tx) => {
       const org = await tx.organization.findUnique({
         where: { id: cmd.organizationId },

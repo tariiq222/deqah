@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { PasswordService } from '../../identity/shared/password.service';
 import { TokenService } from '../../identity/shared/token.service';
 import { TenantContextService } from '../../../common/tenant/tenant-context.service';
@@ -34,6 +34,7 @@ export class RegisterTenantHandler {
     private readonly cache: SubscriptionCacheService,
     private readonly mailer: PlatformMailerService,
     private readonly ownerProvisioning: OwnerProvisioningService,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(dto: RegisterTenantDto) {
@@ -77,7 +78,10 @@ export class RegisterTenantHandler {
         ? baseSlug
         : `${baseSlug.slice(0, Math.max(1, 30 - String(attempt).length - 1))}-${attempt}`;
       try {
-        result = await this.prisma.$transaction(async (tx) => {
+        // bypassRls: true — tenant registration runs before any CLS org context
+        // is established (the org doesn't exist yet). Every write below explicitly
+        // provides organizationId, so RLS enforcement is not applicable here.
+        result = await this.rlsTx.withTransaction(async (tx) => {
           const org = await tx.organization.create({
             data: {
               slug,
@@ -164,7 +168,7 @@ export class RegisterTenantHandler {
           }
 
           return { orgId: org.id, userId: ownerResult.userId, membershipId: membership.id, subscriptionId: sub.id };
-        });
+        }, { bypassRls: true });
         break;
       } catch (err: unknown) {
         if (isPrismaUniqueOn(err, 'email')) {

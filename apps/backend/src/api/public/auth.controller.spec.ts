@@ -101,10 +101,11 @@ describe('AuthController', () => {
       });
     });
 
-    it('returns token pair plus user and expiresIn from login handler', async () => {
+    it('returns accessToken + expiresIn in body but NOT refreshToken (CR-9: cookie-only)', async () => {
       const { controller } = buildController();
       const result = await controller.loginEndpoint({ email: 'a@b.com', password: 'pass123', hCaptchaToken: 'tok' } as never, '127.0.0.1', buildRes());
-      expect(result).toMatchObject({ accessToken: 'access', refreshToken: 'refresh', expiresIn: expect.any(Number) });
+      expect(result).toMatchObject({ accessToken: 'access', expiresIn: expect.any(Number) });
+      expect(result).not.toHaveProperty('refreshToken');
     });
 
     it('sets ck_refresh httpOnly cookie on login', async () => {
@@ -229,7 +230,8 @@ describe('AuthController', () => {
         where: { id: USER_ID },
         include: { customRole: { include: { permissions: true } } },
       });
-      expect(result).toMatchObject({ accessToken: 'access', refreshToken: 'refresh', expiresIn: expect.any(Number) });
+      expect(result).toMatchObject({ accessToken: 'access', expiresIn: expect.any(Number) });
+      expect(result).not.toHaveProperty('refreshToken');
     });
 
     it('throws UnauthorizedException when no token matches', async () => {
@@ -353,12 +355,14 @@ describe('AuthController', () => {
   });
 
   describe('switchOrgEndpoint (SaaS-06)', () => {
-    it('returns fresh tokens with expiresIn on success', async () => {
+    it('returns accessToken + expiresIn in body but NOT refreshToken (CR-9: cookie-only)', async () => {
       const { controller, switchOrganization } = buildController();
+      const res = buildRes();
 
       const result = await controller.switchOrgEndpoint(
         USER_ID,
         { organizationId: 'org-b' } as never,
+        res,
       );
 
       expect(switchOrganization.execute).toHaveBeenCalledWith({
@@ -367,9 +371,22 @@ describe('AuthController', () => {
       });
       expect(result).toEqual({
         accessToken: 'access',
-        refreshToken: 'refresh',
         expiresIn: 900,
       });
+      expect(result).not.toHaveProperty('refreshToken');
+    });
+
+    it('sets ck_refresh httpOnly cookie on org switch (CR-9)', async () => {
+      const { controller } = buildController();
+      const res = buildRes();
+
+      await controller.switchOrgEndpoint(
+        USER_ID,
+        { organizationId: 'org-b' } as never,
+        res,
+      );
+
+      expect(res.cookie).toHaveBeenCalledWith('ck_refresh', 'refresh', expect.objectContaining({ httpOnly: true, sameSite: 'lax', path: '/' }));
     });
   });
 });

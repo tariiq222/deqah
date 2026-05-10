@@ -21,6 +21,9 @@ export class EndImpersonationHandler {
   ) {}
 
   async execute(cmd: EndImpersonationCommand) {
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Closes an ImpersonationSession that belongs to a foreign tenant; RLS is bypassed by design
+    // because the session row's organizationId is the target tenant, not the super-admin's.
     await this.prisma.$allTenants.$transaction(async (tx) => {
       const session = await tx.impersonationSession.findUnique({
         where: { id: cmd.sessionId },

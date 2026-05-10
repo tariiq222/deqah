@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { SubscriptionInvoice } from '@prisma/client';
-import { PrismaService } from '../../../../infrastructure/database/prisma.service';
+import { PrismaService, RlsTransactionService } from '../../../../infrastructure/database';
 import { InvoiceNumberingService } from './invoice-numbering.service';
 import { computeInvoiceHash } from './invoice-hash.util';
 
@@ -18,13 +18,15 @@ export class IssueInvoiceHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly numbering: InvoiceNumberingService,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(
     invoiceId: string,
     now: Date = new Date(),
   ): Promise<SubscriptionInvoice> {
-    return this.prisma.$transaction(async tx => {
+    return this.rlsTx.withBypassTransaction(async tx => {
+      // bypassRls: platform billing — runs outside tenant CLS context
       const invoice = await tx.subscriptionInvoice.findUniqueOrThrow({
         where: { id: invoiceId },
       });

@@ -143,6 +143,9 @@ jobs:
           MINIO_USE_SSL: 'false'
           MINIO_INVOICE_BUCKET: deqah-invoices
           DASHBOARD_PUBLIC_URL: http://localhost:5103
+          # CR-10: explicit E2E bypass flag so the captcha verifier uses NoopCaptchaVerifier.
+          # CAPTCHA_PROVIDER defaults to 'noop' anyway; E2E_TEST makes the intent explicit.
+          E2E_TEST: 'true'
 
       - name: Install Playwright browsers
         working-directory: apps/dashboard
@@ -300,6 +303,8 @@ jobs:
           MINIO_USE_SSL: 'false'
           MINIO_INVOICE_BUCKET: deqah-invoices
           DASHBOARD_PUBLIC_URL: http://localhost:5103
+          # CR-10: explicit E2E bypass flag so the captcha verifier uses NoopCaptchaVerifier.
+          E2E_TEST: 'true'
 
       - name: Install Playwright browsers
         working-directory: apps/dashboard

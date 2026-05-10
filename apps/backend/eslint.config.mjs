@@ -78,12 +78,23 @@ export default defineConfig([
 
       // `$allTenantsUnsafe` is reserved for CLI/bootstrap code (seed/scripts).
       // Application code must go through the CLS-gated `$allTenants` escape hatch.
+      //
+      // Direct `prisma.$transaction()` calls bypass RLS context injection.
+      // Use `RlsTransactionService.withTransaction()` or `.withBypassTransaction()`
+      // instead. For super-admin / cron paths add `{ bypassRls: true }` and a
+      // comment explaining why. The helper file itself is exempt via a file-level
+      // disable comment.
       "no-restricted-syntax": [
         "error",
         {
           selector: "MemberExpression[property.name='$allTenantsUnsafe']",
           message:
             "Use PrismaService.$allTenants only inside a SuperAdminContextInterceptor-protected request. $allTenantsUnsafe is reserved for seed/scripts code.",
+        },
+        {
+          selector: "CallExpression[callee.property.name='$transaction']:not([callee.object.property.name='$allTenants'])",
+          message:
+            "Use RlsTransactionService.withTransaction() instead of prisma.$transaction() to ensure RLS context is injected. $allTenants.$transaction is allowed for super-admin/cron with a justification comment.",
         },
       ],
     },
@@ -95,6 +106,20 @@ export default defineConfig([
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "deqah/require-api-operation": "off",
+      // Test helpers and e2e fixtures legitimately call $transaction directly for
+      // database setup/teardown; they are not application code subject to RLS rules.
+      "no-restricted-syntax": "off",
     },
+  },
+
+  {
+    // Infrastructure-internal files that implement the $transaction wrappers are
+    // exempt from the no-restricted-syntax/$transaction rule — they ARE the wrapper.
+    files: [
+      "src/common/database/rls-transaction.ts",
+      "src/common/tenant/rls.helper.ts",
+      "src/common/interceptors/tenant-guc.interceptor.ts",
+    ],
+    rules: { "no-restricted-syntax": "off" },
   },
 ]);

@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { OtpPurpose, OtpChannel } from '@prisma/client';
-import { PrismaService } from '../../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../../infrastructure/database';
 import { OtpSessionService } from '../../otp/otp-session.service';
 import { PasswordService } from '../../shared/password.service';
 import { ResetPasswordDto } from './reset-password.dto';
@@ -18,7 +18,7 @@ export class ResetPasswordHandler {
     private readonly passwords: PasswordService,
     private readonly tenant: TenantContextService,
     private readonly passwordHistory: PasswordHistoryService,
-    private readonly rls: RlsHelper,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(dto: ResetPasswordDto): Promise<void> {
@@ -58,8 +58,7 @@ export class ResetPasswordHandler {
 
     const passwordHash = await this.passwords.hash(dto.newPassword);
 
-    await this.prisma.$transaction(async (tx) => {
-      await this.rls.applyInTransaction(tx);
+    await this.rlsTx.withTransaction(async (tx) => {
       // Burn OTP session — unique constraint on jti prevents replay
       try {
         await tx.usedOtpSession.create({

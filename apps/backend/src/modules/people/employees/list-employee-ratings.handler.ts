@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { toListResponse } from '../../../common/dto';
 
@@ -14,6 +14,7 @@ export class ListEmployeeRatingsHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenant: TenantContextService,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(query: ListEmployeeRatingsQuery) {
@@ -29,10 +30,12 @@ export class ListEmployeeRatingsHandler {
     if (!employee) throw new NotFoundException('Employee not found');
 
     const where = { employeeId: query.employeeId, organizationId };
-    const [items, total] = await this.prisma.$transaction([
-      this.prisma.rating.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
-      this.prisma.rating.count({ where }),
-    ]);
+    const [items, total] = await this.rlsTx.withTransaction((tx) =>
+      Promise.all([
+        tx.rating.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+        tx.rating.count({ where }),
+      ]),
+    );
 
     return toListResponse(items, total, page, limit);
   }

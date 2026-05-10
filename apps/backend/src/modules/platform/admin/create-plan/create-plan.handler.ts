@@ -31,6 +31,9 @@ export class CreatePlanHandler {
   ) {}
 
   async execute(cmd: CreatePlanCommand) {
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Creates a platform-wide Plan row that is not scoped to any Organization;
+    // RLS would block this write if run inside a tenant context.
     const plan = await this.prisma.$allTenants.$transaction(async (tx) => {
       const existing = await tx.plan.findUnique({ where: { slug: cmd.data.slug } });
       if (existing) throw new ConflictException('plan_slug_already_exists');

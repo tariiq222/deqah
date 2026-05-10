@@ -2,49 +2,86 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { InvoiceStatus, PaymentStatus } from '@prisma/client';
 import { RefundPaymentHandler } from './refund-payment/refund-payment.handler';
 import { VerifyPaymentHandler } from './verify-payment/verify-payment.handler';
-import { createEventBusMock } from '../../../test/fixtures/event-bus';
-import { createRlsHelper } from '../../../test/fixtures/rls';
-import { createPrismaMock, MockedPayment, MockedInvoice, setupPaymentMock, setupInvoiceMock, setupPaymentUpdateMock, setupInvoiceUpdateMock, setupTransactionMock, setupPaymentAggregateMock, setupRefundRequestMocks } from '../../../test/fixtures/prisma';
+import { RlsTransactionService } from '../../infrastructure/database';
 
+const buildPrisma = () => {
+  const prisma: {
+    payment: {
+      findFirst: jest.Mock;
+      update: jest.Mock;
+      aggregate: jest.Mock;
+    };
+    invoice: {
+      findFirst: jest.Mock;
+      update: jest.Mock;
+    };
+    refundRequest: {
+      create: jest.Mock;
+      update: jest.Mock;
+    };
+    $transaction: jest.Mock;
+  } = {
+    payment: {
+      findFirst: jest.fn(),
+      update: jest.fn(),
+      aggregate: jest.fn(),
+    },
+    invoice: {
+      findFirst: jest.fn(),
+      update: jest.fn(),
+    },
+    refundRequest: {
+      create: jest.fn().mockResolvedValue({ id: 'rr-1' }),
+      update: jest.fn().mockResolvedValue({ id: 'rr-1' }),
+    },
+    $transaction: jest.fn(async (fn) => fn(prisma)),
+  };
+  return prisma;
+};
+
+const buildEventBus = () => ({
+  publish: jest.fn().mockResolvedValue(undefined),
+  subscribe: jest.fn(),
+});
+const buildRlsTx = (prisma: ReturnType<typeof buildPrisma>) =>
+  ({
+    withTransaction: jest.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma)),
+  } as unknown as RlsTransactionService);
 const buildMoyasar = () => ({
   createRefund: jest.fn().mockResolvedValue({ id: 'refund-gw-1' }),
 });
 
 const PAY_ID = 'pay-1';
-const INVOICE_ID = 'inv-1';
-
-const PAYMENT_BASE: MockedPayment = {
-  id: PAY_ID,
-  amount: 100,
-  gatewayRef: 'pay_test_gw_123',
-  status: PaymentStatus.COMPLETED,
-  invoiceId: INVOICE_ID,
-  invoice: {
-    id: INVOICE_ID,
-    bookingId: 'book-1',
-    clientId: 'client-1',
-    currency: 'SAR',
-    organizationId: 'org-1',
-  },
-  organizationId: 'org-1',
-};
 
 describe('RefundPaymentHandler', () => {
+  const PAYMENT_BASE = {
+    id: PAY_ID,
+    amount: 100,
+    gatewayRef: 'pay_test_gw_123',
+    invoice: {
+      id: 'inv-1',
+      bookingId: 'book-1',
+      clientId: 'client-1',
+      currency: 'SAR',
+      organizationId: 'org-1',
+    },
+  };
+
   it('refunds a completed payment + creates RefundRequest + emits RefundCompletedEvent', async () => {
-    const prisma = createPrismaMock();
-    const eventBus = createEventBusMock();
+    const prisma = buildPrisma();
+    const eventBus = buildEventBus();
     const moyasar = buildMoyasar();
+    const completedPayment = { ...PAYMENT_BASE, status: PaymentStatus.COMPLETED };
+    const refunded = { ...completedPayment, status: PaymentStatus.REFUNDED, failureReason: 'client request' };
+    prisma.payment.findFirst.mockResolvedValue(completedPayment);
+    prisma.payment.update.mockResolvedValue(refunded);
+    prisma.invoice.update.mockResolvedValue({ id: 'inv-1' });
 
-    setupPaymentMock(prisma, PAYMENT_BASE);
-    setupPaymentUpdateMock(prisma, { ...PAYMENT_BASE, status: PaymentStatus.REFUNDED, failureReason: 'client request' });
-    setupInvoiceUpdateMock(prisma, { id: INVOICE_ID });
-    setupRefundRequestMocks(prisma);
-    setupTransactionMock(prisma);
-
-    const handler = new RefundPaymentHandler(prisma as never, eventBus as never, createRlsHelper(), moyasar as never);
+    const handler = new RefundPaymentHandler(prisma as never, eventBus as never, buildRlsTx(prisma), moyasar as never);
     const result = await handler.execute({ paymentId: PAY_ID, reason: 'client request' });
 
     expect(result.status).toBe(PaymentStatus.REFUNDED);
+    // The pre-Moyasar breadcrumb row is created in PROCESSING.
     expect(prisma.refundRequest.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -53,6 +90,7 @@ describe('RefundPaymentHandler', () => {
         }),
       }),
     );
+    // The finalize step flips it to COMPLETED with the gateway reference.
     expect(prisma.refundRequest.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ status: 'COMPLETED', gatewayRef: 'refund-gw-1' }),
@@ -77,55 +115,57 @@ describe('RefundPaymentHandler', () => {
   });
 
   it('throws NotFoundException when payment not found', async () => {
-    const prisma = createPrismaMock();
-    const eventBus = createEventBusMock();
+    const prisma = buildPrisma();
+    const eventBus = buildEventBus();
     prisma.payment.findFirst.mockResolvedValue(null);
 
     await expect(
-      new RefundPaymentHandler(prisma as never, eventBus as never, createRlsHelper(), buildMoyasar() as never).execute({ paymentId: 'bad', reason: 'x' }),
+      new RefundPaymentHandler(prisma as never, eventBus as never, buildRlsTx(prisma), buildMoyasar() as never).execute({ paymentId: 'bad', reason: 'x' }),
     ).rejects.toThrow(NotFoundException);
   });
 
   it('throws BadRequestException when payment is not COMPLETED', async () => {
-    const prisma = createPrismaMock();
-    const eventBus = createEventBusMock();
-    setupPaymentMock(prisma, { ...PAYMENT_BASE, status: PaymentStatus.PENDING });
+    const prisma = buildPrisma();
+    const eventBus = buildEventBus();
+    prisma.payment.findFirst.mockResolvedValue({ ...PAYMENT_BASE, status: PaymentStatus.PENDING });
 
     await expect(
-      new RefundPaymentHandler(prisma as never, eventBus as never, createRlsHelper(), buildMoyasar() as never).execute({ paymentId: PAY_ID, reason: 'x' }),
+      new RefundPaymentHandler(prisma as never, eventBus as never, buildRlsTx(prisma), buildMoyasar() as never).execute({ paymentId: PAY_ID, reason: 'x' }),
     ).rejects.toThrow(BadRequestException);
   });
 });
 
 describe('VerifyPaymentHandler', () => {
-  it('approves (sets COMPLETED), flips invoice to PAID, and publishes PaymentCompletedEvent', async () => {
-    const prisma = createPrismaMock();
-    const eventBus = createEventBusMock();
+  const INVOICE_ID = 'inv-1';
 
-    const pendingPayment: MockedPayment = {
+  it('approves (sets COMPLETED), flips invoice to PAID, and publishes PaymentCompletedEvent', async () => {
+    const prisma = buildPrisma();
+    const eventBus = buildEventBus();
+    const pendingPayment = {
       id: PAY_ID,
       invoiceId: INVOICE_ID,
       amount: 230,
       status: PaymentStatus.PENDING_VERIFICATION,
       gatewayRef: null,
-      organizationId: 'org-1',
     };
-
-    setupPaymentMock(prisma, pendingPayment);
-    setupPaymentUpdateMock(prisma, { ...pendingPayment, status: PaymentStatus.COMPLETED, processedAt: new Date(), gatewayRef: 'REF-123' });
-
-    const invoice: MockedInvoice = {
+    const verified = {
+      ...pendingPayment,
+      status: PaymentStatus.COMPLETED,
+      processedAt: new Date(),
+      gatewayRef: 'REF-123',
+    };
+    prisma.payment.findFirst.mockResolvedValue(pendingPayment);
+    prisma.payment.update.mockResolvedValue(verified);
+    prisma.invoice.findFirst.mockResolvedValue({
       id: INVOICE_ID,
       total: 230,
       currency: 'SAR',
       bookingId: 'book-1',
-    };
-    setupInvoiceMock(prisma, invoice);
-    setupPaymentAggregateMock(prisma, { _sum: { amount: 230 } });
-    setupInvoiceUpdateMock(prisma, { id: INVOICE_ID, status: InvoiceStatus.PAID });
-    setupTransactionMock(prisma);
+    });
+    prisma.payment.aggregate.mockResolvedValue({ _sum: { amount: 230 } });
+    prisma.invoice.update.mockResolvedValue({ id: INVOICE_ID, status: InvoiceStatus.PAID });
 
-    const handler = new VerifyPaymentHandler(prisma as never, eventBus as never, createRlsHelper());
+    const handler = new VerifyPaymentHandler(prisma as never, eventBus as never, buildRlsTx(prisma));
     const result = await handler.execute({
       paymentId: PAY_ID,
       action: 'approve',
@@ -152,32 +192,25 @@ describe('VerifyPaymentHandler', () => {
   });
 
   it('approves partial payment → invoice marked PARTIALLY_PAID, no event emitted', async () => {
-    const prisma = createPrismaMock();
-    const eventBus = createEventBusMock();
-
-    const pendingPayment: MockedPayment = {
+    const prisma = buildPrisma();
+    const eventBus = buildEventBus();
+    prisma.payment.findFirst.mockResolvedValue({
       id: PAY_ID,
       invoiceId: INVOICE_ID,
       amount: 100,
       status: PaymentStatus.PENDING_VERIFICATION,
       gatewayRef: null,
-      organizationId: 'org-1',
-    };
-
-    setupPaymentMock(prisma, pendingPayment);
-    setupPaymentUpdateMock(prisma, { id: PAY_ID, status: PaymentStatus.COMPLETED, amount: 100 });
-
-    const invoice: MockedInvoice = {
+    });
+    prisma.payment.update.mockResolvedValue({ id: PAY_ID, status: PaymentStatus.COMPLETED, amount: 100 });
+    prisma.invoice.findFirst.mockResolvedValue({
       id: INVOICE_ID,
       total: 230,
       currency: 'SAR',
       bookingId: 'book-1',
-    };
-    setupInvoiceMock(prisma, invoice);
-    setupPaymentAggregateMock(prisma, { _sum: { amount: 100 } });
-    setupTransactionMock(prisma);
+    });
+    prisma.payment.aggregate.mockResolvedValue({ _sum: { amount: 100 } });
 
-    const handler = new VerifyPaymentHandler(prisma as never, eventBus as never, createRlsHelper());
+    const handler = new VerifyPaymentHandler(prisma as never, eventBus as never, buildRlsTx(prisma));
     await handler.execute({ paymentId: PAY_ID, action: 'approve' });
 
     expect(prisma.invoice.update).toHaveBeenCalledWith(
@@ -189,21 +222,14 @@ describe('VerifyPaymentHandler', () => {
   });
 
   it('rejects (sets FAILED) when action is reject', async () => {
-    const prisma = createPrismaMock();
-    const eventBus = createEventBusMock();
+    const prisma = buildPrisma();
+    const eventBus = buildEventBus();
+    const pendingPayment = { id: PAY_ID, status: PaymentStatus.PENDING_VERIFICATION, gatewayRef: null };
+    const failed = { ...pendingPayment, status: PaymentStatus.FAILED, failureReason: 'Bank transfer rejected' };
+    prisma.payment.findFirst.mockResolvedValue(pendingPayment);
+    prisma.payment.update.mockResolvedValue(failed);
 
-    const pendingPayment: MockedPayment = {
-      id: PAY_ID,
-      invoiceId: INVOICE_ID,
-      status: PaymentStatus.PENDING_VERIFICATION,
-      gatewayRef: null,
-      amount: 100,
-      organizationId: 'org-1',
-    };
-    setupPaymentMock(prisma, pendingPayment);
-    setupPaymentUpdateMock(prisma, { ...pendingPayment, status: PaymentStatus.FAILED, failureReason: 'Bank transfer rejected' });
-
-    const handler = new VerifyPaymentHandler(prisma as never, eventBus as never, createRlsHelper());
+    const handler = new VerifyPaymentHandler(prisma as never, eventBus as never, buildRlsTx(prisma));
     const result = await handler.execute({ paymentId: PAY_ID, action: 'reject' });
 
     expect(result.status).toBe(PaymentStatus.FAILED);
@@ -217,12 +243,12 @@ describe('VerifyPaymentHandler', () => {
   });
 
   it('throws NotFoundException when payment not found', async () => {
-    const prisma = createPrismaMock();
-    const eventBus = createEventBusMock();
+    const prisma = buildPrisma();
+    const eventBus = buildEventBus();
     prisma.payment.findFirst.mockResolvedValue(null);
 
     await expect(
-      new VerifyPaymentHandler(prisma as never, eventBus as never, createRlsHelper()).execute({
+      new VerifyPaymentHandler(prisma as never, eventBus as never, buildRlsTx(prisma)).execute({
         paymentId: 'bad',
         action: 'approve',
       }),
@@ -230,12 +256,16 @@ describe('VerifyPaymentHandler', () => {
   });
 
   it('throws BadRequestException when payment is not PENDING_VERIFICATION', async () => {
-    const prisma = createPrismaMock();
-    const eventBus = createEventBusMock();
-    setupPaymentMock(prisma, { ...PAYMENT_BASE, status: PaymentStatus.COMPLETED, gatewayRef: null });
+    const prisma = buildPrisma();
+    const eventBus = buildEventBus();
+    prisma.payment.findFirst.mockResolvedValue({
+      id: PAY_ID,
+      status: PaymentStatus.COMPLETED,
+      gatewayRef: null,
+    });
 
     await expect(
-      new VerifyPaymentHandler(prisma as never, eventBus as never, createRlsHelper()).execute({
+      new VerifyPaymentHandler(prisma as never, eventBus as never, buildRlsTx(prisma)).execute({
         paymentId: PAY_ID,
         action: 'approve',
       }),

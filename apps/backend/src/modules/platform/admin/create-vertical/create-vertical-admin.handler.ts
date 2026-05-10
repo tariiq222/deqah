@@ -24,6 +24,9 @@ export class CreateVerticalAdminHandler {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(cmd: CreateVerticalAdminCommand) {
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Creates a platform-wide Vertical row (global terminology/seed config, no organizationId);
+    // RLS would block the insert if run inside any tenant context.
     return this.prisma.$allTenants.$transaction(async (tx) => {
       const existing = await tx.vertical.findUnique({ where: { slug: cmd.data.slug } });
       if (existing) throw new ConflictException('vertical_slug_already_exists');

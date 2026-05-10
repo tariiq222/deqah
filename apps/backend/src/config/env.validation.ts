@@ -94,6 +94,15 @@ export const envValidationSchema = Joi.object({
   TENANT_ENFORCEMENT: Joi.string().valid('off', 'permissive', 'strict').default('strict'),
   DEFAULT_ORGANIZATION_ID: Joi.string().uuid().default('00000000-0000-0000-0000-000000000001'),
 
+  // Subdomain-based tenant routing (CR-4).
+  // PLATFORM_ROOT_DOMAIN: the apex domain (e.g. deqah.net). Requests arriving on
+  // <slug>.deqah.net are resolved to that organization's ID. Defaults to 'deqah.net'
+  // for production; override in dev/test if needed.
+  PLATFORM_ROOT_DOMAIN: Joi.string().hostname().default('deqah.net'),
+  // RESERVED_SUBDOMAINS: comma-separated additional subdomains to block from
+  // tenant slug resolution (on top of the built-in list in subdomain.utils.ts).
+  RESERVED_SUBDOMAINS: Joi.string().allow('').optional(),
+
   // SMS per-tenant (SaaS-02g-sms) — encryption key is REQUIRED; 32 raw bytes base64-encoded (ASCII length 44).
   // Webhook base URL is the public origin registered with providers for DLR callbacks.
   SMS_PROVIDER_ENCRYPTION_KEY: Joi.string().base64().length(44).required(),

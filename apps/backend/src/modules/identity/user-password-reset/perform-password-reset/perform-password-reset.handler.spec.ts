@@ -2,8 +2,7 @@ import { Test } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { PerformPasswordResetHandler } from './perform-password-reset.handler';
-import { PrismaService } from '../../../../infrastructure/database';
-import { RlsHelper } from '../../../../common/tenant/rls.helper';
+import { PrismaService, RlsTransactionService } from '../../../../infrastructure/database';
 import { PasswordService } from '../../shared/password.service';
 
 describe('PerformPasswordResetHandler', () => {
@@ -12,24 +11,17 @@ describe('PerformPasswordResetHandler', () => {
     passwordResetToken: { findFirst: jest.Mock; update: jest.Mock };
     user: { update: jest.Mock; findUnique: jest.Mock };
     refreshToken: { updateMany: jest.Mock };
-    $transaction: jest.Mock;
   };
   let passwords: { hash: jest.Mock; verify: jest.Mock };
-  let mockRls: jest.Mocked<Pick<RlsHelper, 'applyInTransaction' | 'runWithoutTenant'>>;
 
   const rawToken = 'a'.repeat(64);
   const tokenHash = createHash('sha256').update(rawToken).digest('hex');
 
   beforeEach(async () => {
-    mockRls = {
-      applyInTransaction: jest.fn().mockResolvedValue(undefined),
-      runWithoutTenant: jest.fn(),
-    };
     prisma = {
       passwordResetToken: { findFirst: jest.fn(), update: jest.fn().mockResolvedValue({}) },
       user: { update: jest.fn().mockResolvedValue({}), findUnique: jest.fn().mockResolvedValue({ passwordHash: 'old' }) },
       refreshToken: { updateMany: jest.fn().mockResolvedValue({}) },
-      $transaction: jest.fn().mockImplementation(async (fn) => fn({ ...prisma, $queryRaw: jest.fn().mockResolvedValue([]) })),
     };
     passwords = { hash: jest.fn().mockResolvedValue('hashed-pw'), verify: jest.fn().mockResolvedValue(false) };
     const moduleRef = await Test.createTestingModule({
@@ -37,7 +29,17 @@ describe('PerformPasswordResetHandler', () => {
         PerformPasswordResetHandler,
         { provide: PrismaService, useValue: prisma },
         { provide: PasswordService, useValue: passwords },
-        { provide: RlsHelper, useValue: mockRls },
+        {
+          provide: RlsTransactionService,
+          useValue: {
+            withTransaction: jest.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
+              fn({ ...prisma, $queryRaw: jest.fn().mockResolvedValue([]) }),
+            ),
+            withBypassTransaction: jest.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
+              fn({ ...prisma, $queryRaw: jest.fn().mockResolvedValue([]) }),
+            ),
+          },
+        },
       ],
     }).compile();
     handler = moduleRef.get(PerformPasswordResetHandler);

@@ -32,6 +32,9 @@ export class ResetUserPasswordHandler {
     const tempPassword = randomBytes(12).toString('base64url');
     const passwordHash = await this.passwords.hash(tempPassword);
 
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Resets the password hash on a User row that may belong to any tenant; User rows are
+    // global (no organizationId) and are inaccessible under RLS in a normal tenant context.
     await this.prisma.$allTenants.$transaction(async (tx) => {
       await tx.user.update({
         where: { id: cmd.targetUserId },

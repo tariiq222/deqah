@@ -16,6 +16,9 @@ export class DeleteVerticalAdminHandler {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(cmd: DeleteVerticalAdminCommand) {
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Soft-deletes a platform-wide Vertical row (isActive=false); Vertical is global and
+    // unreachable under RLS — bypass is required even for the safety check on active orgs.
     return this.prisma.$allTenants.$transaction(async (tx) => {
       const vertical = await tx.vertical.findUnique({
         where: { id: cmd.verticalId },

@@ -1,5 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
-import { RlsHelper } from '../../../../common/tenant/rls.helper';
+import { RlsTransactionService } from '../../../../infrastructure/database';
 import { SetClientActiveHandler } from './set-client-active.handler';
 
 const makeClient = (overrides: Partial<{ id: string; isActive: boolean; deletedAt: Date | null }> = {}) => ({
@@ -9,57 +9,33 @@ const makeClient = (overrides: Partial<{ id: string; isActive: boolean; deletedA
   ...overrides,
 });
 
-const buildPrisma = (client: ReturnType<typeof makeClient> | null) => {
-  const txFn = jest.fn().mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) => {
-    const tx = {
-      $queryRaw: jest.fn().mockResolvedValue([]),
-      client: {
-        update: jest.fn().mockResolvedValue({ id: client?.id ?? 'client-1', isActive: false }),
-      },
-      clientRefreshToken: {
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
-      },
-    };
-    return cb(tx);
-  });
-
-  return {
-    _tx: txFn,
-    client: {
-      findFirst: jest.fn().mockResolvedValue(client),
-    },
-    $transaction: txFn,
-  };
-};
+const buildPrisma = (client: ReturnType<typeof makeClient> | null) => ({
+  client: {
+    findFirst: jest.fn().mockResolvedValue(client),
+  },
+});
 
 const buildEventBus = () => ({ publish: jest.fn().mockResolvedValue(undefined) });
 const buildLogActivity = () => ({ execute: jest.fn().mockResolvedValue(undefined) });
-const buildRls = () =>
+
+const buildRlsTx = (txFactory: () => unknown) =>
   ({
-    applyInTransaction: jest.fn().mockResolvedValue(undefined),
-    runWithoutTenant: jest.fn(),
-  }) as unknown as RlsHelper;
+    withTransaction: jest.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(txFactory())),
+  } as unknown as RlsTransactionService);
 
 describe('SetClientActiveHandler', () => {
   it('enables a client (happy path — isActive: true)', async () => {
     const disabledClient = makeClient({ isActive: false });
     const prisma = buildPrisma(disabledClient);
-    // When enabling, transaction updates client but does NOT revoke tokens
-    prisma.$transaction = jest.fn().mockImplementation(
-      async (cb: (tx: unknown) => Promise<unknown>) => {
-        const tx = {
-          $queryRaw: jest.fn().mockResolvedValue([]),
-          client: {
-            update: jest.fn().mockResolvedValue({ id: 'client-1', isActive: true }),
-          },
-          clientRefreshToken: { updateMany: jest.fn() },
-        };
-        const result = await cb(tx);
-        // Verify no revoke when enabling
-        expect(tx.clientRefreshToken.updateMany).not.toHaveBeenCalled();
-        return result;
+
+    const clientRefreshTokenUpdateMany = jest.fn();
+    const tx = {
+      client: {
+        update: jest.fn().mockResolvedValue({ id: 'client-1', isActive: true }),
       },
-    );
+      clientRefreshToken: { updateMany: clientRefreshTokenUpdateMany },
+    };
+    const rlsTx = buildRlsTx(() => tx);
 
     const eventBus = buildEventBus();
     const logActivity = buildLogActivity();
@@ -67,7 +43,7 @@ describe('SetClientActiveHandler', () => {
       prisma as never,
       eventBus as never,
       logActivity as never,
-      buildRls(),
+      rlsTx,
     );
 
     const result = await handler.execute({
@@ -76,6 +52,8 @@ describe('SetClientActiveHandler', () => {
       actorUserId: 'admin-1',
     });
 
+    // Verify no revoke when enabling
+    expect(clientRefreshTokenUpdateMany).not.toHaveBeenCalled();
     expect(result).toEqual({ id: 'client-1', isActive: true });
     expect(eventBus.publish).toHaveBeenCalledWith(
       'people.client.account_toggled',
@@ -96,18 +74,13 @@ describe('SetClientActiveHandler', () => {
     const prisma = buildPrisma(activeClient);
 
     const revokeMany = jest.fn().mockResolvedValue({ count: 2 });
-    prisma.$transaction = jest.fn().mockImplementation(
-      async (cb: (tx: unknown) => Promise<unknown>) => {
-        const tx = {
-          $queryRaw: jest.fn().mockResolvedValue([]),
-          client: {
-            update: jest.fn().mockResolvedValue({ id: 'client-1', isActive: false }),
-          },
-          clientRefreshToken: { updateMany: revokeMany },
-        };
-        return cb(tx);
+    const tx = {
+      client: {
+        update: jest.fn().mockResolvedValue({ id: 'client-1', isActive: false }),
       },
-    );
+      clientRefreshToken: { updateMany: revokeMany },
+    };
+    const rlsTx = buildRlsTx(() => tx);
 
     const eventBus = buildEventBus();
     const logActivity = buildLogActivity();
@@ -115,7 +88,7 @@ describe('SetClientActiveHandler', () => {
       prisma as never,
       eventBus as never,
       logActivity as never,
-      buildRls(),
+      rlsTx,
     );
 
     const result = await handler.execute({
@@ -142,11 +115,12 @@ describe('SetClientActiveHandler', () => {
 
   it('throws 404 when client does not exist', async () => {
     const prisma = buildPrisma(null);
+    const rlsTx = buildRlsTx(() => ({}));
     const handler = new SetClientActiveHandler(
       prisma as never,
       buildEventBus() as never,
       buildLogActivity() as never,
-      buildRls(),
+      rlsTx,
     );
 
     await expect(
@@ -160,18 +134,19 @@ describe('SetClientActiveHandler', () => {
     const prisma = buildPrisma(activeClient);
     const eventBus = buildEventBus();
     const logActivity = buildLogActivity();
+    const rlsTx = buildRlsTx(() => ({}));
     const handler = new SetClientActiveHandler(
       prisma as never,
       eventBus as never,
       logActivity as never,
-      buildRls(),
+      rlsTx,
     );
 
     const result = await handler.execute({ clientId: 'client-1', isActive: true });
 
     expect(result).toEqual({ id: 'client-1', isActive: true });
     // No transaction, no event, no log
-    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(rlsTx.withTransaction).not.toHaveBeenCalled();
     expect(eventBus.publish).not.toHaveBeenCalled();
     expect(logActivity.execute).not.toHaveBeenCalled();
   });

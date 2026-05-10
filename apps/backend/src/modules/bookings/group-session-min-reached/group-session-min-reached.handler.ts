@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BookingStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
+import { RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { EventBusService } from '../../../infrastructure/events';
 import { GroupSessionMinReachedEvent } from '../events/group-session-min-reached.event';
@@ -26,6 +27,7 @@ export interface GroupSessionMinReachedCommand {
 export class GroupSessionMinReachedHandler {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly rlsTx: RlsTransactionService,
     private readonly tenant: TenantContextService,
     private readonly eventBus: EventBusService,
   ) {}
@@ -51,8 +53,8 @@ export class GroupSessionMinReachedHandler {
 
     const bookingIds = bookings.map((b) => b.id);
 
-    await this.prisma.$transaction([
-      this.prisma.booking.updateMany({
+    await this.rlsTx.withTransaction((tx) => Promise.all([
+      tx.booking.updateMany({
         where: { id: { in: bookingIds } },
         data: {
           status: BookingStatus.AWAITING_PAYMENT,
@@ -60,7 +62,7 @@ export class GroupSessionMinReachedHandler {
         },
       }),
       ...bookingIds.map((bookingId) =>
-        this.prisma.bookingStatusLog.create({
+        tx.bookingStatusLog.create({
           data: {
             organizationId,
             bookingId,
@@ -71,7 +73,7 @@ export class GroupSessionMinReachedHandler {
           },
         }),
       ),
-    ]);
+    ]));
 
     const event = new GroupSessionMinReachedEvent({
       serviceId: cmd.serviceId,

@@ -173,6 +173,9 @@ export class ExpireTrialsCron {
     now: Date,
     billingUrl: string,
   ): Promise<void> {
+    // $allTenants.$transaction: cron job runs without tenant context — must scan all orgs to find expiring trials.
+    // Atomically suspends both the Organization row (status→SUSPENDED) and the Subscription row
+    // (status→SUSPENDED) for a trial that expired with no saved payment method.
     await this.prisma.$allTenants.$transaction(async (tx) => {
       await tx.organization.update({
         where: { id: sub.organizationId },

@@ -46,6 +46,10 @@ export class CreateTenantHandler {
       throw new BadRequestException('ownerUserId_or_ownerEmail_required');
     }
 
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Creates a brand-new Organization + initial OWNER Membership + BrandingConfig +
+    // OrganizationSettings + optional Subscription; no tenant context exists yet for the
+    // new org, so a bypass is mandatory.
     const txResult = await this.prisma.$allTenants.$transaction(async (tx) => {
       const existing = await tx.organization.findUnique({
         where: { slug: cmd.slug },

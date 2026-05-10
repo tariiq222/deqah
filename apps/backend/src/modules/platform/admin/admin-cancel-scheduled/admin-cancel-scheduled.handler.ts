@@ -14,6 +14,9 @@ export class AdminCancelScheduledHandler {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(cmd: AdminCancelScheduledCommand) {
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Reverses a scheduled cancellation (sets cancelAtPeriodEnd=false) on a foreign tenant's
+    // Subscription; the row is scoped to the target org, not the acting super-admin's context.
     return this.prisma.$allTenants.$transaction(async (tx) => {
       const subscription = await tx.subscription.findUnique({
         where: { organizationId: cmd.organizationId },

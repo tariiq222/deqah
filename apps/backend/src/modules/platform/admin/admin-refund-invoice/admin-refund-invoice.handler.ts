@@ -93,6 +93,10 @@ export class AdminRefundInvoiceHandler {
     }
 
     // Mutation + audit in a single transaction now that Moyasar acknowledged.
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Records the Moyasar refund acknowledgement on a foreign tenant's SubscriptionInvoice
+    // (updates refundedAmount/status) + appends the audit log; runs after the network call so
+    // the row lock is held only during the DB mutation, not the Moyasar roundtrip.
     return this.prisma.$allTenants.$transaction(async (tx) => {
       const fullyRefunded = newRefundedTotal.gte(totalAmount);
       const updated = await tx.subscriptionInvoice.update({

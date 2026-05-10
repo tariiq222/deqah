@@ -18,6 +18,9 @@ export class ArchiveOrganizationHandler {
   ) {}
 
   async execute(cmd: ArchiveOrganizationCommand) {
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Archives an Organization row + cascades (revokes refresh tokens, closes impersonation sessions)
+    // on a single foreign org identified by id; the caller's own tenant context is irrelevant.
     const archived = await this.prisma.$allTenants.$transaction(async (tx) => {
       const org = await tx.organization.findUnique({
         where: { id: cmd.organizationId },

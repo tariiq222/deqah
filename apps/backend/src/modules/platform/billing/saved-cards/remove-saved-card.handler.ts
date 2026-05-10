@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { SubscriptionStatus } from '@prisma/client';
 import { TenantContextService } from '../../../../common/tenant/tenant-context.service';
-import { PrismaService } from '../../../../infrastructure/database/prisma.service';
+import { PrismaService, RlsTransactionService } from '../../../../infrastructure/database';
 import { MoyasarSubscriptionClient } from '../../../finance/moyasar-api/moyasar-subscription.client';
 import { SubscriptionCacheService } from '../subscription-cache.service';
 
@@ -18,6 +18,7 @@ export class RemoveSavedCardHandler {
     private readonly tenant: TenantContextService,
     private readonly cache: SubscriptionCacheService,
     private readonly moyasar: MoyasarSubscriptionClient,
+    private readonly rlsTx: RlsTransactionService,
   ) {}
 
   async execute(cardId: string) {
@@ -44,7 +45,7 @@ export class RemoveSavedCardHandler {
       throw new UnprocessableEntityException('last_saved_card_required');
     }
 
-    await this.prisma.$transaction(async (tx) => {
+    await this.rlsTx.withTransaction(async (tx) => {
       await tx.savedCard.delete({ where: { id: card.id } });
 
       if (!card.isDefault) return;

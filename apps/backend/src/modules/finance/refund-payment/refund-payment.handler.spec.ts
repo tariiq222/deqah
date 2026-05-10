@@ -1,9 +1,8 @@
 import { Test } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { RefundPaymentHandler } from './refund-payment.handler';
-import { PrismaService } from '../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { EventBusService } from '../../../infrastructure/events';
-import { RlsHelper } from '../../../common/tenant/rls.helper';
 import { MoyasarApiClient } from '../moyasar-api/moyasar-api.client';
 
 describe('RefundPaymentHandler', () => {
@@ -11,6 +10,7 @@ describe('RefundPaymentHandler', () => {
   let moyasar: { createRefund: jest.Mock };
   let prisma: any;
   let eventBus: { publish: jest.Mock };
+  let rlsTx: { withTransaction: jest.Mock };
 
   beforeEach(async () => {
     moyasar = { createRefund: jest.fn() };
@@ -19,20 +19,24 @@ describe('RefundPaymentHandler', () => {
       refundRequest: { create: jest.fn(), update: jest.fn() },
       invoice: { update: jest.fn() },
     };
-    prisma.$transaction = jest.fn(async (fn: any) => fn(prisma));
     eventBus = { publish: jest.fn().mockResolvedValue(undefined) };
-    const rls = { applyInTransaction: jest.fn() };
 
     const module = await Test.createTestingModule({
       providers: [
         RefundPaymentHandler,
         { provide: PrismaService, useValue: prisma },
         { provide: EventBusService, useValue: eventBus },
-        { provide: RlsHelper, useValue: rls },
+        {
+          provide: RlsTransactionService,
+          useValue: {
+            withTransaction: jest.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma)),
+          },
+        },
         { provide: MoyasarApiClient, useValue: moyasar },
       ],
     }).compile();
     handler = module.get(RefundPaymentHandler);
+    rlsTx = module.get(RlsTransactionService) as unknown as { withTransaction: jest.Mock };
   });
 
   const completedPayment = (overrides: any = {}) => ({
@@ -120,7 +124,7 @@ describe('RefundPaymentHandler', () => {
     prisma.refundRequest.create.mockResolvedValue({ id: 'rr_1' });
     moyasar.createRefund.mockResolvedValue({ id: 'ref_partial', amount: 10000, currency: 'SAR', status: 'refunded', paymentId: 'moyasar_pay_abc', createdAt: new Date().toISOString() });
     // Make the finalize transaction fail — money already moved at Moyasar
-    prisma.$transaction = jest.fn().mockRejectedValue(new Error('DB unavailable'));
+    rlsTx.withTransaction = jest.fn().mockRejectedValue(new Error('DB unavailable'));
     prisma.refundRequest.update.mockResolvedValue({});
 
     await expect(handler.execute({ paymentId: 'pay_1', reason: 'test' })).rejects.toThrow('DB unavailable');

@@ -15,6 +15,9 @@ export class AdminChangePlanForOrgHandler {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(cmd: AdminChangePlanForOrgCommand) {
+    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // Switches a foreign tenant's Subscription to a different Plan immediately (no billing cycle
+    // boundary); the subscription row belongs to the target org, not the acting super-admin.
     return this.prisma.$allTenants.$transaction(async (tx) => {
       const sub = await tx.subscription.findUnique({
         where: { organizationId: cmd.organizationId },

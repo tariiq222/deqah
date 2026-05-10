@@ -1,8 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import { RlsHelper } from '../../../common/tenant/rls.helper';
-import { TenantContextService } from '../../../common/tenant';
+import { RlsTransactionService } from '../../../infrastructure/database';
 import { EmployeeOnboardingHandler } from './employee-onboarding.handler';
 
 const OnboardingStatus = {
@@ -22,15 +21,10 @@ describe('EmployeeOnboardingHandler', () => {
   let handler: EmployeeOnboardingHandler;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let prisma: any;
-  let mockRls: jest.Mocked<Pick<RlsHelper, 'applyInTransaction' | 'runWithoutTenant'>>;
+  let rlsTx: { withTransaction: jest.Mock };
 
   beforeEach(async () => {
     jest.clearAllMocks();
-
-    mockRls = {
-      applyInTransaction: jest.fn().mockResolvedValue(undefined),
-      runWithoutTenant: jest.fn(),
-    };
 
     prisma = {
       employee: {
@@ -41,20 +35,24 @@ describe('EmployeeOnboardingHandler', () => {
       employeeBranch: { deleteMany: jest.fn(), createMany: jest.fn() },
       employeeService: { deleteMany: jest.fn(), createMany: jest.fn() },
       $queryRaw: jest.fn().mockResolvedValue([]),
-      $transaction: jest.fn().mockImplementation((fn: (tx: unknown) => unknown) => fn(prisma)),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EmployeeOnboardingHandler,
         { provide: PrismaService, useValue: prisma },
-        { provide: RlsHelper, useValue: mockRls },
-        { provide: TenantContextService, useValue: { requireOrganizationId: () => 'org-test' } },
+        {
+          provide: RlsTransactionService,
+          useValue: {
+            withTransaction: jest.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma)),
+          },
+        },
       ],
     }).compile();
 
     handler = module.get(EmployeeOnboardingHandler);
     prisma = module.get(PrismaService);
+    rlsTx = module.get(RlsTransactionService) as unknown as { withTransaction: jest.Mock };
   });
 
   describe('employee not found', () => {
@@ -116,7 +114,7 @@ describe('EmployeeOnboardingHandler', () => {
 
       await handler.execute({ employeeId: 'emp-1', step: 'branches', branchIds: ['br-1'] });
 
-      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(rlsTx.withTransaction).toHaveBeenCalled();
       expect(prisma.employeeBranch.deleteMany).toHaveBeenCalledWith({ where: { employeeId: 'emp-1' } });
       expect(prisma.employeeBranch.createMany).toHaveBeenCalledWith({
         data: [{ employeeId: 'emp-1', organizationId: 'org-test', branchId: 'br-1' }],

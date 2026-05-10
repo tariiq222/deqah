@@ -1,9 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PaymentStatus } from '@prisma/client';
-import { PrismaService } from '../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../infrastructure/database';
 import { EventBusService } from '../../../infrastructure/events';
-import { RlsHelper } from '../../../common/tenant/rls.helper';
 import { RefundCompletedEvent } from '../events/refund-completed.event';
 import { MoyasarApiClient } from '../moyasar-api/moyasar-api.client';
 
@@ -35,7 +34,7 @@ export class RefundPaymentHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventBus: EventBusService,
-    private readonly rls: RlsHelper,
+    private readonly rlsTx: RlsTransactionService,
     private readonly moyasar: MoyasarApiClient,
   ) {}
 
@@ -104,8 +103,7 @@ export class RefundPaymentHandler {
     // leave the row in PROCESSING for reconciliation.
     let updatedPayment;
     try {
-      updatedPayment = await this.prisma.$transaction(async (tx) => {
-        await this.rls.applyInTransaction(tx);
+      updatedPayment = await this.rlsTx.withTransaction(async (tx) => {
         await tx.refundRequest.update({
           where: { id: refundRequestId },
           data: { status: 'COMPLETED', gatewayRef: moyasarRefundId },
