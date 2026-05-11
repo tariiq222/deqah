@@ -68,5 +68,30 @@ describe('subdomain.utils', () => {
     it('honors extra reserved set', () => {
       expect(isReservedSubdomain('myextra', new Set(['myextra']))).toBe(true);
     });
+
+    it('treats newly added infrastructure subdomains as reserved', () => {
+      const newEntries = [
+        'assets',
+        'dev',
+        'errors',
+        'files',
+        'grafana',
+        'media',
+        'metrics',
+        'monitoring',
+        'prod',
+        'production',
+        'prometheus',
+        'qa',
+        'socket',
+        'test',
+        'webhook',
+        'webhooks',
+        'ws',
+      ];
+      for (const entry of newEntries) {
+        expect(isReservedSubdomain(entry, DEFAULT_RESERVED_SUBDOMAINS)).toBe(true);
+      }
+    });
   });
 });
