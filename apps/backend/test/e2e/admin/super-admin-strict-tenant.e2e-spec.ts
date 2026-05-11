@@ -4,7 +4,8 @@ import * as jwt from 'jsonwebtoken';
 import { createTestApp, closeTestApp } from '../../setup/app.setup';
 import { cleanTables, testPrisma } from '../../setup/db.setup';
 
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET ?? 'test-access-secret-32chars-min';
+const TEST_JWT_ACCESS_SECRET = 'test-access-secret-32chars-min';
+const accessSecret = () => process.env.JWT_ACCESS_SECRET ?? TEST_JWT_ACCESS_SECRET;
 const ADMIN_HOST = 'admin.strict.test';
 const ORG_ID = '550e8400-e29b-41d4-a716-446655440000';
 const MEMBERSHIP_ID = '660e8400-e29b-41d4-a716-446655440000';
@@ -94,7 +95,7 @@ describe('Super-admin strict tenancy (e2e)', () => {
         membershipId: MEMBERSHIP_ID,
         ...claims,
       },
-      ACCESS_SECRET,
+      accessSecret(),
       { expiresIn: '1h' },
     );
   }

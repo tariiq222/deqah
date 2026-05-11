@@ -5,7 +5,8 @@ import { createTestApp, closeTestApp } from '../../setup/app.setup';
 import { testPrisma, cleanTables, flushTestRedis } from '../../setup/db.setup';
 import { DEFAULT_ORGANIZATION_ID } from '../../../src/common/tenant';
 
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET ?? 'test-access-secret-32chars-min';
+const TEST_JWT_ACCESS_SECRET = 'test-access-secret-32chars-min';
+const accessSecret = () => process.env.JWT_ACCESS_SECRET ?? TEST_JWT_ACCESS_SECRET;
 
 // Plan 05b — Task 9. Asserts that the super-admin surface area is
 // reachable ONLY by users whose JWT carries isSuperAdmin=true AND whose
@@ -122,7 +123,7 @@ describe('Super-admin isolation (e2e)', () => {
         features: [],
         ...claims,
       },
-      ACCESS_SECRET,
+      accessSecret(),
       { expiresIn: '1h' },
     );
   }
@@ -179,7 +180,7 @@ describe('Super-admin isolation (e2e)', () => {
     it('rejects a JWT with isSuperAdmin=true claim if DB row says false (re-verification)', async () => {
       const token = tokenFor(
         { id: regularUserId, email: 'tenant-user@e2e.test' },
-        { isSuperAdmin: true },
+        { isSuperAdmin: true, organizationId: 'some-org' },
       );
       const res = await req
         .get('/api/v1/admin/organizations')
