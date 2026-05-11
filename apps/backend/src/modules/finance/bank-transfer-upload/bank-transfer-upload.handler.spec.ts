@@ -1,4 +1,4 @@
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PaymentMethod, PaymentStatus } from '@prisma/client';
 import { BankTransferUploadHandler } from './bank-transfer-upload.handler';
 
@@ -29,8 +29,10 @@ const MP4_BUFFER = Buffer.from([
 
 const mockInvoice = {
   id: 'inv-1',
-  total: 230,
+  total: new (require('decimal.js')).Decimal(230),
   currency: 'SAR',
+  clientId: 'client-1',
+  organizationId: '00000000-0000-0000-0000-000000000001',
 };
 
 const mockPayment = {
@@ -40,8 +42,10 @@ const mockPayment = {
   receiptUrl: 'http://minio/bucket/path.jpg',
 };
 
-const buildPrisma = () => ({
-  invoice: { findFirst: jest.fn().mockResolvedValue(mockInvoice) },
+const buildPrisma = (invoiceOverrides = {}) => ({
+  invoice: {
+    findFirst: jest.fn().mockResolvedValue({ ...mockInvoice, ...invoiceOverrides }),
+  },
   payment: { create: jest.fn().mockResolvedValue(mockPayment) },
 });
 
@@ -162,7 +166,38 @@ describe('BankTransferUploadHandler', () => {
     });
   });
 
-  describe('guard clauses', () => {
+  describe('ownership and amount validation', () => {
+    it('throws ForbiddenException when invoice belongs to another client', async () => {
+      const prisma = buildPrisma({ clientId: 'client-other' });
+      const handler = new BankTransferUploadHandler(prisma as never, buildTenant() as never, buildStorage() as never);
+
+      await expect(
+        handler.execute({
+          ...baseCmd,
+          fileBuffer: JPEG_BUFFER,
+          mimetype: 'image/jpeg',
+          filename: 'receipt.jpg',
+        }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(prisma.payment.create).not.toHaveBeenCalled();
+    });
+
+    it('throws BadRequestException when transfer amount does not match invoice total', async () => {
+      const prisma = buildPrisma();
+      const handler = new BankTransferUploadHandler(prisma as never, buildTenant() as never, buildStorage() as never);
+
+      await expect(
+        handler.execute({
+          ...baseCmd,
+          amount: 99,
+          fileBuffer: JPEG_BUFFER,
+          mimetype: 'image/jpeg',
+          filename: 'receipt.jpg',
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.payment.create).not.toHaveBeenCalled();
+    });
+
     it('throws BadRequestException for disallowed mime type', async () => {
       const handler = new BankTransferUploadHandler(buildPrisma() as never, buildTenant() as never, buildStorage() as never);
       await expect(
@@ -176,15 +211,6 @@ describe('BankTransferUploadHandler', () => {
       const handler = new BankTransferUploadHandler(prisma as never, buildTenant() as never, buildStorage() as never);
       await expect(
         handler.execute({ ...baseCmd, fileBuffer: JPEG_BUFFER, mimetype: 'image/jpeg', filename: 'receipt.jpg' }),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('throws NotFoundException when invoice id is unknown', async () => {
-      const prisma = buildPrisma();
-      prisma.invoice.findFirst = jest.fn().mockResolvedValue(null);
-      const handler = new BankTransferUploadHandler(prisma as never, buildTenant() as never, buildStorage() as never);
-      await expect(
-        handler.execute({ ...baseCmd, invoiceId: 'bad-id', fileBuffer: JPEG_BUFFER, mimetype: 'image/jpeg', filename: 'receipt.jpg' }),
       ).rejects.toThrow(NotFoundException);
     });
   });

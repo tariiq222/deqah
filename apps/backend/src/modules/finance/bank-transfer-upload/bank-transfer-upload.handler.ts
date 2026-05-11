@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PaymentMethod, PaymentStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant/tenant-context.service';
@@ -44,10 +44,20 @@ export class BankTransferUploadHandler {
     }
 
     const invoice = await this.prisma.invoice.findFirst({
-      where: { id: cmd.invoiceId },
+      where: { id: cmd.invoiceId, organizationId },
     });
     if (!invoice) {
       throw new NotFoundException(`Invoice ${cmd.invoiceId} not found`);
+    }
+
+    if (invoice.clientId !== cmd.clientId) {
+      throw new ForbiddenException('Invoice does not belong to this client');
+    }
+
+    if (cmd.amount !== Number(invoice.total)) {
+      throw new BadRequestException(
+        `Transfer amount ${cmd.amount} does not match invoice total ${invoice.total}`,
+      );
     }
 
     const ext = cmd.filename.split('.').pop() ?? 'bin';
