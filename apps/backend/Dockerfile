@@ -148,4 +148,4 @@ EXPOSE 5100
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:5100/api/v1/health || exit 1
 
-CMD ["sh", "-c", "printf '[boot] DATABASE_URL=%.30s...\\n' \"${DATABASE_URL:-MISSING}\" && node --import tsx dist/main.js"]
+CMD ["sh", "-c", "if [ -n \"${DATABASE_URL:-}\" ]; then echo '[boot] DATABASE_URL: set'; else echo '[boot] DATABASE_URL: MISSING'; fi && node --import tsx dist/main.js"]

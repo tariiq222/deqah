@@ -7,7 +7,7 @@ import {
   ApiOkResponse, ApiCreatedResponse, ApiNoContentResponse, ApiResponse,
 } from '@nestjs/swagger';
 import { JwtGuard } from '../../common/guards/jwt.guard';
-import { CaslGuard } from '../../common/guards/casl.guard';
+import { CaslGuard, CheckPermissions } from '../../common/guards/casl.guard';
 import { ApiStandardResponses, ApiErrorDto } from '../../common/swagger';
 import { EnforceLimit } from '../../modules/platform/billing/plan-limits.decorator';
 import { RequireFeature } from '../../modules/platform/billing/feature.decorator';
@@ -43,6 +43,7 @@ export class DashboardOrganizationBranchesController {
   ) {}
 
   @Post('branches')
+  @CheckPermissions({ action: 'create', subject: 'Branch' })
   @RequireFeature(FeatureKey.MULTI_BRANCH)
   @EnforceLimit('BRANCHES')
   @ApiOperation({ summary: 'Create a branch' })
@@ -52,6 +53,7 @@ export class DashboardOrganizationBranchesController {
   }
 
   @Get('branches')
+  @CheckPermissions({ action: 'read', subject: 'Branch' })
   @ApiOperation({ summary: 'List branches' })
   @ApiQuery({ name: 'search', required: false, description: 'Search branches by name or city', example: 'Riyadh' })
   @ApiQuery({ name: 'isActive', required: false, description: 'Filter by active status', example: true })
@@ -63,6 +65,7 @@ export class DashboardOrganizationBranchesController {
   }
 
   @Get('branches/:branchId')
+  @CheckPermissions({ action: 'read', subject: 'Branch' })
   @ApiOperation({ summary: 'Get a branch by ID' })
   @ApiParam({ name: 'branchId', description: 'Branch UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({ description: 'Branch details' })
@@ -72,6 +75,7 @@ export class DashboardOrganizationBranchesController {
   }
 
   @Patch('branches/:branchId')
+  @CheckPermissions({ action: 'update', subject: 'Branch' })
   @RequireFeature(FeatureKey.MULTI_BRANCH)
   @ApiOperation({ summary: 'Update a branch' })
   @ApiParam({ name: 'branchId', description: 'Branch UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -85,6 +89,7 @@ export class DashboardOrganizationBranchesController {
   }
 
   @Delete('branches/:branchId')
+  @CheckPermissions({ action: 'delete', subject: 'Branch' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a branch' })
   @ApiParam({ name: 'branchId', description: 'Branch UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -95,6 +100,7 @@ export class DashboardOrganizationBranchesController {
   }
 
   @Get('branches/:branchId/employees')
+  @CheckPermissions({ action: 'read', subject: 'Branch' })
   @ApiOperation({ summary: 'List employees assigned to a branch' })
   @ApiParam({ name: 'branchId', description: 'Branch UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({ description: 'List of employees in the branch' })
@@ -104,6 +110,7 @@ export class DashboardOrganizationBranchesController {
   }
 
   @Post('branches/:branchId/employees')
+  @CheckPermissions({ action: 'update', subject: 'Branch' })
   @ApiOperation({ summary: 'Assign an employee to a branch' })
   @ApiParam({ name: 'branchId', description: 'Branch UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiCreatedResponse({ description: 'Employee assigned to branch' })
@@ -116,6 +123,7 @@ export class DashboardOrganizationBranchesController {
   }
 
   @Delete('branches/:branchId/employees/:employeeId')
+  @CheckPermissions({ action: 'update', subject: 'Branch' })
   @ApiOperation({ summary: 'Unassign an employee from a branch' })
   @ApiParam({ name: 'branchId', description: 'Branch UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiParam({ name: 'employeeId', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })

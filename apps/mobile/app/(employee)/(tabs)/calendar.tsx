@@ -58,7 +58,7 @@ export default function CalendarScreen() {
         />
       </ThemedCard>
 
-      <ThemedText variant="subheading" style={styles.dayTitle} suppressHydrationWarning>
+      <ThemedText variant="subheading" style={styles.dayTitle}>
         {new Date(selectedDate).toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', {
           weekday: 'long',
           month: 'long',

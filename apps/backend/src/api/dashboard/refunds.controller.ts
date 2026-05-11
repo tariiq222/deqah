@@ -18,7 +18,7 @@ class DenyRefundDto {
 
 @ApiTags('Dashboard / Refunds')
 @ApiBearerAuth()
-@Controller('refunds')
+@Controller('dashboard/refunds')
 @UseGuards(JwtGuard, CaslGuard)
 export class RefundsController {
   constructor(

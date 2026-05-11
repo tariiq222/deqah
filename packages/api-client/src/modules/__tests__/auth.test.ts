@@ -23,6 +23,7 @@ const fakeUser: UserPayload = {
   organizationId: 'org_1',
   verticalSlug: null,
   onboardingCompletedAt: null,
+  activeMembership: null,
 }
 
 const fakeAuth: AuthResponse = {

@@ -9,7 +9,7 @@ import {
 import { ApiStandardResponses } from '../../common/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { JwtGuard } from '../../common/guards/jwt.guard';
-import { CaslGuard } from '../../common/guards/casl.guard';
+import { CaslGuard, CheckPermissions } from '../../common/guards/casl.guard';
 import { ManageKnowledgeBaseHandler } from '../../modules/ai/manage-knowledge-base/manage-knowledge-base.handler';
 import {
   ListDocumentsDto,
@@ -56,11 +56,13 @@ export class DashboardAiController {
       },
     },
   })
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   listDocuments(@Query() query: ListDocumentsDto) {
     return this.knowledgeBase.listDocuments(query);
   }
 
   @RequireFeature(FeatureKey.AI_CHATBOT)
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   @Get('knowledge-base/:id')
   @ApiOperation({ summary: 'Get a knowledge-base document by ID' })
   @ApiParam({ name: 'id', description: 'Document UUID', example: '00000000-0000-0000-0000-000000000001' })
@@ -71,6 +73,7 @@ export class DashboardAiController {
   }
 
   @RequireFeature(FeatureKey.AI_CHATBOT)
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @Patch('knowledge-base/:id')
   @ApiOperation({ summary: 'Update a knowledge-base document' })
   @ApiParam({ name: 'id', description: 'Document UUID', example: '00000000-0000-0000-0000-000000000001' })
@@ -84,6 +87,7 @@ export class DashboardAiController {
   }
 
   @RequireFeature(FeatureKey.AI_CHATBOT)
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @Delete('knowledge-base/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a knowledge-base document' })
@@ -112,11 +116,13 @@ export class DashboardAiController {
       },
     },
   })
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   getChatbotConfigEndpoint() {
     return this.getChatbotConfig.execute();
   }
 
   @RequireFeature(FeatureKey.AI_CHATBOT)
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @Patch('chatbot-config')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Upsert chatbot configuration (org-unique singleton)' })
@@ -139,6 +145,7 @@ export class DashboardAiController {
       'text/event-stream': { schema: { type: 'string', description: 'SSE token stream' } },
     },
   })
+  @CheckPermissions({ action: 'read', subject: 'Booking' })
   chatCompletionEndpoint(@Body() body: ChatCompletionDto) {
     return this.chatCompletion.execute(body);
   }

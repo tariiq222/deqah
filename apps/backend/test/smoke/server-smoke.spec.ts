@@ -1,5 +1,6 @@
 import SuperTest from 'supertest';
 import { createTestApp, closeTestApp } from '../setup/app.setup';
+import { closePrisma } from '../setup/db.setup';
 
 describe('Server Smoke Tests', () => {
   let req: SuperTest.Agent;
@@ -10,6 +11,7 @@ describe('Server Smoke Tests', () => {
 
   afterAll(async () => {
     await closeTestApp();
+    await closePrisma();
   });
 
   it('starts the NestJS application and responds to health', async () => {

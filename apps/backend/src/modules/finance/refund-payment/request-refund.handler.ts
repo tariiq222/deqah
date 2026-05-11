@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant/tenant-context.service';
@@ -33,6 +34,7 @@ export class RequestRefundHandler {
       where: {
         id: cmd.invoiceId,
         clientId: cmd.clientId,
+        organizationId,
       },
       include: {
         payments: {
@@ -61,6 +63,7 @@ export class RequestRefundHandler {
     const existingRequest = await this.prisma.refundRequest.findFirst({
       where: {
         invoiceId: cmd.invoiceId,
+        organizationId,
         status: { in: ['PENDING_REVIEW', 'APPROVED', 'PROCESSING', 'COMPLETED'] },
       },
     });

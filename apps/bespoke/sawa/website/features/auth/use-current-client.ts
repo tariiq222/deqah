@@ -36,7 +36,7 @@ export function useCurrentClient(): UseCurrentClientResult {
 
   useEffect(() => {
     if (getClient() === null) {
-      refetch();
+      void Promise.resolve().then(refetch);
     }
   }, [refetch]);
 

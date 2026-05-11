@@ -80,7 +80,13 @@ export function useRegisterForm() {
       });
       if (response.success && response.data) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        dispatch(setCredentials(response.data));
+        dispatch(
+          setCredentials({
+            accessToken: response.data.accessToken,
+            refreshToken: response.data.refreshToken ?? '',
+            user: response.data.user,
+          }),
+        );
         router.replace('/(client)/(tabs)/home');
       }
     } catch {

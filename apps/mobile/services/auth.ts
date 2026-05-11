@@ -223,7 +223,7 @@ export const authService = {
 
 async function persistTokens(data: NonNullable<AuthResponse['data']>) {
   await setSecureItem('accessToken', data.accessToken);
-  await setSecureItem('refreshToken', data.refreshToken);
+  await setSecureItem('refreshToken', data.refreshToken ?? '');
   if (data.user?.organizationId) {
     await setCurrentOrgId(data.user.organizationId);
   }

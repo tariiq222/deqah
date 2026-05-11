@@ -171,7 +171,7 @@ export class DashboardIdentityController {
   }
 
   @Patch('users/:id')
-  @CheckPermissions({ action: 'read', subject: 'User' })
+  @CheckPermissions({ action: 'update', subject: 'User' })
   @ApiOperation({ summary: 'Update a user' })
   @ApiParam({ name: 'id', description: 'User UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({
@@ -208,6 +208,7 @@ export class DashboardIdentityController {
   }
 
   @Patch('users/:id/activate')
+  @CheckPermissions({ action: 'manage', subject: 'User' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Activate a user' })
   @ApiParam({ name: 'id', description: 'User UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -243,6 +244,7 @@ export class DashboardIdentityController {
   }
 
   @Delete('users/:userId/roles/:roleId')
+  @CheckPermissions({ action: 'manage', subject: 'User' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remove a role from a user' })
   @ApiParam({ name: 'userId', description: 'User UUID', example: '00000000-0000-0000-0000-000000000000' })

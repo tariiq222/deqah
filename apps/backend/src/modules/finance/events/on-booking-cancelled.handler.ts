@@ -24,10 +24,23 @@ export class OnBookingCancelledRefundHandler {
   }
 
   async handle(envelope: DomainEventEnvelope<BookingCancelledPayload>): Promise<void> {
-    const { refundType, paymentId, bookingId, clientId } = envelope.payload;
+    const { refundType, paymentId, bookingId, clientId, refundRequestId, idempotencyKey } = envelope.payload;
     if (refundType === 'NONE' || !paymentId) {
       return;
     }
+
+    if (refundRequestId && idempotencyKey) {
+      try {
+        await this.refund.finalizeRefundFromCancellation({ refundRequestId, idempotencyKey });
+      } catch (err) {
+        this.logger.error(
+          `Finalize refund from cancellation failed for booking ${bookingId} refundRequest ${refundRequestId}`,
+          err,
+        );
+      }
+      return;
+    }
+
     try {
       await this.refund.execute({
         paymentId,
@@ -39,7 +52,6 @@ export class OnBookingCancelledRefundHandler {
         `Auto-refund failed for booking ${bookingId} payment ${paymentId}`,
         err,
       );
-      // Do not rethrow — manual ops can still issue the refund.
     }
   }
 }

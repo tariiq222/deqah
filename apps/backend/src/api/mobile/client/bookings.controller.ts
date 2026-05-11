@@ -151,9 +151,10 @@ export class MobileClientBookingsController {
   @ApiOkResponse({ description: 'Booking detail', schema: { type: 'object' } })
   @ApiResponse({ status: 404, description: 'Booking not found', type: ApiErrorDto })
   getBooking(
+    @ClientSession() user: ClientSession,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.get.execute({ bookingId: id });
+    return this.get.execute({ bookingId: id, clientId: user.id });
   }
 
   @Patch(':id/cancel')
@@ -172,6 +173,7 @@ export class MobileClientBookingsController {
       cancelNotes: body.cancelNotes,
       changedBy: user.id,
       source: 'client',
+      clientId: user.id,
     });
   }
 
@@ -241,6 +243,7 @@ export class MobileClientBookingsController {
       newScheduledAt: new Date(body.newScheduledAt),
       newDurationMins: body.newDurationMins,
       changedBy: user.id,
+      clientId: user.id,
     });
   }
 }

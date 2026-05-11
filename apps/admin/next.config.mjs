@@ -54,7 +54,7 @@ const nextConfig = {
 export default withSentryConfig(withNextIntl(nextConfig), {
   org: 'webvue',
   project: 'deqah-admin',
-  url: 'http://100.124.231.44:8000/',
+  url: 'https://errors.webvue.pro/',
   silent: true,
   disableLogger: true,
   authToken: process.env.SENTRY_AUTH_TOKEN,

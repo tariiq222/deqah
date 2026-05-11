@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { BookingStatus, Prisma } from '@prisma/client';
 
 /** Re-map a Postgres exclusion violation (23P01) to a domain 409 conflict. */
@@ -24,6 +24,7 @@ export type RescheduleBookingCommand = Omit<RescheduleBookingDto, 'newScheduledA
   bookingId: string;
   newScheduledAt: Date;
   changedBy: string;
+  clientId?: string;
 };
 
 @Injectable()
@@ -39,6 +40,9 @@ export class RescheduleBookingHandler {
   async execute(cmd: RescheduleBookingCommand) {
     const organizationId = this.tenant.requireOrganizationIdOrDefault();
     const booking = await fetchBookingOrFail(this.prisma, cmd.bookingId, [BookingStatus.PENDING, BookingStatus.CONFIRMED], 'rescheduled');
+    if (cmd.clientId && booking.clientId !== cmd.clientId) {
+      throw new ForbiddenException('Not your booking');
+    }
 
     const newScheduledAt = new Date(cmd.newScheduledAt);
     if (newScheduledAt <= new Date()) {

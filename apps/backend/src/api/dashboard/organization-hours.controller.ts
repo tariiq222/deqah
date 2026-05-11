@@ -7,7 +7,7 @@ import {
   ApiOkResponse, ApiCreatedResponse, ApiNoContentResponse, ApiResponse,
 } from '@nestjs/swagger';
 import { JwtGuard } from '../../common/guards/jwt.guard';
-import { CaslGuard } from '../../common/guards/casl.guard';
+import { CaslGuard, CheckPermissions } from '../../common/guards/casl.guard';
 import { ApiStandardResponses, ApiErrorDto } from '../../common/swagger';
 import { SetBusinessHoursHandler } from '../../modules/org-config/business-hours/set-business-hours.handler';
 import { SetBusinessHoursDto } from '../../modules/org-config/business-hours/set-business-hours.dto';
@@ -33,6 +33,7 @@ export class DashboardOrganizationHoursController {
   ) {}
 
   @Post('hours')
+  @CheckPermissions({ action: 'update', subject: 'Setting' })
   @ApiOperation({ summary: 'Set business hours for a branch' })
   @ApiCreatedResponse({ description: 'Business hours saved' })
   @ApiResponse({ status: 404, description: 'Branch not found', type: ApiErrorDto })
@@ -41,6 +42,7 @@ export class DashboardOrganizationHoursController {
   }
 
   @Get('hours/:branchId')
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   @ApiOperation({ summary: 'Get business hours for a branch' })
   @ApiParam({ name: 'branchId', description: 'Branch ID', example: 'main-branch' })
   @ApiOkResponse({ description: 'Business hours schedule' })
@@ -50,6 +52,7 @@ export class DashboardOrganizationHoursController {
   }
 
   @Post('holidays')
+  @CheckPermissions({ action: 'update', subject: 'Setting' })
   @ApiOperation({ summary: 'Add a holiday to a branch' })
   @ApiCreatedResponse({ description: 'Holiday added' })
   @ApiResponse({ status: 404, description: 'Branch not found', type: ApiErrorDto })
@@ -58,6 +61,7 @@ export class DashboardOrganizationHoursController {
   }
 
   @Delete('holidays/:holidayId')
+  @CheckPermissions({ action: 'update', subject: 'Setting' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remove a holiday' })
   @ApiParam({ name: 'holidayId', description: 'Holiday UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -68,6 +72,7 @@ export class DashboardOrganizationHoursController {
   }
 
   @Get('holidays')
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   @ApiOperation({ summary: 'List holidays for a branch' })
   @ApiQuery({ name: 'branchId', required: true, description: 'Branch ID', example: 'main-branch' })
   @ApiQuery({ name: 'year', required: false, description: 'Filter by year', example: 2025 })

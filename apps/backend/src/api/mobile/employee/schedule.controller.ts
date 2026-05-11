@@ -8,6 +8,7 @@ import {
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ApiStandardResponses } from '../../../common/swagger';
 import { JwtGuard } from '../../../common/guards/jwt.guard';
+import { CaslGuard, CheckPermissions } from '../../../common/guards/casl.guard';
 import { CurrentUser, JwtUser } from '../../../common/auth/current-user.decorator';
 import { ListBookingsHandler } from '../../../modules/bookings/list-bookings/list-bookings.handler';
 import {
@@ -39,7 +40,7 @@ export class UpdateAvailabilityBody {
 @ApiTags('Mobile Employee / Schedule')
 @ApiBearerAuth()
 @ApiStandardResponses()
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, CaslGuard)
 @Controller('mobile/employee/schedule')
 export class MobileEmployeeScheduleController {
   constructor(
@@ -61,6 +62,7 @@ export class MobileEmployeeScheduleController {
     },
   })
   @Get('today')
+  @CheckPermissions({ action: 'read', subject: 'Booking' })
   today(@CurrentUser() user: JwtUser) {
     const { start: today, end: tomorrow } = todayRangeInTz();
     return this.listBookings.execute({
@@ -90,6 +92,7 @@ export class MobileEmployeeScheduleController {
   @ApiQuery({ name: 'page', required: false, description: 'Page number (1-based)', example: 1 })
   @ApiQuery({ name: 'limit', required: false, description: 'Results per page', example: 100 })
   @Get('weekly')
+  @CheckPermissions({ action: 'read', subject: 'Booking' })
   weekly(
     @CurrentUser() user: JwtUser,
     @Query() q: EmployeeScheduleQuery,
@@ -116,6 +119,7 @@ export class MobileEmployeeScheduleController {
     },
   })
   @Patch('availability')
+  @CheckPermissions({ action: 'update', subject: 'Booking' })
   updateAvailabilityEndpoint(
     @CurrentUser() user: JwtUser,
     @Body() body: UpdateAvailabilityBody,

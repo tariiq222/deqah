@@ -74,6 +74,7 @@ const clientUser: User = {
   organizationId: 'org-1',
   verticalSlug: null,
   onboardingCompletedAt: null,
+  activeMembership: null,
   emailVerified: true,
   createdAt: '2026-01-01T00:00:00Z',
 };

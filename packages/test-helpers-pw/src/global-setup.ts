@@ -1,4 +1,5 @@
 import { writePersonaStorageState } from './auth';
+import type { PersonaCredentials } from './auth';
 import { PWConfig } from './config';
 import path from 'node:path';
 
@@ -14,7 +15,7 @@ const APP_ROOTS: AppRoot[] = [
   { app: 'website', baseUrl: PWConfig.websiteBaseUrl, authStateKind: 'cookie' },
 ];
 
-const personas = [
+const personas: PersonaCredentials[] = [
   { persona: 'superAdmin', email: PWConfig.superAdminEmail, password: PWConfig.superAdminPassword },
 ];
 

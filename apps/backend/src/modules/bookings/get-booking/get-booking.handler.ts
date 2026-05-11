@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database';
 import { mapBookingRow, type BookingRelations } from '../booking-row.mapper';
 
 export interface GetBookingQuery {
   bookingId: string;
+  clientId?: string;
 }
 
 @Injectable()
@@ -16,6 +17,9 @@ export class GetBookingHandler {
     });
     if (!booking) {
       throw new NotFoundException(`Booking ${query.bookingId} not found`);
+    }
+    if (query.clientId && booking.clientId !== query.clientId) {
+      throw new ForbiddenException('Not your booking');
     }
 
     const [client, employee, service] = await Promise.all([

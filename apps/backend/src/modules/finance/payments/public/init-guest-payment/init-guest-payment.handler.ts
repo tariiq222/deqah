@@ -52,10 +52,16 @@ export class InitGuestPaymentHandler {
       if (existingPayment.status === 'COMPLETED') {
         throw new ConflictException('Payment for this booking has already been completed');
       }
-      return {
-        paymentId: existingPayment.id,
-        redirectUrl: '',
-      };
+      if (!existingPayment.gatewayRef) {
+        await this.rlsTx.withTransaction(async (tx) => {
+          await tx.payment.delete({ where: { id: existingPayment.id } });
+        }, { organizationId });
+      } else {
+        return {
+          paymentId: existingPayment.id,
+          redirectUrl: '',
+        };
+      }
     }
 
     const amountHalalas = Math.round(Number(invoice.total) * 100);

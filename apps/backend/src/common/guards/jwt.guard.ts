@@ -9,6 +9,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { PrismaService } from '../../infrastructure/database';
 import { RedisService } from '../../infrastructure/cache';
 import { TenantContextService } from '../tenant/tenant-context.service';
+import { parseUuidHeader } from '../tenant/uuid-header.util';
 import { ALLOW_DURING_SUSPENSION_KEY } from './allow-during-suspension.decorator';
 
 export const IS_PUBLIC_KEY = 'isPublic';
@@ -65,15 +66,23 @@ export class JwtGuard extends AuthGuard('jwt') {
     const activated = await Promise.resolve(super.canActivate(ctx));
     const req = ctx.switchToHttp().getRequest<{
       user?: AuthenticatedReqUser;
+      headers?: Record<string, string | string[] | undefined>;
     }>();
-    this.stampTenantContext(req.user);
+
+    // TAR-10: Resolve the effective tenant once (honoring super-admin
+    // X-Org-Id override) and use it for BOTH the tenant-context stamp
+    // AND the suspension check. Otherwise a super-admin overriding into
+    // a suspended tenant would silently bypass the ORG_SUSPENDED guard
+    // because the suspension check would target their own platform org.
+    const effectiveOrgId = this.resolveEffectiveOrgId(req.user, req.headers);
+    this.stampTenantContext(req.user, effectiveOrgId);
 
     const allowDuringSuspension = this.reflector.getAllAndOverride<boolean>(
       ALLOW_DURING_SUSPENSION_KEY,
       [ctx.getHandler(), ctx.getClass()],
     );
     await this.assertOrganizationIsActive(
-      req.user?.organizationId,
+      effectiveOrgId,
       {
         allowDuringSuspension: allowDuringSuspension === true,
         membershipRole: req.user?.membershipRole,
@@ -190,11 +199,43 @@ export class JwtGuard extends AuthGuard('jwt') {
     return `org-suspension:${organizationId}`;
   }
 
-  private stampTenantContext(user?: AuthenticatedReqUser): void {
-    if (!user?.organizationId) return;
+  /**
+   * Resolves the effective tenant org for the current request (TAR-10).
+   *
+   * Runs after Passport has populated `req.user`, so this is the canonical
+   * point to resolve tenant for authenticated requests. The
+   * TenantResolverMiddleware now only handles unauthenticated paths
+   * (public routes, subdomain binding, auth-bootstrap bypass).
+   *
+   * Super-admin override: when `user.isSuperAdmin === true` and a
+   * well-formed UUID `X-Org-Id` header is present, that org wins over the
+   * super-admin's own JWT `organizationId` claim. This is how platform
+   * operators inspect / act on a specific tenant. The header is ignored
+   * for non-super-admin users (security: never trust caller-supplied org).
+   */
+  private resolveEffectiveOrgId(
+    user: AuthenticatedReqUser | undefined,
+    headers: Record<string, string | string[] | undefined> | undefined,
+  ): string | undefined {
+    if (!user) return undefined;
+    const overrideOrgId =
+      user.isSuperAdmin === true ? parseUuidHeader(headers?.['x-org-id']) : undefined;
+    return overrideOrgId ?? user.organizationId;
+  }
+
+  /**
+   * Stamps the per-request tenant context using the already-resolved
+   * effective org id. Kept as a thin setter so `canActivate` can use the
+   * same org for both context-stamping and the suspension check.
+   */
+  private stampTenantContext(
+    user: AuthenticatedReqUser | undefined,
+    effectiveOrgId: string | undefined,
+  ): void {
+    if (!user || !effectiveOrgId) return;
 
     this.tenantContext.set({
-      organizationId: user.organizationId,
+      organizationId: effectiveOrgId,
       membershipId: user.membershipId ?? '',
       id: user.id ?? user.sub ?? '',
       role: user.role ?? '',

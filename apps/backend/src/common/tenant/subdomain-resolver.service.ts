@@ -8,7 +8,7 @@ import {
   DEFAULT_RESERVED_SUBDOMAINS,
 } from './subdomain.utils';
 
-const SLUG_REGEX = /^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/;
+export const SLUG_REGEX = /^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/;
 
 interface CacheEntry {
   id: string | null;

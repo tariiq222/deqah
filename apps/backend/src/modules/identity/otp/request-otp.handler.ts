@@ -54,7 +54,7 @@ export class RequestOtpHandler {
     }
 
     // Per-identifier cooldown: prevent SMS-bombing a single victim
-    const cooldownKey = `otp:cooldown:${dto.identifier}:${dto.purpose}`;
+    const cooldownKey = `otp:cooldown:${dto.organizationId ?? 'global'}:${dto.identifier}:${dto.purpose}`;
     const redis = this.redisService.getClient();
     // SET key 1 NX EX 60 — atomically set only if not exists, expire in 60s
     const set = await redis.set(cooldownKey, '1', 'EX', OTP_COOLDOWN_SECONDS, 'NX');

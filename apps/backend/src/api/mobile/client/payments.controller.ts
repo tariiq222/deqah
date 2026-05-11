@@ -79,8 +79,11 @@ export class MobileClientPaymentsController {
   @ApiParam({ name: 'id', description: 'Invoice UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({ description: 'Invoice found' })
   @ApiResponse({ status: 404, description: 'Invoice not found', type: ApiErrorDto })
-  getInvoiceEndpoint(@Param('id', ParseUUIDPipe) id: string) {
-    return this.getInvoice.execute({ invoiceId: id });
+  getInvoiceEndpoint(
+    @Param('id', ParseUUIDPipe) id: string,
+    @ClientSession() user: ClientSession,
+  ) {
+    return this.getInvoice.execute({ invoiceId: id, clientId: user.id });
   }
 
   @Post('init')

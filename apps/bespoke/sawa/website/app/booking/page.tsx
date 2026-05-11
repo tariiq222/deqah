@@ -123,15 +123,37 @@ export default function BookingWizardPage() {
     }
   })();
 
+  const employeeId = employee?.id;
+  const serviceId = service?.id;
+
   useEffect(() => {
-    if (state.step === WizardStep.SLOT && employee) {
-      setLoadingSlots(true);
-      getPublicAvailability(employee.id, selectedDate, service?.id)
-        .then(setSlots)
-        .catch(() => setSlots([]))
-        .finally(() => setLoadingSlots(false));
+    if (state.step !== WizardStep.SLOT || !employeeId) {
+      return;
     }
-  }, [state.step, employee, selectedDate, service]);
+
+    let cancelled = false;
+    void Promise.resolve().then(async () => {
+      setLoadingSlots(true);
+      try {
+        const availableSlots = await getPublicAvailability(employeeId, selectedDate, serviceId);
+        if (!cancelled) {
+          setSlots(availableSlots);
+        }
+      } catch {
+        if (!cancelled) {
+          setSlots([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingSlots(false);
+        }
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [state.step, employeeId, selectedDate, serviceId]);
 
   if (redirectUrl && bookingId) {
     return <PaymentRedirect redirectUrl={redirectUrl} bookingId={bookingId} />;

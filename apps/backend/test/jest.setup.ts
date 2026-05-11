@@ -19,6 +19,7 @@ process.env.JWT_ACCESS_SECRET ??= 'test-access-secret-32chars-min';
 process.env.JWT_REFRESH_SECRET ??= 'test-refresh-secret-32chars-min';
 process.env.JWT_CLIENT_ACCESS_SECRET ??= 'test-client-access-secret-32chars';
 process.env.SUPER_ADMIN_PASSWORD ??= 'TestAdmin@2026Test!!';
+process.env.BILLING_CRON_ENABLED = 'false';
 process.env.SMS_PROVIDER_ENCRYPTION_KEY ??= Buffer.alloc(32, 1).toString('base64');
 process.env.ZOOM_PROVIDER_ENCRYPTION_KEY ??= Buffer.alloc(32, 2).toString('base64');
 process.env.ZOHO_PROVIDER_ENCRYPTION_KEY ??= Buffer.alloc(32, 5).toString('base64');

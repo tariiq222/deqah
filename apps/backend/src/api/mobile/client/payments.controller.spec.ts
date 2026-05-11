@@ -48,13 +48,13 @@ describe('MobileClientPaymentsController', () => {
   describe('getInvoiceEndpoint', () => {
     it('passes invoiceId to handler', async () => {
       const { controller, getInvoice } = buildController();
-      await controller.getInvoiceEndpoint('inv-123');
-      expect(getInvoice.execute).toHaveBeenCalledWith({ invoiceId: 'inv-123' });
+      await controller.getInvoiceEndpoint('inv-123', USER);
+      expect(getInvoice.execute).toHaveBeenCalledWith({ invoiceId: 'inv-123', clientId: USER.id });
     });
 
     it('returns handler result', async () => {
       const { controller } = buildController();
-      const result = await controller.getInvoiceEndpoint('inv-123');
+      const result = await controller.getInvoiceEndpoint('inv-123', USER);
       expect(result).toEqual({ id: 'inv-1', total: 100 });
     });
   });

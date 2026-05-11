@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { getLocale, LanguageSwitcher } from '@/features/locale/public';
 import { t } from '@/features/locale/dictionary';
 import { getPublicBrandingForSsr } from '@/features/branding/public';
@@ -32,10 +33,10 @@ export async function PremiumLayout({ children }: ThemeLayoutProps) {
       >
         <span style={{ letterSpacing: '0.12em', fontSize: '0.75rem' }}>{brandName}</span>
         <nav style={{ display: 'flex', gap: '2rem', fontSize: '0.875rem', alignItems: 'center' }}>
-          <a href="/" style={{ color: '#f5f5f5' }}>{t(locale, 'nav.home')}</a>
-          <a href="/therapists" style={{ color: '#f5f5f5' }}>{t(locale, 'nav.therapists')}</a>
-          <a href="/burnout-test" style={{ color: '#f5f5f5' }}>{t(locale, 'nav.burnout')}</a>
-          <a href="/contact" style={{ color: '#f5f5f5' }}>{t(locale, 'nav.contact')}</a>
+          <Link href="/" style={{ color: '#f5f5f5' }}>{t(locale, 'nav.home')}</Link>
+          <Link href="/therapists" style={{ color: '#f5f5f5' }}>{t(locale, 'nav.therapists')}</Link>
+          <Link href="/burnout-test" style={{ color: '#f5f5f5' }}>{t(locale, 'nav.burnout')}</Link>
+          <Link href="/contact" style={{ color: '#f5f5f5' }}>{t(locale, 'nav.contact')}</Link>
           <LanguageSwitcher current={locale} />
         </nav>
       </header>

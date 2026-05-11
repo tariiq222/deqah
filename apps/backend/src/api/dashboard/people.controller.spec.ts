@@ -1,5 +1,7 @@
 import { DashboardPeopleController } from './people.controller';
 import { ENFORCE_LIMIT_KEY } from '../../modules/platform/billing/plan-limits.decorator';
+import { CHECK_PERMISSIONS_KEY, type RequiredPermission } from '../../common/guards/casl.guard';
+import { CaslAbilityFactory } from '../../modules/identity/casl/casl-ability.factory';
 
 const fn = <T = unknown>(val: T = {} as T) => ({ execute: jest.fn().mockResolvedValue(val) });
 
@@ -155,5 +157,116 @@ describe('DashboardPeopleController', () => {
     expect(employeeOnboarding.execute).toHaveBeenCalledWith(
       expect.objectContaining({ employeeId: 'e-1' }),
     );
+  });
+
+  // ── CASL permission decorator coverage ────────────────────────────────────
+  // Every dashboard /people route must carry an explicit @CheckPermissions
+  // decorator. Missing decorators previously fail-opened (see TAR-45).
+  const PROTOTYPE = DashboardPeopleController.prototype as unknown as Record<string, unknown>;
+  const expected: Array<{ method: string; permission: RequiredPermission }> = [
+    // clients
+    { method: 'createClientEndpoint',           permission: { action: 'create', subject: 'Client' } },
+    { method: 'listClientsEndpoint',            permission: { action: 'read',   subject: 'Client' } },
+    { method: 'getClientEndpoint',              permission: { action: 'read',   subject: 'Client' } },
+    { method: 'updateClientEndpoint',           permission: { action: 'update', subject: 'Client' } },
+    { method: 'deleteClientEndpoint',           permission: { action: 'delete', subject: 'Client' } },
+    { method: 'setClientActiveEndpoint',        permission: { action: 'update', subject: 'Client' } },
+    // employees
+    { method: 'createEmployeeEndpoint',           permission: { action: 'create', subject: 'Employee' } },
+    { method: 'onboardEmployeeEndpoint',          permission: { action: 'create', subject: 'Employee' } },
+    { method: 'attachMembershipEndpoint',         permission: { action: 'create', subject: 'Employee' } },
+    { method: 'listEmployeesEndpoint',            permission: { action: 'read',   subject: 'Employee' } },
+    { method: 'employeeStatsEndpoint',            permission: { action: 'read',   subject: 'Employee' } },
+    { method: 'getEmployeeEndpoint',              permission: { action: 'read',   subject: 'Employee' } },
+    { method: 'updateEmployeeEndpoint',           permission: { action: 'update', subject: 'Employee' } },
+    { method: 'getAvailabilityEndpoint',          permission: { action: 'read',   subject: 'Employee' } },
+    { method: 'getBreaksEndpoint',                permission: { action: 'read',   subject: 'Employee' } },
+    { method: 'putBreaksEndpoint',                permission: { action: 'update', subject: 'Employee' } },
+    { method: 'listVacationsEndpoint',            permission: { action: 'read',   subject: 'Employee' } },
+    { method: 'createVacationEndpoint',           permission: { action: 'update', subject: 'Employee' } },
+    { method: 'deleteVacationEndpoint',           permission: { action: 'update', subject: 'Employee' } },
+    { method: 'updateAvailabilityEndpoint',       permission: { action: 'update', subject: 'Employee' } },
+    { method: 'employeeOnboardingEndpoint',       permission: { action: 'update', subject: 'Employee' } },
+    { method: 'deleteEmployeeEndpoint',           permission: { action: 'delete', subject: 'Employee' } },
+    { method: 'listEmployeeServicesEndpoint',     permission: { action: 'read',   subject: 'Employee' } },
+    { method: 'assignEmployeeServiceEndpoint',    permission: { action: 'update', subject: 'Employee' } },
+    { method: 'getEmployeeSlotsEndpoint',         permission: { action: 'read',   subject: 'Employee' } },
+    { method: 'getEmployeeServiceTypesEndpoint',  permission: { action: 'read',   subject: 'Employee' } },
+    { method: 'removeEmployeeServiceEndpoint',    permission: { action: 'update', subject: 'Employee' } },
+    { method: 'listEmployeeExceptionsEndpoint',   permission: { action: 'read',   subject: 'Employee' } },
+    { method: 'createEmployeeExceptionEndpoint',  permission: { action: 'update', subject: 'Employee' } },
+    { method: 'deleteEmployeeExceptionEndpoint',  permission: { action: 'update', subject: 'Employee' } },
+    { method: 'listEmployeeRatingsEndpoint',      permission: { action: 'read',   subject: 'Employee' } },
+    { method: 'uploadAvatarEndpoint',             permission: { action: 'update', subject: 'Employee' } },
+  ];
+
+  describe('@CheckPermissions decorator coverage (TAR-45)', () => {
+    it.each(expected)(
+      '$method declares CheckPermissions($permission.action, $permission.subject)',
+      ({ method, permission }) => {
+        const meta = Reflect.getMetadata(
+          CHECK_PERMISSIONS_KEY,
+          PROTOTYPE[method] as object,
+        ) as RequiredPermission[] | undefined;
+        expect(meta).toBeDefined();
+        expect(meta).toEqual(expect.arrayContaining([expect.objectContaining(permission)]));
+      },
+    );
+  });
+
+  describe('Role matrix (TAR-45) — CaslAbilityFactory enforces expected access', () => {
+    const factory = new CaslAbilityFactory();
+    const abilityFor = (membershipRole: string) =>
+      factory.buildForUser({ membershipRole, role: null, customRole: null });
+
+    it('RECEPTIONIST can manage clients but only read employees', () => {
+      const a = abilityFor('RECEPTIONIST');
+      expect(a.can('create', 'Client')).toBe(true);
+      expect(a.can('read',   'Client')).toBe(true);
+      expect(a.can('update', 'Client')).toBe(true);
+      expect(a.can('delete', 'Client')).toBe(true);
+      expect(a.can('read',   'Employee')).toBe(true);
+      expect(a.can('create', 'Employee')).toBe(false);
+      expect(a.can('update', 'Employee')).toBe(false);
+      expect(a.can('delete', 'Employee')).toBe(false);
+    });
+
+    it('EMPLOYEE can only read clients and cannot touch employees', () => {
+      const a = abilityFor('EMPLOYEE');
+      expect(a.can('read',   'Client')).toBe(true);
+      expect(a.can('create', 'Client')).toBe(false);
+      expect(a.can('update', 'Client')).toBe(false);
+      expect(a.can('delete', 'Client')).toBe(false);
+      expect(a.can('read',   'Employee')).toBe(false);
+      expect(a.can('create', 'Employee')).toBe(false);
+      expect(a.can('update', 'Employee')).toBe(false);
+      expect(a.can('delete', 'Employee')).toBe(false);
+    });
+
+    it('ADMIN can manage both Client and Employee fully', () => {
+      const a = abilityFor('ADMIN');
+      for (const action of ['create', 'read', 'update', 'delete'] as const) {
+        expect(a.can(action, 'Client')).toBe(true);
+        expect(a.can(action, 'Employee')).toBe(true);
+      }
+    });
+
+    it('OWNER inherits ADMIN access to Client and Employee', () => {
+      const a = abilityFor('OWNER');
+      for (const action of ['create', 'read', 'update', 'delete'] as const) {
+        expect(a.can(action, 'Client')).toBe(true);
+        expect(a.can(action, 'Employee')).toBe(true);
+      }
+    });
+
+    it('ACCOUNTANT cannot create/update/delete clients or employees', () => {
+      const a = abilityFor('ACCOUNTANT');
+      expect(a.can('create', 'Client')).toBe(false);
+      expect(a.can('update', 'Client')).toBe(false);
+      expect(a.can('delete', 'Client')).toBe(false);
+      expect(a.can('create', 'Employee')).toBe(false);
+      expect(a.can('update', 'Employee')).toBe(false);
+      expect(a.can('delete', 'Employee')).toBe(false);
+    });
   });
 });

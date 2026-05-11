@@ -7,6 +7,7 @@ import {
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ApiStandardResponses } from '../../../common/swagger';
 import { JwtGuard } from '../../../common/guards/jwt.guard';
+import { CaslGuard, CheckPermissions } from '../../../common/guards/casl.guard';
 import { CurrentUser, JwtUser } from '../../../common/auth/current-user.decorator';
 import { PrismaService } from '../../../infrastructure/database';
 
@@ -21,7 +22,7 @@ export class EarningsQuery {
 @ApiTags('Mobile Employee / Earnings')
 @ApiBearerAuth()
 @ApiStandardResponses()
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, CaslGuard)
 @Controller('mobile/employee/earnings')
 export class MobileEmployeeEarningsController {
   constructor(private readonly prisma: PrismaService) {}
@@ -49,9 +50,10 @@ export class MobileEmployeeEarningsController {
       },
     },
   })
-  @ApiQuery({ name: 'from', required: false, description: 'Start of earnings period (ISO 8601)', example: '2026-04-01' })
+@ApiQuery({ name: 'from', required: false, description: 'Start of earnings period (ISO 8601)', example: '2026-04-01' })
   @ApiQuery({ name: 'to', required: false, description: 'End of earnings period (ISO 8601)', example: '2026-04-30' })
   @Get()
+  @CheckPermissions({ action: 'read', subject: 'Employee' })
   async earnings(
     @CurrentUser() user: JwtUser,
     @Query() q: EarningsQuery,

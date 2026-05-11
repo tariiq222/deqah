@@ -96,6 +96,197 @@ describe('JwtGuard', () => {
     passportCanActivate.mockRestore();
   });
 
+  // ─── TAR-10: tenant resolution order (after auth) ────────────────────────
+  // The tenant-resolver MIDDLEWARE runs before Passport, so super-admin
+  // X-Org-Id override (which depends on req.user.isSuperAdmin) was dead
+  // code there. JwtGuard now owns this responsibility because it runs
+  // AFTER Passport has populated req.user.
+  describe('TAR-10: tenant context stamping with super-admin X-Org-Id override', () => {
+    const VALID_UUID = '550e8400-e29b-41d4-a716-446655440000';
+    const OTHER_UUID = '660e8400-e29b-41d4-a716-446655440001';
+    let passportCanActivate: jest.SpyInstance;
+
+    beforeEach(() => {
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
+      passportCanActivate = jest
+        .spyOn(Object.getPrototypeOf(JwtGuard.prototype), 'canActivate')
+        .mockResolvedValue(true);
+      redisClient.get.mockResolvedValue('active');
+    });
+
+    afterEach(() => {
+      passportCanActivate.mockRestore();
+    });
+
+    it('normal tenant user: JWT organizationId wins; X-Org-Id is ignored', async () => {
+      const ctx = makeCtx({}, {}, {
+        user: {
+          id: 'user-1',
+          organizationId: 'org-jwt',
+          membershipId: 'member-1',
+          role: 'ADMIN',
+          isSuperAdmin: false,
+        },
+        headers: { 'x-org-id': OTHER_UUID },
+      });
+
+      await expect(guard.canActivate(ctx)).resolves.toBe(true);
+      expect(tenantContext.set).toHaveBeenCalledWith({
+        organizationId: 'org-jwt',
+        membershipId: 'member-1',
+        id: 'user-1',
+        role: 'ADMIN',
+        isSuperAdmin: false,
+      });
+    });
+
+    it('super-admin: valid X-Org-Id header overrides JWT organizationId', async () => {
+      const ctx = makeCtx({}, {}, {
+        user: {
+          id: 'admin-1',
+          organizationId: 'platform-org',
+          membershipId: '',
+          role: 'SUPER_ADMIN',
+          isSuperAdmin: true,
+        },
+        headers: { 'x-org-id': VALID_UUID },
+      });
+
+      await expect(guard.canActivate(ctx)).resolves.toBe(true);
+      expect(tenantContext.set).toHaveBeenCalledWith({
+        organizationId: VALID_UUID,
+        membershipId: '',
+        id: 'admin-1',
+        role: 'SUPER_ADMIN',
+        isSuperAdmin: true,
+      });
+    });
+
+    it('super-admin without X-Org-Id: falls back to JWT organizationId', async () => {
+      const ctx = makeCtx({}, {}, {
+        user: {
+          id: 'admin-1',
+          organizationId: 'platform-org',
+          membershipId: '',
+          role: 'SUPER_ADMIN',
+          isSuperAdmin: true,
+        },
+        headers: {},
+      });
+
+      await expect(guard.canActivate(ctx)).resolves.toBe(true);
+      expect(tenantContext.set).toHaveBeenCalledWith(
+        expect.objectContaining({ organizationId: 'platform-org', isSuperAdmin: true }),
+      );
+    });
+
+    it('super-admin with invalid (non-UUID) X-Org-Id: header ignored, JWT used', async () => {
+      const ctx = makeCtx({}, {}, {
+        user: {
+          id: 'admin-1',
+          organizationId: 'platform-org',
+          membershipId: '',
+          role: 'SUPER_ADMIN',
+          isSuperAdmin: true,
+        },
+        headers: { 'x-org-id': 'not-a-uuid' },
+      });
+
+      await expect(guard.canActivate(ctx)).resolves.toBe(true);
+      expect(tenantContext.set).toHaveBeenCalledWith(
+        expect.objectContaining({ organizationId: 'platform-org' }),
+      );
+    });
+
+    it('non-super-admin sending X-Org-Id is silently ignored (security)', async () => {
+      // Attacker scenario: a regular ADMIN sends X-Org-Id trying to act on
+      // another tenant. Guard must use the JWT-bound org and discard the
+      // header entirely.
+      const ctx = makeCtx({}, {}, {
+        user: {
+          id: 'user-attacker',
+          organizationId: 'org-victim-attempt',
+          membershipId: 'm-1',
+          role: 'ADMIN',
+          isSuperAdmin: false,
+        },
+        headers: { 'x-org-id': 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' },
+      });
+
+      await expect(guard.canActivate(ctx)).resolves.toBe(true);
+      const call = tenantContext.set.mock.calls[0][0] as { organizationId: string };
+      expect(call.organizationId).toBe('org-victim-attempt');
+      expect(call.organizationId).not.toBe('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+    });
+
+    it('super-admin with no organizationId on JWT and no header: context not stamped', async () => {
+      // Platform-only super-admin (no membership) hitting an endpoint that
+      // does not require a tenant. assertOrganizationIsActive short-circuits
+      // on undefined organizationId, so the request still passes.
+      const ctx = makeCtx({}, {}, {
+        user: {
+          id: 'admin-1',
+          role: 'SUPER_ADMIN',
+          isSuperAdmin: true,
+        },
+        headers: {},
+      });
+
+      await expect(guard.canActivate(ctx)).resolves.toBe(true);
+      expect(tenantContext.set).not.toHaveBeenCalled();
+    });
+
+    it('missing user (Passport failure path): context not stamped', async () => {
+      // Defensive: if super.canActivate somehow resolved true without
+      // populating req.user, we must not blow up trying to read .isSuperAdmin.
+      const ctx = makeCtx({}, {}, { headers: { 'x-org-id': VALID_UUID } });
+
+      await expect(guard.canActivate(ctx)).resolves.toBe(true);
+      expect(tenantContext.set).not.toHaveBeenCalled();
+    });
+
+    it('super-admin overriding into a SUSPENDED target tenant is rejected (suspension check uses effective org)', async () => {
+      // TAR-10 follow-up: stampTenantContext AND assertOrganizationIsActive
+      // must operate on the same effective org id. Otherwise a super-admin
+      // could write to a suspended tenant because the suspension check
+      // would target their own (non-suspended) platform org.
+      redisClient.get.mockResolvedValue('2026-04-22T10:00:00.000Z'); // suspended
+
+      const ctx = makeCtx({}, {}, {
+        user: {
+          id: 'admin-1',
+          organizationId: 'platform-org',
+          role: 'SUPER_ADMIN',
+          isSuperAdmin: true,
+        },
+        headers: { 'x-org-id': VALID_UUID },
+      });
+
+      await expect(guard.canActivate(ctx)).rejects.toThrow('ORG_SUSPENDED');
+      // Cache key was built from the OVERRIDE org, not the JWT org.
+      expect(redisClient.get).toHaveBeenCalledWith(`org-suspension:${VALID_UUID}`);
+    });
+
+    it('header in array form (Express multi-value): rejected as invalid UUID', async () => {
+      // Express may surface duplicate headers as string[]; parseUuidHeader
+      // only accepts strings, so multi-value headers fall through to JWT.
+      const ctx = makeCtx({}, {}, {
+        user: {
+          id: 'admin-1',
+          organizationId: 'platform-org',
+          role: 'SUPER_ADMIN',
+          isSuperAdmin: true,
+        },
+        headers: { 'x-org-id': [VALID_UUID, OTHER_UUID] },
+      });
+
+      await expect(guard.canActivate(ctx)).resolves.toBe(true);
+      expect(tenantContext.set).toHaveBeenCalledWith(
+        expect.objectContaining({ organizationId: 'platform-org' }),
+      );
+    });
+  });
+
   it('skips suspension lookup when no organizationId is present', async () => {
     await expect(guard.assertOrganizationIsActive(undefined)).resolves.toBeUndefined();
     expect(redis.getClient).not.toHaveBeenCalled();

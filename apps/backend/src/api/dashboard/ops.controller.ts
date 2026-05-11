@@ -9,7 +9,7 @@ import {
 import { Response } from 'express';
 import { ReportFormat } from '@prisma/client';
 import { JwtGuard } from '../../common/guards/jwt.guard';
-import { CaslGuard } from '../../common/guards/casl.guard';
+import { CaslGuard, CheckPermissions } from '../../common/guards/casl.guard';
 import { ApiStandardResponses } from '../../common/swagger';
 import { TenantContextService } from '../../common/tenant';
 import { RequireFeature } from '../../modules/platform/billing/feature.decorator';
@@ -46,6 +46,7 @@ export class DashboardOpsController {
       },
     },
   })
+  @CheckPermissions({ action: 'manage', subject: 'Report' })
   async generateReportEndpoint(
     @Body() body: GenerateReportDto,
     @Res({ passthrough: true }) res: Response,
@@ -77,6 +78,7 @@ export class DashboardOpsController {
       },
     },
   })
+  @CheckPermissions({ action: 'read', subject: 'Report' })
   @ApiQuery({ name: 'userId', required: false, description: 'Filter by staff user UUID' })
   @ApiQuery({ name: 'entity', required: false, description: 'Filter by entity type (e.g. Booking, Client)' })
   @ApiQuery({ name: 'entityId', required: false, description: 'Filter by entity UUID' })

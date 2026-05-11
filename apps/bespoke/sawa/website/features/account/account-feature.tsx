@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Locale } from '@/features/locale/locale';
 import { t } from '@/features/locale/dictionary';
@@ -58,9 +59,9 @@ export function AccountFeature({ locale }: AccountFeatureProps) {
           <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--primary-dark)' }}>
             {t(locale, 'account.bookings')}
           </h2>
-          <a href="/account/bookings" style={{ fontSize: '0.875rem', color: 'var(--primary)', fontWeight: 500 }}>
+          <Link href="/account/bookings" style={{ fontSize: '0.875rem', color: 'var(--primary)', fontWeight: 500 }}>
             View all
-          </a>
+          </Link>
         </div>
         <ClientBookingsList locale={locale} />
       </div>

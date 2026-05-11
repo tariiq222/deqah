@@ -72,7 +72,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
     // Preserve any custom keys (e.g. `code`, `violations`) that callers attached
     // to the HttpException response — without this, structured exceptions like
     // DowngradePrecheckFailedException lose all their actionable payload.
-    if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+    // For 5xx errors, skip custom keys to prevent internal details (stack, internal
+    // error codes, etc.) from leaking to clients.
+    if (
+      typeof exceptionResponse === 'object' &&
+      exceptionResponse !== null &&
+      status < 500
+    ) {
       for (const [key, value] of Object.entries(exceptionResponse as Record<string, unknown>)) {
         if (!RESERVED_KEYS.has(key)) {
           body[key] = value;

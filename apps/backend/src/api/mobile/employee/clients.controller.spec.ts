@@ -1,18 +1,23 @@
 import { MobileEmployeeClientsController } from './clients.controller';
 
 const USER = { sub: 'user-1' };
+const EMPLOYEE = { id: 'emp-1' };
 
-// Minimal prisma mock
 function mockPrisma(overrides: Partial<{
-  findMany: jest.Mock;
+  employeeFindFirst: jest.Mock;
+  bookingFindMany: jest.Mock;
+  clientFindMany: jest.Mock;
   count: jest.Mock;
 }> = {}) {
   return {
+    employee: {
+      findFirst: overrides.employeeFindFirst ?? jest.fn().mockResolvedValue(EMPLOYEE),
+    },
     booking: {
-      findMany: overrides.findMany ?? jest.fn().mockResolvedValue([]),
+      findMany: overrides.bookingFindMany ?? jest.fn().mockResolvedValue([]),
     },
     client: {
-      findMany: overrides.findMany ?? jest.fn().mockResolvedValue([]),
+      findMany: overrides.clientFindMany ?? jest.fn().mockResolvedValue([]),
       count: overrides.count ?? jest.fn().mockResolvedValue(0),
     },
   };
@@ -20,20 +25,47 @@ function mockPrisma(overrides: Partial<{
 
 describe('MobileEmployeeClientsController', () => {
   describe('listMyClients', () => {
-    it('fetches distinct clientIds from bookings for the employee', async () => {
+    it('resolves the Employee record from the authenticated user before querying bookings', async () => {
       const prisma = mockPrisma();
       const controller = new MobileEmployeeClientsController(prisma as never);
       await controller.listMyClients(USER as never, {} as never);
+      expect(prisma.employee.findFirst).toHaveBeenCalledWith({
+        where: { userId: USER.sub, isActive: true },
+        select: { id: true },
+      });
       expect(prisma.booking.findMany).toHaveBeenCalledWith({
-        where: { employeeId: USER.sub },
+        where: { employeeId: EMPLOYEE.id },
         select: { clientId: true },
         distinct: ['clientId'],
       });
     });
 
+    it('uses employeeId from the token when present', async () => {
+      const prisma = mockPrisma();
+      const controller = new MobileEmployeeClientsController(prisma as never);
+      await controller.listMyClients({ ...USER, employeeId: 'emp-token' } as never, {} as never);
+      expect(prisma.employee.findFirst).not.toHaveBeenCalled();
+      expect(prisma.booking.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { employeeId: 'emp-token' } }),
+      );
+    });
+
+    it('rejects authenticated users without a linked active employee profile', async () => {
+      const prisma = mockPrisma({
+        employeeFindFirst: jest.fn().mockResolvedValue(null),
+      });
+      const controller = new MobileEmployeeClientsController(prisma as never);
+
+      await expect(controller.listMyClients(USER as never, {} as never)).rejects.toMatchObject({
+        message: 'employee_profile_not_found',
+      });
+      expect(prisma.booking.findMany).not.toHaveBeenCalled();
+    });
+
     it('returns clients with pagination meta', async () => {
       const prisma = mockPrisma({
-        findMany: jest.fn().mockResolvedValue([{ id: 'c-1', name: 'Ahmed' }]),
+        bookingFindMany: jest.fn().mockResolvedValue([{ clientId: 'c-1' }]),
+        clientFindMany: jest.fn().mockResolvedValue([{ id: 'c-1', name: 'Ahmed' }]),
         count: jest.fn().mockResolvedValue(1),
       });
       const controller = new MobileEmployeeClientsController(prisma as never);
@@ -102,7 +134,7 @@ describe('MobileEmployeeClientsController', () => {
 
     it('includes correct totalPages in meta', async () => {
       const prisma = mockPrisma({
-        findMany: jest.fn().mockResolvedValue([]),
+        clientFindMany: jest.fn().mockResolvedValue([]),
         count: jest.fn().mockResolvedValue(45),
       });
       const controller = new MobileEmployeeClientsController(prisma as never);
@@ -112,20 +144,32 @@ describe('MobileEmployeeClientsController', () => {
   });
 
   describe('clientHistory', () => {
-    it('fetches bookings for the given clientId', async () => {
+    it('fetches bookings for the given clientId with the linked employee id', async () => {
       const prisma = mockPrisma();
       const controller = new MobileEmployeeClientsController(prisma as never);
       await controller.clientHistory(USER as never, 'c-1');
       expect(prisma.booking.findMany).toHaveBeenCalledWith({
-        where: { employeeId: USER.sub, clientId: 'c-1' },
+        where: { employeeId: EMPLOYEE.id, clientId: 'c-1' },
         orderBy: { scheduledAt: 'desc' },
         take: 20,
       });
     });
 
+    it('rejects history requests for authenticated users without a linked employee profile', async () => {
+      const prisma = mockPrisma({
+        employeeFindFirst: jest.fn().mockResolvedValue(null),
+      });
+      const controller = new MobileEmployeeClientsController(prisma as never);
+
+      await expect(controller.clientHistory(USER as never, 'c-1')).rejects.toMatchObject({
+        message: 'employee_profile_not_found',
+      });
+      expect(prisma.booking.findMany).not.toHaveBeenCalled();
+    });
+
     it('returns bookings ordered by scheduledAt desc', async () => {
       const prisma = mockPrisma({
-        findMany: jest.fn().mockResolvedValue([{ id: 'b-1' }, { id: 'b-2' }]),
+        bookingFindMany: jest.fn().mockResolvedValue([{ id: 'b-1' }, { id: 'b-2' }]),
       });
       const controller = new MobileEmployeeClientsController(prisma as never);
       const result = await controller.clientHistory(USER as never, 'c-1');

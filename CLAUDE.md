@@ -71,6 +71,22 @@ The active orchestration system is **Kilo-native**, defined in `AGENTS.md` (this
 - **RTL-first layout** — use logical properties (`start`/`end`, `ps-`/`pe-`, `ms-`/`me-`); never hardcode `left`/`right`
 - **Semantic tokens only** — no hex colors, no `text-gray-*`; always use CSS custom properties so per-tenant branding works
 
+## Dependency Management
+
+**pnpm overrides** in root `package.json` pin transitive deps to known-good versions:
+```json
+"pnpm": {
+  "overrides": {
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "@types/react": "18.3.28",
+    "@types/react-dom": "18.3.7"
+  }
+}
+```
+
+**React 19 vs @types/react 18.3 — known mismatch, safe to ignore**: `@types/react` ships its own PropTypes validators keyed to the exact React version. Since React 19 ships `PropTypes` validators that accept `string | number` for `size`, and `@types/react@18` types `size` as `number | null`, TypeScript reports errors in mobile (`apps/mobile`). This is a type-library lag, not a runtime bug — the actual prop values are compatible. The override pins `@types/react` to 18.x because 19.x types have not shipped yet (as of 2026-05-11). Track upstream: https://github.com/DefinitelyTyped/DefinitelyTyped/issues/.
+
 ## Commands
 
 > Note: the repo uses **pnpm workspaces**. `npm run <script>` works at the root because npm forwards to the same `package.json` scripts, but inside individual apps prefer `pnpm` (e.g. `pnpm --filter dashboard test`).

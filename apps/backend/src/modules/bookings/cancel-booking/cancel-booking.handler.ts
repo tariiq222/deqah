@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { BookingStatus, RefundType } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
 import { RlsTransactionService } from '../../../infrastructure/database';
@@ -9,10 +9,13 @@ import { GetBookingSettingsHandler } from '../get-booking-settings/get-booking-s
 import { LaunchFlags } from '../../platform/billing/feature-flags/launch-flags';
 import { CancelBookingDto } from './cancel-booking.dto';
 import { ZoomMeetingService } from '../zoom-meeting.service';
+import { RefundPaymentHandler } from '../../finance/refund-payment/refund-payment.handler';
 
 export type CancelBookingCommand = CancelBookingDto & {
   bookingId: string;
   changedBy: string;
+  source?: string;
+  clientId?: string;
 };
 
 const CANCELLABLE_STATUSES: BookingStatus[] = [
@@ -31,6 +34,7 @@ export class CancelBookingHandler {
     private readonly settingsHandler: GetBookingSettingsHandler,
     private readonly zoomMeetingService: ZoomMeetingService,
     private readonly flags: LaunchFlags,
+    private readonly refundHandler: RefundPaymentHandler,
   ) {}
 
   async execute(cmd: CancelBookingCommand) {
@@ -40,6 +44,9 @@ export class CancelBookingHandler {
     });
     if (!booking) {
       throw new NotFoundException(`Booking ${cmd.bookingId} not found`);
+    }
+    if (cmd.source === 'client' && cmd.clientId && booking.clientId !== cmd.clientId) {
+      throw new ForbiddenException('Not your booking');
     }
     if (!CANCELLABLE_STATUSES.includes(booking.status)) {
       throw new BadRequestException(`Booking cannot be cancelled (status: ${booking.status})`);
@@ -64,6 +71,14 @@ export class CancelBookingHandler {
     const refundType = hoursUntilBooking >= settings.freeCancelBeforeHours
       ? settings.freeCancelRefundType
       : RefundType.NONE;
+
+    const completedPayment = await this.prisma.payment.findFirst({
+      where: { invoice: { bookingId: booking.id }, status: 'COMPLETED' },
+      select: { id: true },
+    });
+
+    let refundRequestId: string | null = null;
+    let idempotencyKey: string | null = null;
 
     const updated = await this.rlsTx.withTransaction(async (tx) => {
       const cancelledBooking = await tx.booking.update({
@@ -96,15 +111,20 @@ export class CancelBookingHandler {
           data: { usedCount: { decrement: 1 } },
         });
       }
+      if (completedPayment && refundType !== RefundType.NONE) {
+        const created = await this.refundHandler.createRefundRequestInTx(tx, {
+          paymentId: completedPayment.id,
+          reason: `Booking ${booking.id} cancellation (${refundType})`,
+          performedBy: cmd.changedBy,
+        });
+        refundRequestId = created.refundRequestId;
+        idempotencyKey = created.idempotencyKey;
+      }
       return cancelledBooking;
     });
 
-    const completedPayment = await this.prisma.payment.findFirst({
-      where: { invoice: { bookingId: booking.id }, status: 'COMPLETED' },
-      select: { id: true },
-    });
-
     const event = new BookingCancelledEvent({
+      organizationId,
       bookingId: booking.id,
       clientId: booking.clientId,
       employeeId: booking.employeeId,
@@ -113,11 +133,12 @@ export class CancelBookingHandler {
       zoomMeetingId: (booking as Record<string, unknown>).zoomMeetingId as string | null ?? null,
       refundType,
       paymentId: completedPayment?.id ?? null,
+      refundRequestId,
+      idempotencyKey,
     });
     await this.eventBus.publish(event.eventName, event.toEnvelope());
 
     if (booking.zoomMeetingId) {
-      // Best effort deletion
       this.zoomMeetingService.deleteMeeting(organizationId, booking.zoomMeetingId).catch(() => {});
     }
 

@@ -30,7 +30,14 @@ export class TenantAwareThrottlerGuard extends ThrottlerGuard {
   }
 
   private extractOrgId(req: Record<string, unknown>): string | undefined {
-    // Path 1: JWT-authenticated request — user is populated by JwtStrategy
+    // Path 1: JWT-authenticated request — user is populated by JwtStrategy.
+    //
+    // TAR-10 note: super-admin X-Org-Id override (honored by JwtGuard for
+    // tenant CONTEXT) is intentionally NOT mirrored into the throttler
+    // bucket. Super-admin traffic is low-volume + trusted, so we keep
+    // their rate-limit budget tied to their own JWT org (typically the
+    // platform org). Reflecting the override here would let a single
+    // super-admin exhaust per-tenant buckets while debugging.
     const user = req['user'] as { organizationId?: string } | undefined;
     if (user?.organizationId) {
       return user.organizationId;

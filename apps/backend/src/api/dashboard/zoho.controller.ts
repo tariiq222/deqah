@@ -22,7 +22,7 @@ import {
 } from '@nestjs/swagger';
 import { ApiStandardResponses } from '../../common/swagger';
 import { JwtGuard, Public } from '../../common/guards/jwt.guard';
-import { CaslGuard } from '../../common/guards/casl.guard';
+import { CaslGuard, CheckPermissions } from '../../common/guards/casl.guard';
 import { RequireFeature } from '../../modules/platform/billing/feature.decorator';
 import { FeatureKey } from '@deqah/shared/constants/feature-keys';
 
@@ -77,6 +77,7 @@ export class DashboardZohoController {
   @ApiOkResponse({
     description: 'Configured + active flags + selected Zoho organization',
   })
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   status() {
     return this.getConfig.execute();
   }
@@ -91,6 +92,7 @@ export class DashboardZohoController {
     required: true,
     description: 'Zoho data center: com|sa|eu|in|au|jp|ca',
   })
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @ApiOkResponse({ type: StartConnectResponseDto })
   connect(@Query() dto: StartConnectDto): StartConnectResponseDto {
     return this.startConnect.execute(dto);
@@ -130,6 +132,7 @@ export class DashboardZohoController {
     summary:
       'Select the Zoho organization to use (required when the connected user has more than one SAR org)',
   })
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   selectOrg(@Body() dto: SelectOrganizationDto) {
     return this.selectOrganization.execute(dto);
   }
@@ -139,12 +142,14 @@ export class DashboardZohoController {
   @ApiOperation({
     summary: 'Disconnect Zoho — revokes the refresh token and deletes the integration row',
   })
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   removeConnection() {
     return this.disconnect.execute();
   }
 
   // ───────── Config ─────────
 
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @Put('config')
   @RequireFeature(FEATURE)
   @ApiOperation({ summary: 'Update tenant defaults (sendOnCreate, item id, payment terms, ...)' })
@@ -152,6 +157,7 @@ export class DashboardZohoController {
     return this.updateConfig.execute(dto);
   }
 
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @Post('test')
   @RequireFeature(FEATURE)
   @HttpCode(HttpStatus.OK)
@@ -162,6 +168,7 @@ export class DashboardZohoController {
 
   // ───────── Invoices proxy ─────────
 
+  @CheckPermissions({ action: 'read', subject: 'Invoice' })
   @Get('invoices')
   @RequireFeature(FEATURE)
   @ApiOperation({ summary: 'List invoices in the connected Zoho organization' })
@@ -169,6 +176,7 @@ export class DashboardZohoController {
     return this.listInvoices.execute(query);
   }
 
+  @CheckPermissions({ action: 'read', subject: 'Invoice' })
   @Get('invoices/:id')
   @RequireFeature(FEATURE)
   @ApiOperation({ summary: 'Fetch a Zoho invoice by id' })
@@ -176,6 +184,7 @@ export class DashboardZohoController {
     return this.getInvoice.execute(id);
   }
 
+  @CheckPermissions({ action: 'update', subject: 'Invoice' })
   @Post('invoices/:id/send')
   @RequireFeature(FEATURE)
   @HttpCode(HttpStatus.OK)
@@ -184,6 +193,7 @@ export class DashboardZohoController {
     return this.sendInvoice.execute(id);
   }
 
+  @CheckPermissions({ action: 'update', subject: 'Invoice' })
   @Post('invoices/:id/void')
   @RequireFeature(FEATURE)
   @HttpCode(HttpStatus.OK)
@@ -200,6 +210,7 @@ export class DashboardZohoController {
     summary:
       'List captured Moyasar payments with their Zoho invoice mirror (URL/PDF/status) — used by the dashboard to show a per-client invoice link',
   })
+  @CheckPermissions({ action: 'read', subject: 'Payment' })
   paymentMirrors(
     @Query('page') page?: string,
     @Query('perPage') perPage?: string,

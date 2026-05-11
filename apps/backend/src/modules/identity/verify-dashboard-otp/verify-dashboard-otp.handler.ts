@@ -115,6 +115,10 @@ export class VerifyDashboardOtpHandler {
       : null;
     const membership = sticky ?? activeMemberships[0] ?? null;
 
+    if (!user.isSuperAdmin && !membership) {
+      throw new UnauthorizedException('No active membership found for this account');
+    }
+
     const tokens = await this.tokens.issueTokenPair(user, {
       organizationId: membership?.organizationId ?? DEFAULT_ORGANIZATION_ID,
       membershipId: membership?.id,

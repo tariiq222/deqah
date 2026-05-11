@@ -35,64 +35,72 @@ export class ReconcileUsageCountersHandler {
   ) {}
 
   async execute(): Promise<{ orgsScanned: number; rowsRepaired: number }> {
-    const orgs = await this.prisma.$allTenants.organization.findMany({
-      where: { status: { in: ['TRIALING', 'ACTIVE'] } },
-      select: { id: true },
-    });
+    // Outer cls.run sets SUPER_ADMIN_CONTEXT_CLS_KEY before any $allTenants
+    // access. Without this the $allTenants getter throws ForbiddenException
+    // when called outside a super-admin CLS context (production bug: cron
+    // crashed nightly at the org-list query before the inner per-org run).
+    return this.cls.run(async () => {
+      this.cls.set(SUPER_ADMIN_CONTEXT_CLS_KEY, true);
 
-    let repaired = 0;
-
-    for (const { id: orgId } of orgs) {
-      // Run all counter reads/writes for this org inside a tenant CLS context
-      // so the tenant-scoping extension allows UsageCounter queries.
-      const orgRepaired = await this.cls.run(async () => {
-        this.cls.set(TENANT_CLS_KEY, {
-          organizationId: orgId,
-          membershipId: 'system',
-          id: 'system',
-          role: 'system',
-          isSuperAdmin: false,
-        });
-        // Also set SUPER_ADMIN_CONTEXT_CLS_KEY in case any downstream call
-        // needs prisma.$allTenants (e.g. recomputeFromSource uses scoped models
-        // directly, so this is defensive only).
-        this.cls.set(SUPER_ADMIN_CONTEXT_CLS_KEY, true);
-        this.logger.log(`systemContext: reconcile-usage-counters org=${orgId}`);
-
-        let localRepaired = 0;
-
-        for (const key of QUANTITATIVE_KEYS) {
-          const period = key === FeatureKey.MONTHLY_BOOKINGS ? startOfMonthUTC() : EPOCH;
-
-          try {
-            const truth = await this.recomputeFromSource(orgId, key, period);
-            const stored = await this.counters.read(orgId, key, period);
-
-            if (stored !== truth) {
-              await this.counters.upsertExact(orgId, key, period, truth);
-              this.logger.warn(
-                { orgId, key, stored, truth },
-                'usage_counter_drift_repaired',
-              );
-              localRepaired++;
-            }
-          } catch (err: unknown) {
-            this.logger.error({ err, orgId, key }, 'usage_counter_reconcile_error');
-          }
-        }
-
-        return localRepaired;
+      const orgs = await this.prisma.$allTenants.organization.findMany({
+        where: { status: { in: ['TRIALING', 'ACTIVE'] } },
+        select: { id: true },
       });
 
-      repaired += orgRepaired;
-    }
+      let repaired = 0;
 
-    this.logger.log(
-      { orgsScanned: orgs.length, rowsRepaired: repaired },
-      'usage_counter_reconcile_complete',
-    );
+      for (const { id: orgId } of orgs) {
+        // Inner cls.run gives each org its own isolated CLS context with a
+        // tenant identity so the tenant-scoping extension allows UsageCounter
+        // queries scoped to that org. nestjs-cls supports nested runs.
+        const orgRepaired = await this.cls.run(async () => {
+          this.cls.set(TENANT_CLS_KEY, {
+            organizationId: orgId,
+            membershipId: 'system',
+            id: 'system',
+            role: 'system',
+            isSuperAdmin: false,
+          });
+          // Keep SUPER_ADMIN_CONTEXT_CLS_KEY set in the inner context too so
+          // any downstream $allTenants call (defensive) does not throw.
+          this.cls.set(SUPER_ADMIN_CONTEXT_CLS_KEY, true);
+          this.logger.log(`systemContext: reconcile-usage-counters org=${orgId}`);
 
-    return { orgsScanned: orgs.length, rowsRepaired: repaired };
+          let localRepaired = 0;
+
+          for (const key of QUANTITATIVE_KEYS) {
+            const period = key === FeatureKey.MONTHLY_BOOKINGS ? startOfMonthUTC() : EPOCH;
+
+            try {
+              const truth = await this.recomputeFromSource(orgId, key, period);
+              const stored = await this.counters.read(orgId, key, period);
+
+              if (stored !== truth) {
+                await this.counters.upsertExact(orgId, key, period, truth);
+                this.logger.warn(
+                  { orgId, key, stored, truth },
+                  'usage_counter_drift_repaired',
+                );
+                localRepaired++;
+              }
+            } catch (err: unknown) {
+              this.logger.error({ err, orgId, key }, 'usage_counter_reconcile_error');
+            }
+          }
+
+          return localRepaired;
+        });
+
+        repaired += orgRepaired;
+      }
+
+      this.logger.log(
+        { orgsScanned: orgs.length, rowsRepaired: repaired },
+        'usage_counter_reconcile_complete',
+      );
+
+      return { orgsScanned: orgs.length, rowsRepaired: repaired };
+    });
   }
 
   private async recomputeFromSource(

@@ -173,7 +173,7 @@ export default function ProfileScreen() {
 
         <Animated.View entering={FadeInDown.delay(220).duration(700).easing(Easing.out(Easing.cubic))}>
           <Glass variant="strong" radius={sawaaRadius.xl} style={styles.settingsCard}>
-            {settingsItems.map((it) => (
+            {settingsItems.map((it, i) => (
               <Pressable
                 key={it.label.en}
                 onPress={it.onToggle ?? it.onPress}

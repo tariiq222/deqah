@@ -1,6 +1,8 @@
 import { ParseUUIDPipe } from '@nestjs/common';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
 import { DashboardOrganizationHoursController } from './organization-hours.controller';
+import { CHECK_PERMISSIONS_KEY, type RequiredPermission } from '../../common/guards/casl.guard';
+import { CaslAbilityFactory } from '../../modules/identity/casl/casl-ability.factory';
 
 const fn = <T = unknown>(val: T = {} as T) => ({ execute: jest.fn().mockResolvedValue(val) });
 
@@ -59,3 +61,52 @@ describe('DashboardOrganizationHoursController', () => {
     expect(pipes).not.toContain(ParseUUIDPipe);
   });
 });
+
+// ── CASL permission decorator coverage (TAR-46) ────────────────────────────
+describe('@CheckPermissions decorator coverage (TAR-46)', () => {
+  const PROTOTYPE = DashboardOrganizationHoursController.prototype as unknown as Record<string, unknown>;
+  const expected: Array<{ method: string; permission: RequiredPermission }> = [
+    { method: 'setBusinessHoursEndpoint',  permission: { action: 'update', subject: 'Setting' } },
+    { method: 'getBusinessHoursEndpoint',  permission: { action: 'read',   subject: 'Setting' } },
+    { method: 'addHolidayEndpoint',        permission: { action: 'update', subject: 'Setting' } },
+    { method: 'removeHolidayEndpoint',     permission: { action: 'update', subject: 'Setting' } },
+    { method: 'listHolidaysEndpoint',      permission: { action: 'read',   subject: 'Setting' } },
+  ];
+
+  it.each(expected)(
+    '$method declares CheckPermissions($permission.action, $permission.subject)',
+    ({ method, permission }) => {
+      const meta = Reflect.getMetadata(
+        CHECK_PERMISSIONS_KEY,
+        PROTOTYPE[method] as object,
+      ) as RequiredPermission[] | undefined;
+      expect(meta).toBeDefined();
+      expect(meta).toEqual(expect.arrayContaining([expect.objectContaining(permission)]));
+    },
+  );
+});
+
+describe('Role matrix (TAR-46) — business hours / holidays access', () => {
+  const factory = new CaslAbilityFactory();
+  const abilityFor = (membershipRole: string) =>
+    factory.buildForUser({ membershipRole, role: null, customRole: null });
+
+  it('OWNER and ADMIN can manage Setting fully', () => {
+    for (const role of ['OWNER', 'ADMIN'] as const) {
+      const a = abilityFor(role);
+      for (const action of ['create', 'read', 'update', 'delete'] as const) {
+        expect(a.can(action, 'Setting')).toBe(true);
+      }
+    }
+  });
+
+  it('RECEPTIONIST and EMPLOYEE cannot read or mutate Setting', () => {
+    for (const role of ['RECEPTIONIST', 'EMPLOYEE'] as const) {
+      const a = abilityFor(role);
+      for (const action of ['create', 'read', 'update', 'delete'] as const) {
+        expect(a.can(action, 'Setting')).toBe(false);
+      }
+    }
+  });
+});
+

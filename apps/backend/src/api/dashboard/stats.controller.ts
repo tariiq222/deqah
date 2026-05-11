@@ -24,6 +24,7 @@ export class DashboardStatsController {
   ) {}
 
   @Get('stats')
+  @CheckPermissions({ action: 'read', subject: 'Report' })
   @ApiOperation({ summary: 'Get dashboard home page statistics for today' })
   @ApiOkResponse({
     description: 'Dashboard statistics aggregated for today',

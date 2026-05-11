@@ -1,20 +1,22 @@
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { GetInvoiceHandler } from './get-invoice.handler';
 import { ListPaymentsHandler } from '../list-payments/list-payments.handler';
 import { PaymentStatus } from '@prisma/client';
 
 const mockInvoice = {
-  id: 'inv-1', bookingId: 'booking-1',
+  id: 'inv-1',
+  bookingId: 'booking-1',
+  clientId: 'client-1',
   payments: [],
 };
 
 const mockPayment = { id: 'pay-1', invoiceId: 'inv-1', status: PaymentStatus.COMPLETED };
 
 describe('GetInvoiceHandler', () => {
-  it('returns invoice with payments', async () => {
+  it('returns invoice with payments when client owns the invoice', async () => {
     const prisma = { invoice: { findFirst: jest.fn().mockResolvedValue(mockInvoice) } };
     const handler = new GetInvoiceHandler(prisma as never);
-    const result = await handler.execute({ invoiceId: 'inv-1' });
+    const result = await handler.execute({ invoiceId: 'inv-1', clientId: 'client-1' });
     expect(result.id).toBe('inv-1');
     expect(prisma.invoice.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -24,9 +26,16 @@ describe('GetInvoiceHandler', () => {
     );
   });
 
+  it('throws ForbiddenException when client does not own the invoice', async () => {
+    const prisma = { invoice: { findFirst: jest.fn().mockResolvedValue({ ...mockInvoice, clientId: 'client-other' }) } };
+    await expect(
+      new GetInvoiceHandler(prisma as never).execute({ invoiceId: 'inv-1', clientId: 'client-1' }),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
   it('throws NotFoundException when invoice not found', async () => {
     const prisma = { invoice: { findFirst: jest.fn().mockResolvedValue(null) } };
-    await expect(new GetInvoiceHandler(prisma as never).execute({ invoiceId: 'bad' }))
+    await expect(new GetInvoiceHandler(prisma as never).execute({ invoiceId: 'bad', clientId: 'client-1' }))
       .rejects.toThrow(NotFoundException);
   });
 });

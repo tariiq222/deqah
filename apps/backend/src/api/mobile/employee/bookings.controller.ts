@@ -25,6 +25,7 @@ import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ApiStandardResponses } from '../../../common/swagger';
 import { JwtGuard } from '../../../common/guards/jwt.guard';
+import { CaslGuard, CheckPermissions } from '../../../common/guards/casl.guard';
 import { CurrentUser, JwtUser } from '../../../common/auth/current-user.decorator';
 import { PrismaService } from '../../../infrastructure/database';
 import { ListBookingsHandler } from '../../../modules/bookings/list-bookings/list-bookings.handler';
@@ -77,7 +78,7 @@ export class EmployeeCancelRequestDto {
 @ApiTags('Mobile Employee / Bookings')
 @ApiBearerAuth()
 @ApiStandardResponses()
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, CaslGuard)
 @Controller('mobile/employee/bookings')
 export class MobileEmployeeBookingsController {
   constructor(
@@ -93,6 +94,7 @@ export class MobileEmployeeBookingsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @CheckPermissions({ action: 'create', subject: 'Booking' })
   @ApiOperation({ summary: 'Create a new booking on the authenticated employee calendar' })
   @ApiCreatedResponse({ description: 'Booking created', schema: { type: 'object' } })
   createMyBooking(
@@ -106,6 +108,7 @@ export class MobileEmployeeBookingsController {
   }
 
   @Get()
+  @CheckPermissions({ action: 'read', subject: 'Booking' })
   @ApiOperation({ summary: 'List bookings assigned to the authenticated employee' })
   @ApiOkResponse({ description: 'Paginated list of bookings', schema: { type: 'object' } })
   listMyBookings(@CurrentUser() user: JwtUser, @Query() q: ListBookingsDto) {
@@ -121,6 +124,7 @@ export class MobileEmployeeBookingsController {
   }
 
   @Get(':id')
+  @CheckPermissions({ action: 'read', subject: 'Booking' })
   @ApiOperation({ summary: 'Get a booking assigned to the authenticated employee' })
   @ApiParam({ name: 'id', description: 'Booking ID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({ description: 'Booking detail', schema: { type: 'object' } })
@@ -133,6 +137,7 @@ export class MobileEmployeeBookingsController {
   }
 
   @Post(':id/start')
+  @CheckPermissions({ action: 'update', subject: 'Booking' })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Start the session for an assigned booking (check-in)' })
   @ApiParam({ name: 'id', description: 'Booking ID', example: '00000000-0000-0000-0000-000000000000' })
@@ -146,6 +151,7 @@ export class MobileEmployeeBookingsController {
   }
 
   @Post(':id/complete')
+  @CheckPermissions({ action: 'update', subject: 'Booking' })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Mark an assigned booking as complete' })
   @ApiParam({ name: 'id', description: 'Booking ID', example: '00000000-0000-0000-0000-000000000000' })
@@ -164,6 +170,7 @@ export class MobileEmployeeBookingsController {
   }
 
   @Post(':id/employee-cancel')
+  @CheckPermissions({ action: 'delete', subject: 'Booking' })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Cancel an assigned booking (employee-initiated, immediate)' })
   @ApiParam({ name: 'id', description: 'Booking ID', example: '00000000-0000-0000-0000-000000000000' })
@@ -184,6 +191,7 @@ export class MobileEmployeeBookingsController {
   }
 
   @Post(':id/cancel-request')
+  @CheckPermissions({ action: 'update', subject: 'Booking' })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request cancellation for an assigned booking (requires admin approval)' })
   @ApiParam({ name: 'id', description: 'Booking ID', example: '00000000-0000-0000-0000-000000000000' })

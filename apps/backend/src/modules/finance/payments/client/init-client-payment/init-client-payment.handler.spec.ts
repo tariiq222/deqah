@@ -13,6 +13,7 @@ const mockInvoice = {
   bookingId,
   total: 230,
   currency: 'SAR',
+  organizationId,
 };
 
 const mockBooking = {
@@ -40,10 +41,6 @@ const buildPrisma = () => ({
   },
 });
 
-const buildTenant = () => ({
-  requireOrganizationIdOrDefault: jest.fn().mockReturnValue(organizationId),
-});
-
 const buildMoyasar = () => ({
   createPayment: jest.fn().mockResolvedValue(mockMoyasarPayment),
 });
@@ -53,7 +50,6 @@ const buildHandler = () => {
   const moyasar = buildMoyasar();
   const handler = new InitClientPaymentHandler(
     prisma as never,
-    buildTenant() as never,
     moyasar as never,
   );
   return { handler, prisma, moyasar };

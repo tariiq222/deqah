@@ -138,7 +138,7 @@ export default function BookingConfirmScreen() {
         scheduledAt,
         durationOptionId,
         amount: String(total),
-        currency,
+        currency: service?.currency,
       },
     });
   };
@@ -176,7 +176,7 @@ export default function BookingConfirmScreen() {
 
         <Animated.View entering={FadeInDown.delay(160).duration(700).easing(Easing.out(Easing.cubic))}>
           <Glass variant="strong" radius={sawaaRadius.xl} style={styles.card}>
-            {rows.map((r) => (
+            {rows.map((r, i) => (
               <View
                 key={r.labelEn}
                 style={[

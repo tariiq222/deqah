@@ -91,4 +91,26 @@ describe('RequestRefundHandler', () => {
 
     await expect(handler.execute(cmd)).rejects.toThrow(ConflictException);
   });
+
+  it('does not find refund request from different organizationId', async () => {
+    const prisma = buildPrisma();
+    const tenantOrgA = { requireOrganizationIdOrDefault: jest.fn().mockReturnValue('org-A') };
+    const tenantOrgB = { requireOrganizationIdOrDefault: jest.fn().mockReturnValue('org-B') };
+
+    prisma.refundRequest.findFirst = jest.fn().mockResolvedValue(null);
+    const handlerOrgA = new RequestRefundHandler(prisma as never, tenantOrgA as never);
+    const handlerOrgB = new RequestRefundHandler(prisma as never, tenantOrgB as never);
+
+    const cmdOrgA = { invoiceId: 'inv-1', clientId: 'client-1', reason: 'Changed my mind' };
+
+    await handlerOrgA.execute(cmdOrgA);
+
+    expect(prisma.refundRequest.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organizationId: 'org-A',
+        }),
+      }),
+    );
+  });
 });

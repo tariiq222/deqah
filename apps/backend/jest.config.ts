@@ -24,6 +24,7 @@ const config: Config = {
   },
   setupFiles: ['<rootDir>/test/jest.setup.ts'],
   testEnvironment: 'node',
+  modulePathIgnorePatterns: ['<rootDir>/dist/'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     // file-type@22 is ESM-only and cannot be loaded by ts-jest in CJS mode.

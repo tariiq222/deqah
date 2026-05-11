@@ -11,7 +11,7 @@ import {
 } from '@nestjs/swagger';
 import { ApiStandardResponses } from '../../common/swagger';
 import { JwtGuard } from '../../common/guards/jwt.guard';
-import { CaslGuard } from '../../common/guards/casl.guard';
+import { CaslGuard, CheckPermissions } from '../../common/guards/casl.guard';
 import { CreateServiceHandler } from '../../modules/org-experience/services/create-service.handler';
 import { CreateServiceDto } from '../../modules/org-experience/services/create-service.dto';
 import { UpdateServiceHandler } from '../../modules/org-experience/services/update-service.handler';
@@ -93,6 +93,7 @@ export class DashboardOrganizationSettingsController {
   // ── Services ─────────────────────────────────────────────────────────────
 
   @Post('services')
+  @CheckPermissions({ action: 'create', subject: 'Service' })
   @ApiOperation({ summary: 'Create a service' })
   @ApiCreatedResponse({ description: 'Service created' })
   createServiceEndpoint(@Body() body: CreateServiceDto) {
@@ -100,6 +101,7 @@ export class DashboardOrganizationSettingsController {
   }
 
   @Get('services')
+  @CheckPermissions({ action: 'read', subject: 'Service' })
   @ApiOperation({ summary: 'List services' })
   @ApiOkResponse({ description: 'Paginated list of services' })
   listServicesEndpoint(@Query() query: ListServicesDto) {
@@ -107,6 +109,7 @@ export class DashboardOrganizationSettingsController {
   }
 
   @Get('services/:serviceId')
+  @CheckPermissions({ action: 'read', subject: 'Service' })
   @ApiOperation({ summary: 'Get a service by id' })
   @ApiParam({ name: 'serviceId', description: 'Service UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({ description: 'Service details' })
@@ -116,6 +119,7 @@ export class DashboardOrganizationSettingsController {
   }
 
   @Patch('services/:serviceId')
+  @CheckPermissions({ action: 'update', subject: 'Service' })
   @ApiOperation({ summary: 'Update a service' })
   @ApiParam({ name: 'serviceId', description: 'Service UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({ description: 'Service updated' })
@@ -128,6 +132,7 @@ export class DashboardOrganizationSettingsController {
   }
 
   @Delete('services/:serviceId')
+  @CheckPermissions({ action: 'delete', subject: 'Service' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Archive a service' })
   @ApiParam({ name: 'serviceId', description: 'Service UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -138,6 +143,7 @@ export class DashboardOrganizationSettingsController {
   }
 
   @Get('services/:serviceId/employees')
+  @CheckPermissions({ action: 'read', subject: 'Service' })
   @ApiOperation({ summary: 'List active employees who offer this service' })
   @ApiParam({ name: 'serviceId', description: 'Service UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({ description: 'List of employees for the service' })
@@ -146,6 +152,7 @@ export class DashboardOrganizationSettingsController {
   }
 
   @Get('services/:serviceId/booking-types')
+  @CheckPermissions({ action: 'read', subject: 'Service' })
   @ApiOperation({ summary: 'Get booking type configs for a service' })
   @ApiParam({ name: 'serviceId', description: 'Service UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({ description: 'Booking type configs' })
@@ -155,6 +162,7 @@ export class DashboardOrganizationSettingsController {
   }
 
   @Put('services/:serviceId/booking-types')
+  @CheckPermissions({ action: 'update', subject: 'Service' })
   @ApiOperation({ summary: 'Set booking type configs for a service' })
   @ApiParam({ name: 'serviceId', description: 'Service UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({ description: 'Booking type configs updated' })
@@ -169,6 +177,7 @@ export class DashboardOrganizationSettingsController {
   // ── Branding ──────────────────────────────────────────────────────────────
 
   @Post('branding')
+  @CheckPermissions({ action: 'update', subject: 'Branding' })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Upsert clinic branding' })
   @ApiOkResponse({ description: 'Branding saved' })
@@ -177,6 +186,7 @@ export class DashboardOrganizationSettingsController {
   }
 
   @Get('branding')
+  @CheckPermissions({ action: 'read', subject: 'Branding' })
   @ApiOperation({ summary: 'Get clinic branding' })
   @ApiOkResponse({ description: 'Current branding config' })
   getBrandingEndpoint() {
@@ -184,6 +194,7 @@ export class DashboardOrganizationSettingsController {
   }
 
   @Post('branding/logo')
+  @CheckPermissions({ action: 'update', subject: 'Branding' })
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload clinic logo' })
@@ -205,6 +216,7 @@ export class DashboardOrganizationSettingsController {
   // ── Intake Forms ──────────────────────────────────────────────────────────
 
   @Post('intake-forms')
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @ApiOperation({ summary: 'Create an intake form' })
   @ApiCreatedResponse({ description: 'Intake form created' })
   @RequireFeature(FeatureKey.INTAKE_FORMS)
@@ -213,6 +225,7 @@ export class DashboardOrganizationSettingsController {
   }
 
   @Get('intake-forms')
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   @ApiOperation({ summary: 'List intake forms' })
   @ApiOkResponse({ description: 'List of intake forms' })
   @RequireFeature(FeatureKey.INTAKE_FORMS)
@@ -221,6 +234,7 @@ export class DashboardOrganizationSettingsController {
   }
 
   @Get('intake-forms/:formId')
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   @ApiOperation({ summary: 'Get an intake form by ID' })
   @ApiParam({ name: 'formId', description: 'Intake form UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({ description: 'Intake form detail' })
@@ -231,6 +245,7 @@ export class DashboardOrganizationSettingsController {
   }
 
   @Delete('intake-forms/:formId')
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete an intake form' })
   @ApiParam({ name: 'formId', description: 'Intake form UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -244,6 +259,7 @@ export class DashboardOrganizationSettingsController {
   // ── Ratings ───────────────────────────────────────────────────────────────
 
   @Post('ratings')
+  @CheckPermissions({ action: 'create', subject: 'Booking' })
   @RequireFeature(FeatureKey.CLIENT_RATINGS)
   @ApiOperation({ summary: 'Submit a rating for a booking' })
   @ApiCreatedResponse({ description: 'Rating submitted' })
@@ -252,6 +268,7 @@ export class DashboardOrganizationSettingsController {
   }
 
   @Get('ratings')
+  @CheckPermissions({ action: 'read', subject: 'Booking' })
   @RequireFeature(FeatureKey.CLIENT_RATINGS)
   @ApiOperation({ summary: 'List ratings' })
   @ApiOkResponse({ description: 'Paginated list of ratings' })
@@ -262,6 +279,7 @@ export class DashboardOrganizationSettingsController {
   // ── Organization Settings ─────────────────────────────────────────────────
 
   @Get('settings')
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   @ApiOperation({ summary: 'Get organization settings' })
   @ApiOkResponse({ description: 'Current organization settings' })
   getOrgSettingsEndpoint() {
@@ -269,6 +287,7 @@ export class DashboardOrganizationSettingsController {
   }
 
   @Patch('settings')
+  @CheckPermissions({ action: 'update', subject: 'Setting' })
   @ApiOperation({ summary: 'Update organization settings' })
   @ApiOkResponse({ description: 'Organization settings updated' })
   upsertOrgSettingsEndpoint(@Body() body: UpsertOrgSettingsDto) {
@@ -278,6 +297,7 @@ export class DashboardOrganizationSettingsController {
   // ── Booking Settings ──────────────────────────────────────────────────────
 
   @Get('booking-settings')
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   @ApiOperation({ summary: 'Get booking settings' })
   @ApiOkResponse({ description: 'Current booking settings' })
   getBookingSettingsEndpoint() {
@@ -285,6 +305,7 @@ export class DashboardOrganizationSettingsController {
   }
 
   @Patch('booking-settings')
+  @CheckPermissions({ action: 'update', subject: 'Setting' })
   @ApiOperation({ summary: 'Update booking settings' })
   @ApiOkResponse({ description: 'Booking settings updated' })
   upsertBookingSettingsEndpoint(@Body() body: UpsertBookingSettingsDto) {
@@ -292,6 +313,7 @@ export class DashboardOrganizationSettingsController {
   }
 
   @Patch('mark-onboarded')
+  @CheckPermissions({ action: 'update', subject: 'Setting' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Mark the organization onboarding wizard as completed' })
   @ApiNoContentResponse({ description: 'Onboarding marked complete' })
@@ -304,6 +326,7 @@ export class DashboardOrganizationSettingsController {
   }
 
   @Post('seed-vertical')
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Seed organization with departments + service categories from a vertical',

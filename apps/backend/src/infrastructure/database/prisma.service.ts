@@ -162,7 +162,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     @Optional() private readonly tenantCtx?: TenantContextService,
   ) {
     super({
-      adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+      adapter: new PrismaPg({
+        connectionString: process.env.DATABASE_URL,
+        max: 100,
+        idleTimeoutMillis: 30_000,
+        connectionTimeoutMillis: 10_000,
+      }),
     });
     this.basePrisma = this as unknown as PrismaClient;
     const mode = (this.config?.get<TenantEnforcementMode>('TENANT_ENFORCEMENT', 'strict') ??

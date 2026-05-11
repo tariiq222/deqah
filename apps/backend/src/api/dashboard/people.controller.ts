@@ -122,6 +122,7 @@ export class DashboardPeopleController {
   ) {}
   // ── Clients ────────────────────────────────────────────────────────────────
   @Post('clients')
+  @CheckPermissions({ action: 'create', subject: 'Client' })
   @HttpCode(HttpStatus.CREATED)
   @TrackUsage('CLIENTS')
   @ApiOperation({ summary: 'Create a client' })
@@ -131,6 +132,7 @@ export class DashboardPeopleController {
   }
 
   @Get('clients')
+  @CheckPermissions({ action: 'read', subject: 'Client' })
   @ApiOperation({ summary: 'List clients' })
   @ApiQuery({ name: 'search', required: false, description: 'Search by name or phone', example: 'Sara' })
   @ApiQuery({ name: 'isActive', required: false, description: 'Filter by active status', example: true })
@@ -157,6 +159,7 @@ export class DashboardPeopleController {
   }
 
   @Get('clients/:id')
+  @CheckPermissions({ action: 'read', subject: 'Client' })
   @ApiOperation({ summary: 'Get a client by ID' })
   @ApiParam({ name: 'id', description: 'Client UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({ type: ClientResponseDto, description: 'Client record' })
@@ -166,6 +169,7 @@ export class DashboardPeopleController {
   }
 
   @Patch('clients/:id')
+  @CheckPermissions({ action: 'update', subject: 'Client' })
   @ApiOperation({ summary: 'Update a client' })
   @ApiParam({ name: 'id', description: 'Client UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({ type: ClientResponseDto, description: 'Updated client record' })
@@ -178,6 +182,7 @@ export class DashboardPeopleController {
   }
 
   @Delete('clients/:id')
+  @CheckPermissions({ action: 'delete', subject: 'Client' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a client' })
   @ApiParam({ name: 'id', description: 'Client UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -208,6 +213,7 @@ export class DashboardPeopleController {
   }
   // ── Employees ──────────────────────────────────────────────────────────────
   @Post('employees')
+  @CheckPermissions({ action: 'create', subject: 'Employee' })
   @HttpCode(HttpStatus.CREATED)
   @EnforceLimit('EMPLOYEES')
   @ApiOperation({ summary: 'Create an employee' })
@@ -217,6 +223,7 @@ export class DashboardPeopleController {
   }
 
   @Post('employees/onboarding')
+  @CheckPermissions({ action: 'create', subject: 'Employee' })
   @HttpCode(HttpStatus.CREATED)
   @EnforceLimit('EMPLOYEES')
   @ApiOperation({ summary: 'Onboard a new employee with full profile details' })
@@ -236,6 +243,7 @@ export class DashboardPeopleController {
   }
 
   @Post('employees/attach-membership')
+  @CheckPermissions({ action: 'create', subject: 'Employee' })
   @HttpCode(HttpStatus.CREATED)
   @EnforceLimit('EMPLOYEES')
   @ApiOperation({ summary: 'Attach an existing user as an employee to the organization' })
@@ -259,6 +267,7 @@ export class DashboardPeopleController {
   }
 
   @Get('employees')
+  @CheckPermissions({ action: 'read', subject: 'Employee' })
   @ApiOperation({ summary: 'List employees' })
   @ApiQuery({ name: 'search', required: false, description: 'Search by name, email, or phone', example: 'Khalid' })
   @ApiQuery({ name: 'isActive', required: false, description: 'Filter by active status', example: true })
@@ -287,6 +296,7 @@ export class DashboardPeopleController {
   }
 
   @Get('employees/stats')
+  @CheckPermissions({ action: 'read', subject: 'Employee' })
   @ApiOperation({ summary: 'Get employee statistics' })
   @ApiOkResponse({ type: EmployeeStatsResponseDto, description: 'Employee statistics summary' })
   employeeStatsEndpoint() {
@@ -294,6 +304,7 @@ export class DashboardPeopleController {
   }
 
   @Get('employees/:id')
+  @CheckPermissions({ action: 'read', subject: 'Employee' })
   @ApiOperation({ summary: 'Get an employee by ID' })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({ type: EmployeeResponseDto, description: 'Employee record' })
@@ -303,6 +314,7 @@ export class DashboardPeopleController {
   }
 
   @Patch('employees/:id')
+  @CheckPermissions({ action: 'update', subject: 'Employee' })
   @ApiOperation({ summary: 'Update an employee' })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({ type: EmployeeResponseDto, description: 'Updated employee record' })
@@ -315,6 +327,7 @@ export class DashboardPeopleController {
   }
 
   @Get('employees/:id/availability')
+  @CheckPermissions({ action: 'read', subject: 'Employee' })
   @ApiOperation({ summary: "Get an employee's availability schedule" })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({
@@ -344,6 +357,7 @@ export class DashboardPeopleController {
   }
 
   @Get('employees/:id/breaks')
+  @CheckPermissions({ action: 'read', subject: 'Employee' })
   @ApiOperation({ summary: "Get an employee's break schedule" })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({
@@ -372,6 +386,7 @@ export class DashboardPeopleController {
   }
 
   @Put('employees/:id/breaks')
+  @CheckPermissions({ action: 'update', subject: 'Employee' })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Set an employee's break schedule" })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -404,6 +419,7 @@ export class DashboardPeopleController {
   }
 
   @Get('employees/:id/vacations')
+  @CheckPermissions({ action: 'read', subject: 'Employee' })
   @ApiOperation({ summary: "List an employee's vacations (exceptions)" })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({
@@ -427,6 +443,7 @@ export class DashboardPeopleController {
   }
 
   @Post('employees/:id/vacations')
+  @CheckPermissions({ action: 'update', subject: 'Employee' })
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a vacation exception for an employee' })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -452,6 +469,7 @@ export class DashboardPeopleController {
   }
 
   @Delete('employees/:id/vacations/:vacationId')
+  @CheckPermissions({ action: 'update', subject: 'Employee' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a vacation exception' })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -466,6 +484,7 @@ export class DashboardPeopleController {
   }
 
   @Patch('employees/:id/availability')
+  @CheckPermissions({ action: 'update', subject: 'Employee' })
   @ApiOperation({ summary: "Update an employee's availability windows and exceptions" })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({
@@ -514,6 +533,7 @@ export class DashboardPeopleController {
   }
 
   @Post('employees/:id/onboarding')
+  @CheckPermissions({ action: 'update', subject: 'Employee' })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Submit an onboarding step for an employee' })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -527,6 +547,7 @@ export class DashboardPeopleController {
   }
 
   @Delete('employees/:id')
+  @CheckPermissions({ action: 'delete', subject: 'Employee' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete an employee' })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -537,6 +558,7 @@ export class DashboardPeopleController {
   }
 
   @Get('employees/:id/services')
+  @CheckPermissions({ action: 'read', subject: 'Employee' })
   @ApiOperation({ summary: "List services assigned to an employee" })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({
@@ -568,6 +590,7 @@ export class DashboardPeopleController {
   }
 
   @Post('employees/:id/services')
+  @CheckPermissions({ action: 'update', subject: 'Employee' })
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Assign a service to an employee' })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -600,6 +623,7 @@ export class DashboardPeopleController {
   }
 
   @Get('employees/:id/slots')
+  @CheckPermissions({ action: 'read', subject: 'Employee' })
   @ApiOperation({ summary: 'Available booking slots for an employee on a given date' })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiQuery({ name: 'date', description: 'Date (ISO 8601, YYYY-MM-DD)', example: '2026-05-01' })
@@ -636,6 +660,7 @@ export class DashboardPeopleController {
   }
 
   @Get('employees/:id/services/:serviceId/types')
+  @CheckPermissions({ action: 'read', subject: 'Employee' })
   @ApiOperation({ summary: 'Get bookable types + duration options for an employee-service pair' })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiParam({ name: 'serviceId', description: 'Service UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -680,6 +705,7 @@ export class DashboardPeopleController {
   }
 
   @Delete('employees/:id/services/:serviceId')
+  @CheckPermissions({ action: 'update', subject: 'Employee' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remove a service from an employee' })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -694,6 +720,7 @@ export class DashboardPeopleController {
   }
 
   @Get('employees/:id/exceptions')
+  @CheckPermissions({ action: 'read', subject: 'Employee' })
   @ApiOperation({ summary: "List availability exceptions for an employee" })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiOkResponse({
@@ -719,6 +746,7 @@ export class DashboardPeopleController {
   }
 
   @Post('employees/:id/exceptions')
+  @CheckPermissions({ action: 'update', subject: 'Employee' })
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create an availability exception for an employee' })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -745,6 +773,7 @@ export class DashboardPeopleController {
   }
 
   @Delete('employees/:id/exceptions/:exceptionId')
+  @CheckPermissions({ action: 'update', subject: 'Employee' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete an availability exception' })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -759,6 +788,7 @@ export class DashboardPeopleController {
   }
 
   @Get('employees/:id/ratings')
+  @CheckPermissions({ action: 'read', subject: 'Employee' })
   @ApiOperation({ summary: "List ratings for an employee" })
   @ApiParam({ name: 'id', description: 'Employee UUID', example: '00000000-0000-0000-0000-000000000000' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (1-based)', example: 1 })
@@ -805,6 +835,7 @@ export class DashboardPeopleController {
   }
 
   @Post('employees/:employeeId/avatar')
+  @CheckPermissions({ action: 'update', subject: 'Employee' })
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload an avatar image for an employee' })

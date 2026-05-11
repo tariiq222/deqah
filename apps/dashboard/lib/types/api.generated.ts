@@ -905,7 +905,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Rotate a refresh token and issue new token pair */
+        /** Rotate a refresh token and issue new access token (refresh token rotated via cookie) */
         post: operations["AuthController_refreshEndpoint"];
         delete?: never;
         options?: never;
@@ -958,7 +958,7 @@ export interface paths {
         put?: never;
         /**
          * Switch active organization context
-         * @description SaaS-06 — issues a fresh access + refresh token pair scoped to the target organization. Caller must have an ACTIVE membership in the target.
+         * @description SaaS-06 — issues a fresh access + refresh token pair scoped to the target organization. Caller must have an ACTIVE membership in the target. Refresh token is delivered as httpOnly cookie ck_refresh.
          */
         post: operations["AuthController_switchOrgEndpoint"];
         delete?: never;
@@ -3593,6 +3593,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/health/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Liveness check — always returns 200 if the process is alive */
+        get: operations["PublicHealthController_getLiveness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/health/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Readiness check — includes DB, Redis, queues */
+        get: operations["PublicHealthController_getReadiness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/mobile/auth/register": {
         parameters: {
             query?: never;
@@ -4920,6 +4954,23 @@ export interface paths {
         put?: never;
         /** Deny a refund request */
         post: operations["RefundsController_denyRefund"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tenants/exists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Check tenant existence by subdomain (public) */
+        get: operations["PublicTenantsController_existsEndpoint"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -7462,6 +7513,7 @@ export interface components {
             id: string;
             nameAr: string;
             nameEn?: Record<string, never>;
+            owner?: Record<string, never>;
             slug: string;
             stats: components["schemas"]["OrganizationStatsDto"];
             /** @enum {string} */
@@ -7473,6 +7525,7 @@ export interface components {
             trialEndsAt?: Record<string, never>;
             /** Format: date-time */
             updatedAt: string;
+            vertical?: Record<string, never>;
             verticalId?: Record<string, never>;
         };
         OrganizationListItemDto: {
@@ -12671,7 +12724,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Access + refresh tokens with user profile */
+            /** @description Access token with user profile (refresh token delivered as httpOnly cookie ck_refresh) */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -12682,8 +12735,6 @@ export interface operations {
                         accessToken?: string;
                         /** @example 900 */
                         expiresIn?: number;
-                        /** @example a1b2c3d4-... */
-                        refreshToken?: string;
                         user?: {
                             avatarUrl?: string | null;
                             /** Format: email */
@@ -13106,7 +13157,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Access + refresh tokens with user profile */
+            /** @description Access token with user profile (refresh token delivered as httpOnly cookie ck_refresh) */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -13117,8 +13168,6 @@ export interface operations {
                         accessToken?: string;
                         /** @example 900 */
                         expiresIn?: number;
-                        /** @example a1b2c3d4-... */
-                        refreshToken?: string;
                         user?: {
                             avatarUrl?: string | null;
                             /** Format: email */
@@ -13231,7 +13280,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description New access + refresh token pair */
+            /** @description New access token (rotated refresh token delivered as httpOnly cookie ck_refresh) */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -13242,8 +13291,6 @@ export interface operations {
                         accessToken?: string;
                         /** @example 900 */
                         expiresIn?: number;
-                        /** @example a1b2c3d4-... */
-                        refreshToken?: string;
                     };
                 };
             };
@@ -13369,7 +13416,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description New access + refresh token pair scoped to the target org */
+            /** @description New access token scoped to the target org (refresh token as httpOnly cookie ck_refresh) */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -13379,7 +13426,6 @@ export interface operations {
                         accessToken?: string;
                         /** @example 900 */
                         expiresIn?: number;
-                        refreshToken?: string;
                     };
                 };
             };
@@ -26739,6 +26785,41 @@ export interface operations {
             };
         };
     };
+    PublicHealthController_getLiveness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PublicHealthController_getReadiness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Health check result with per-service status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     MobileClientAuthController_registerUser: {
         parameters: {
             query?: never;
@@ -31032,6 +31113,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    PublicTenantsController_existsEndpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tenant existence result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation failed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description Unhandled server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
                 };
             };
         };

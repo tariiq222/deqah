@@ -3,6 +3,7 @@ import { DatabaseModule } from '../../infrastructure/database';
 import { MessagingModule } from '../../infrastructure/messaging.module';
 import { TenantModule } from '../../common/tenant';
 import { OrgExperienceModule } from '../org-experience/org-experience.module';
+import { FinanceModule } from '../finance/finance.module';
 import { CreateBookingHandler } from './create-booking/create-booking.handler';
 import { CreateRecurringBookingHandler } from './create-recurring-booking/create-recurring-booking.handler';
 import { CancelBookingHandler } from './cancel-booking/cancel-booking.handler';
@@ -91,6 +92,7 @@ const handlers = [
     OrgExperienceModule,
     ZoomModule,
     BillingModule,
+    FinanceModule,
   ],
   controllers: [DashboardBookingsController],
   providers: [...handlers, PaymentCompletedEventHandler],

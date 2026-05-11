@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseGuards, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, ForbiddenException, Get, Param, Query, UseGuards, ParseUUIDPipe } from '@nestjs/common';
 import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import {
@@ -9,6 +9,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ApiStandardResponses } from '../../../common/swagger';
 import { ClientResponseDto } from '../../dashboard/dto/people-response.dto';
 import { JwtGuard } from '../../../common/guards/jwt.guard';
+import { CaslGuard, CheckPermissions } from '../../../common/guards/casl.guard';
 import { CurrentUser, JwtUser } from '../../../common/auth/current-user.decorator';
 import { PrismaService } from '../../../infrastructure/database';
 
@@ -27,11 +28,12 @@ export class EmployeeClientListQuery {
 @ApiBearerAuth()
 @ApiStandardResponses()
 @ApiExtraModels(ClientResponseDto)
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, CaslGuard)
 @Controller('mobile/employee/clients')
 export class MobileEmployeeClientsController {
   constructor(private readonly prisma: PrismaService) {}
 
+  @CheckPermissions({ action: 'read', subject: 'Client' })
   @Get()
   @ApiOperation({ summary: "List the authenticated employee's clients" })
   @ApiQuery({ name: 'page', required: false, description: 'Page number (1-based)', example: 1 })
@@ -61,9 +63,10 @@ export class MobileEmployeeClientsController {
   ) {
     const page = q.page ?? 1;
     const limit = q.limit ?? 20;
+    const employeeId = await this.resolveEmployeeId(user);
 
     const clientIdRows = await this.prisma.booking.findMany({
-      where: { employeeId: user.sub },
+      where: { employeeId },
       select: { clientId: true },
       distinct: ['clientId'],
     });
@@ -95,6 +98,7 @@ export class MobileEmployeeClientsController {
     return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
   }
 
+  @CheckPermissions({ action: 'read', subject: 'Client' })
   @Get(':clientId/history')
   @ApiOperation({ summary: "Get booking history for a client with the authenticated employee" })
   @ApiParam({ name: 'clientId', description: 'Client UUID', example: '00000000-0000-0000-0000-000000000000' })
@@ -116,14 +120,33 @@ export class MobileEmployeeClientsController {
     },
   })
   @ApiNotFoundResponse({ description: 'Client not found' })
-  clientHistory(
+  async clientHistory(
     @CurrentUser() user: JwtUser,
     @Param('clientId', ParseUUIDPipe) clientId: string,
   ) {
+    const employeeId = await this.resolveEmployeeId(user);
+
     return this.prisma.booking.findMany({
-      where: { employeeId: user.sub, clientId },
+      where: { employeeId, clientId },
       orderBy: { scheduledAt: 'desc' },
       take: 20,
     });
+  }
+
+  private async resolveEmployeeId(user: JwtUser): Promise<string> {
+    if (user.employeeId) {
+      return user.employeeId;
+    }
+
+    const employee = await this.prisma.employee.findFirst({
+      where: { userId: user.sub, isActive: true },
+      select: { id: true },
+    });
+
+    if (!employee) {
+      throw new ForbiddenException('employee_profile_not_found');
+    }
+
+    return employee.id;
   }
 }

@@ -116,7 +116,7 @@ export default function BankTransferScreen() {
         {/* Bank details */}
         <Animated.View entering={FadeInDown.delay(160).duration(700).easing(Easing.out(Easing.cubic))}>
           <Glass variant="strong" radius={sawaaRadius.xl} style={styles.card}>
-            {details.map((d) => (
+            {details.map((d, i) => (
               <View
                 key={d.labelEn}
                 style={[

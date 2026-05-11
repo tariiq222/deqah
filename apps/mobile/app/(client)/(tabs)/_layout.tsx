@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Calendar, FileText, Home, MessageCircle } from 'lucide-react-native';
+import { Calendar, FileText, Home, MessageCircle, type LucideIcon } from 'lucide-react-native';
 
 import { Glass } from '@/theme';
 import { sawaaTokens, sawaaColors } from '@/theme/sawaa/tokens';
@@ -135,7 +135,7 @@ function TabItem({
 
 const VISIBLE_TABS = new Set(['home', 'chat', 'records', 'appointments']);
 
-const ICONS: Record<string, React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>> = {
+const ICONS: Record<string, LucideIcon> = {
   home: Home,
   chat: MessageCircle,
   records: FileText,

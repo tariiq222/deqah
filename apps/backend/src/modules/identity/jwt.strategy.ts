@@ -73,6 +73,24 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Token missing tenant claim');
     }
 
+    // TAR-43: verify non-superadmin token has an active membership in the claimed org
+    if (!user.isSuperAdmin && payload.organizationId) {
+      const membership = await this.cls.run(async () => {
+        this.cls.set(SYSTEM_CONTEXT_CLS_KEY, true);
+        return this.prisma.membership.findFirst({
+          where: {
+            userId: user.id,
+            organizationId: payload.organizationId,
+            isActive: true,
+          },
+          select: { id: true },
+        });
+      });
+      if (!membership) {
+        throw new UnauthorizedException('No active membership in claimed organization');
+      }
+    }
+
     // P0-6: If the JWT carries a tokenVersion, verify it matches the DB value.
     // Stale tokenVersion means the session was revoked (logout/switch-org/password change).
     if (typeof payload.tokenVersion === 'number' && user.tokenVersion !== payload.tokenVersion) {

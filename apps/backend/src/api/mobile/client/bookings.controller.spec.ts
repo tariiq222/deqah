@@ -85,15 +85,15 @@ describe('MobileClientBookingsController', () => {
   });
 
   describe('getBooking', () => {
-    it('passes bookingId to handler', async () => {
+    it('passes bookingId and clientId to handler', async () => {
       const { controller, get } = buildController();
-      await controller.getBooking('booking-123');
-      expect(get.execute).toHaveBeenCalledWith({ bookingId: 'booking-123' });
+      await controller.getBooking(USER as never, 'booking-123');
+      expect(get.execute).toHaveBeenCalledWith({ bookingId: 'booking-123', clientId: 'client-1' });
     });
   });
 
   describe('cancelBooking', () => {
-    it('passes bookingId, reason, cancelNotes, changedBy, and source', async () => {
+    it('passes bookingId, reason, cancelNotes, changedBy, source, and clientId', async () => {
       const { controller, cancel } = buildController();
       const body: MobileCancelBookingDto = { reason: CancellationReason.CLIENT_REQUESTED, cancelNotes: 'changed mind' };
       await controller.cancelBooking(USER as never, 'booking-1', body);
@@ -103,6 +103,7 @@ describe('MobileClientBookingsController', () => {
         cancelNotes: 'changed mind',
         changedBy: USER.id,
         source: 'client',
+        clientId: USER.id,
       });
     });
 
@@ -110,13 +111,13 @@ describe('MobileClientBookingsController', () => {
       const { controller, cancel } = buildController();
       await controller.cancelBooking(USER as never, 'booking-1', { reason: CancellationReason.OTHER });
       expect(cancel.execute).toHaveBeenCalledWith(
-        expect.objectContaining({ cancelNotes: undefined, source: 'client' }),
+        expect.objectContaining({ cancelNotes: undefined, source: 'client', clientId: USER.id }),
       );
     });
   });
 
   describe('rescheduleBooking', () => {
-    it('passes bookingId, newScheduledAt, newDurationMins, and changedBy', async () => {
+    it('passes bookingId, newScheduledAt, newDurationMins, changedBy, and clientId', async () => {
       const { controller, reschedule } = buildController();
       const body = { newScheduledAt: '2026-07-15T14:00:00Z', newDurationMins: 60 };
       await controller.rescheduleBooking(USER as never, 'booking-1', body as never);
@@ -125,6 +126,7 @@ describe('MobileClientBookingsController', () => {
         newScheduledAt: expect.any(Date),
         newDurationMins: 60,
         changedBy: USER.id,
+        clientId: USER.id,
       });
     });
 

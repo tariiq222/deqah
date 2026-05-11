@@ -175,9 +175,9 @@ describe('InitGuestPaymentHandler', () => {
       expect(moyasar.createPayment).not.toHaveBeenCalled();
     });
 
-    it('returns existing pending payment without creating new one (idempotency)', async () => {
+    it('returns existing pending payment with gatewayRef without creating new one (retry)', async () => {
       const prisma = buildPrisma();
-      prisma.payment.findFirst = jest.fn().mockResolvedValue({ ...mockPayment });
+      prisma.payment.findFirst = jest.fn().mockResolvedValue({ ...mockPayment, gatewayRef: 'moyasar-pay-existing' });
       const moyasar = buildMoyasar();
       const handler = new InitGuestPaymentHandler(prisma as never, buildTenant() as never, moyasar as never, buildRlsTx(prisma) as never);
 
@@ -186,6 +186,34 @@ describe('InitGuestPaymentHandler', () => {
       expect(result).toEqual({ paymentId: 'pay-1', redirectUrl: '' });
       expect(prisma.payment.create).not.toHaveBeenCalled();
       expect(moyasar.createPayment).not.toHaveBeenCalled();
+    });
+
+    it('deletes existing pending payment without gatewayRef and creates new one', async () => {
+      const prisma = buildPrisma();
+      prisma.payment.findFirst = jest.fn().mockResolvedValue({ ...mockPayment, gatewayRef: null });
+      const moyasar = buildMoyasar();
+      const handler = new InitGuestPaymentHandler(prisma as never, buildTenant() as never, moyasar as never, buildRlsTx(prisma) as never);
+
+      const result = await handler.execute({ bookingId: 'booking-1' });
+
+      expect(result).toEqual({ paymentId: 'pay-1', redirectUrl: 'https://checkout.moyasar.com/pay/pay_xxx' });
+      expect(prisma.payment.delete).toHaveBeenCalledWith({ where: { id: 'pay-1' } });
+      expect(prisma.payment.create).toHaveBeenCalled();
+      expect(moyasar.createPayment).toHaveBeenCalled();
+    });
+
+    it('returns existing pending payment without creating new one (idempotency)', async () => {
+      const prisma = buildPrisma();
+      prisma.payment.findFirst = jest.fn().mockResolvedValue({ ...mockPayment, gatewayRef: undefined });
+      const moyasar = buildMoyasar();
+      const handler = new InitGuestPaymentHandler(prisma as never, buildTenant() as never, moyasar as never, buildRlsTx(prisma) as never);
+
+      const result = await handler.execute({ bookingId: 'booking-1' });
+
+      expect(result).toEqual({ paymentId: 'pay-1', redirectUrl: 'https://checkout.moyasar.com/pay/pay_xxx' });
+      expect(prisma.payment.delete).toHaveBeenCalledWith({ where: { id: 'pay-1' } });
+      expect(prisma.payment.create).toHaveBeenCalled();
+      expect(moyasar.createPayment).toHaveBeenCalled();
     });
 
     it('uses default callback URL when PUBLIC_WEBSITE_URL is not set', async () => {
