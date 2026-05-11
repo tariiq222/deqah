@@ -65,6 +65,7 @@ import { AdminNotificationsController } from '../../api/admin/notifications.cont
 import { ListNotificationDeliveryLogHandler } from './admin/list-notification-delivery-log/list-notification-delivery-log.handler';
 import { FinanceModule } from '../finance/finance.module';
 import { RegisterTenantHandler } from './tenant-registration/register-tenant.handler';
+import { CheckTenantExistsHandler } from './tenant-registration/check-tenant-exists/check-tenant-exists.handler';
 import { IdentityModule } from '../identity/identity.module';
 import { BillingModule } from './billing/billing.module';
 import { PlatformSettingsModule } from './settings/platform-settings.module';
@@ -80,6 +81,7 @@ import { SystemHealthModule } from './system-health/system-health.module';
 
 const ADMIN_HANDLERS = [
   RegisterTenantHandler,
+  CheckTenantExistsHandler,
   ListOrganizationsHandler,
   GetOrganizationHandler,
   CreateTenantHandler,

@@ -35,7 +35,14 @@ describe('GetOrganizationHandler', () => {
   });
 
   it('returns org with aggregated stats', async () => {
-    orgFindUnique.mockResolvedValue({ id: 'o1', slug: 'a', nameAr: 'A', suspendedAt: null });
+    orgFindUnique.mockResolvedValue({
+      id: 'o1',
+      slug: 'a',
+      nameAr: 'A',
+      suspendedAt: null,
+      memberships: [],
+      vertical: null,
+    });
     membershipCount.mockResolvedValue(7);
     bookingCount.mockResolvedValue(42);
     invoiceAggregate.mockResolvedValue({ _sum: { amount: 1500 } });
@@ -57,7 +64,12 @@ describe('GetOrganizationHandler', () => {
   });
 
   it('defaults totalRevenue to 0 when no PAID invoices', async () => {
-    orgFindUnique.mockResolvedValue({ id: 'o1', slug: 'a' });
+    orgFindUnique.mockResolvedValue({
+      id: 'o1',
+      slug: 'a',
+      memberships: [],
+      vertical: null,
+    });
     membershipCount.mockResolvedValue(0);
     bookingCount.mockResolvedValue(0);
     invoiceAggregate.mockResolvedValue({ _sum: { amount: null } });

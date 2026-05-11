@@ -11,6 +11,7 @@ import { BillingShell } from "@/components/billing-shell"
 import { ImpersonationBanner } from "@/components/impersonation-banner"
 import { TrialBanner } from "@/components/trial-banner"
 import { ZohoReconnectBanner } from "@/components/zoho-reconnect-banner"
+import { SubdomainRedirect } from "@/components/subdomain-redirect"
 
 export default function DashboardLayout({
   children,
@@ -20,6 +21,7 @@ export default function DashboardLayout({
   return (
     <AuthGate>
       <>
+        <SubdomainRedirect />
         <BillingShell>
           <SidebarProvider>
             <AppSidebar />

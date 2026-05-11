@@ -26,4 +26,6 @@ export interface OrganizationDetail extends OrganizationRow {
     bookingCount30d: number;
     totalRevenue: number | string;
   };
+  vertical: { id: string; nameAr: string; nameEn: string } | null;
+  owner: { name: string | null; email: string; phone: string | null } | null;
 }

@@ -12,8 +12,21 @@ export class GetOrganizationHandler {
   async execute(q: GetOrganizationQuery) {
     const org = await this.prisma.$allTenants.organization.findUnique({
       where: { id: q.id },
+      include: {
+        vertical: { select: { id: true, nameAr: true, nameEn: true } },
+        memberships: {
+          where: { role: 'OWNER', isActive: true },
+          take: 1,
+          select: {
+            user: { select: { name: true, email: true, phone: true } },
+          },
+        },
+      },
     });
     if (!org) throw new NotFoundException('organization_not_found');
+
+    const { memberships, vertical, ...orgFields } = org;
+    const ownerMembership = memberships[0] as typeof memberships[0] | undefined;
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
@@ -31,7 +44,9 @@ export class GetOrganizationHandler {
     ]);
 
     return {
-      ...org,
+      ...orgFields,
+      vertical: vertical ?? null,
+      owner: ownerMembership?.user ?? null,
       stats: {
         memberCount,
         bookingCount30d,

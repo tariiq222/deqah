@@ -4220,6 +4220,9 @@
           "nameEn": {
             "type": "object"
           },
+          "owner": {
+            "type": "object"
+          },
           "slug": {
             "type": "string"
           },
@@ -4250,6 +4253,9 @@
           "updatedAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "vertical": {
+            "type": "object"
           },
           "verticalId": {
             "type": "object"
@@ -12238,10 +12244,6 @@
                       "example": 900,
                       "type": "number"
                     },
-                    "refreshToken": {
-                      "example": "a1b2c3d4-...",
-                      "type": "string"
-                    },
                     "user": {
                       "properties": {
                         "avatarUrl": {
@@ -12301,7 +12303,7 @@
                 }
               }
             },
-            "description": "Access + refresh tokens with user profile"
+            "description": "Access token with user profile (refresh token delivered as httpOnly cookie ck_refresh)"
           },
           "400": {
             "content": {
@@ -12872,10 +12874,6 @@
                       "example": 900,
                       "type": "number"
                     },
-                    "refreshToken": {
-                      "example": "a1b2c3d4-...",
-                      "type": "string"
-                    },
                     "user": {
                       "properties": {
                         "avatarUrl": {
@@ -12935,7 +12933,7 @@
                 }
               }
             },
-            "description": "Access + refresh tokens with user profile"
+            "description": "Access token with user profile (refresh token delivered as httpOnly cookie ck_refresh)"
           },
           "400": {
             "content": {
@@ -13061,17 +13059,13 @@
                     "expiresIn": {
                       "example": 900,
                       "type": "number"
-                    },
-                    "refreshToken": {
-                      "example": "a1b2c3d4-...",
-                      "type": "string"
                     }
                   },
                   "type": "object"
                 }
               }
             },
-            "description": "New access + refresh token pair"
+            "description": "New access token (rotated refresh token delivered as httpOnly cookie ck_refresh)"
           },
           "400": {
             "content": {
@@ -13104,7 +13098,7 @@
             "description": "Unhandled server error"
           }
         },
-        "summary": "Rotate a refresh token and issue new token pair",
+        "summary": "Rotate a refresh token and issue new access token (refresh token rotated via cookie)",
         "tags": [
           "Public / Auth"
         ]
@@ -13202,7 +13196,7 @@
     },
     "/api/v1/auth/switch-org": {
       "post": {
-        "description": "SaaS-06 — issues a fresh access + refresh token pair scoped to the target organization. Caller must have an ACTIVE membership in the target.",
+        "description": "SaaS-06 — issues a fresh access + refresh token pair scoped to the target organization. Caller must have an ACTIVE membership in the target. Refresh token is delivered as httpOnly cookie ck_refresh.",
         "operationId": "AuthController_switchOrgEndpoint",
         "parameters": [],
         "requestBody": {
@@ -13227,16 +13221,13 @@
                     "expiresIn": {
                       "example": 900,
                       "type": "number"
-                    },
-                    "refreshToken": {
-                      "type": "string"
                     }
                   },
                   "type": "object"
                 }
               }
             },
-            "description": "New access + refresh token pair scoped to the target org"
+            "description": "New access token scoped to the target org (refresh token as httpOnly cookie ck_refresh)"
           },
           "400": {
             "content": {
@@ -30949,6 +30940,36 @@
         ]
       }
     },
+    "/api/v1/health/live": {
+      "get": {
+        "operationId": "PublicHealthController_getLiveness",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Liveness check — always returns 200 if the process is alive",
+        "tags": [
+          "Public / Health"
+        ]
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "operationId": "PublicHealthController_getReadiness",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Health check result with per-service status"
+          }
+        },
+        "summary": "Readiness check — includes DB, Redis, queues",
+        "tags": [
+          "Public / Health"
+        ]
+      }
+    },
     "/api/v1/mobile/auth/register": {
       "post": {
         "operationId": "MobileClientAuthController_registerUser",
@@ -36810,6 +36831,41 @@
         "summary": "Deny a refund request",
         "tags": [
           "Dashboard / Refunds"
+        ]
+      }
+    },
+    "/api/v1/tenants/exists": {
+      "get": {
+        "operationId": "PublicTenantsController_existsEndpoint",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Tenant existence result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "Validation failed"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "Unhandled server error"
+          }
+        },
+        "summary": "Check tenant existence by subdomain (public)",
+        "tags": [
+          "Public / Tenants"
         ]
       }
     },

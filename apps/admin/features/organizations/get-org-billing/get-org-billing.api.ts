@@ -14,6 +14,25 @@ export interface OrgBillingSubscription {
   };
 }
 
+export interface OrgBillingInvoice {
+  id: string;
+  amount: number;
+  status: string;
+  createdAt: string;
+  paidAt: string | null;
+}
+
+export interface OrgBillingCredit {
+  id: string;
+  amount: number;
+  consumedAt: string | null;
+}
+
+export interface OrgBillingDunningLog {
+  id: string;
+  status: string;
+}
+
 export interface OrgBillingResponse {
   org: {
     id: string;
@@ -23,6 +42,9 @@ export interface OrgBillingResponse {
     status: string;
   };
   subscription: OrgBillingSubscription | null;
+  invoices?: OrgBillingInvoice[];
+  credits?: OrgBillingCredit[];
+  dunningLogs?: OrgBillingDunningLog[];
 }
 
 export function getOrgBilling(orgId: string): Promise<OrgBillingResponse> {

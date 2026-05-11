@@ -1,38 +1,36 @@
-"use client"
+import { headers } from "next/headers"
+import { LoginFormClient } from "./login-form-client"
+import { TenantNotFound } from "./tenant-not-found"
+import { BrandingStyle } from "./branding-style"
+import { parseHost } from "@/lib/subdomain"
+import { checkTenantExistsSSR } from "@/lib/api/tenant-exists"
+import { fetchPublicBrandingSSR } from "@/lib/api/branding-ssr"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/components/providers/auth-provider"
-import { LoginForm } from "@/components/features/login-form"
+export default async function LoginPage() {
+  const headersList = await headers()
+  const host = headersList.get("x-forwarded-host") ?? headersList.get("host") ?? ""
+  const parsed = parseHost(host)
 
-export default function LoginPage() {
-  const { user, loading } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!loading && user) {
-      router.replace("/")
-    }
-  }, [user, loading, router])
-
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <div className="size-8 rounded-full border-2 border-primary border-t-transparent" />
-        </div>
-      </div>
-    )
+  if (parsed.isReserved || !parsed.subdomain) {
+    return <LoginFormClient />
+  }
+  if (!parsed.isTenantCandidate) {
+    return <TenantNotFound />
   }
 
-  if (user) {
-    // Already redirecting via useEffect; render nothing while navigating
-    return null
+  const [existsResult, branding] = await Promise.all([
+    checkTenantExistsSSR(host),
+    fetchPublicBrandingSSR(host),
+  ])
+
+  if (!existsResult.exists) {
+    return <TenantNotFound />
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <LoginForm />
-    </div>
+    <>
+      <BrandingStyle branding={branding} />
+      <LoginFormClient />
+    </>
   )
 }

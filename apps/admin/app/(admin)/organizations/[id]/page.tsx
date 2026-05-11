@@ -1,12 +1,18 @@
 'use client';
 
+import type React from 'react';
 import { use, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { Copy } from 'lucide-react';
+import { Copy, BarChart2, ExternalLink } from 'lucide-react';
 import { Button } from '@deqah/ui/primitives/button';
 import { Skeleton } from '@deqah/ui/primitives/skeleton';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@deqah/ui/primitives/popover';
 import { useGetOrganization } from '@/features/organizations/get-organization/use-get-organization';
 import { useGetOrgBilling } from '@/features/organizations/get-org-billing/use-get-org-billing';
 import { SuspendDialog } from '@/features/organizations/suspend-organization/suspend-dialog';
@@ -36,21 +42,11 @@ function StatusDot({ status, label }: { status: string; label: string }) {
   );
 }
 
-function KpiRow({
-  items,
-}: {
-  items: { label: string; value: string | number }[];
-}) {
+function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex divide-x divide-border overflow-hidden rounded-md border border-border">
-      {items.map(({ label, value }) => (
-        <div key={label} className="px-5 py-3 first:ps-5">
-          <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-            {label}
-          </p>
-          <p className="mt-1.5 text-[24px] font-semibold leading-none tabular">{value}</p>
-        </div>
-      ))}
+    <div>
+      <dt className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">{label}</dt>
+      <dd className="mt-1 text-sm font-medium">{value ?? '—'}</dd>
     </div>
   );
 }
@@ -71,6 +67,7 @@ export default function OrganizationDetailPage({
   const [updateOpen, setUpdateOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [slugCopied, setSlugCopied] = useState(false);
   const { data, isLoading, error } = useGetOrganization(id);
   const { data: billing } = useGetOrgBilling(id);
 
@@ -87,11 +84,28 @@ export default function OrganizationDetailPage({
   const suspended = data.status === 'SUSPENDED';
   const hasSuspensionDetail = Boolean(data.suspendedAt);
   const sub = billing?.subscription ?? null;
+  const lastInvoice = billing?.invoices?.[0] ?? null;
+  const availableCredit = billing?.credits
+    ?.filter((c: { consumedAt: string | null }) => !c.consumedAt)
+    ?.reduce((sum: number, c: { amount: number }) => sum + c.amount, 0) ?? 0;
+  const hasDunning = billing?.dunningLogs?.some(
+    (d: { status: string }) => d.status === 'FAILED',
+  ) ?? false;
+
+  const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL ?? 'https://app.deqah.app';
+  const subdomainUrl = `${dashboardUrl.replace('app.', `${data.slug}.`)}`;
 
   function copyId() {
     void navigator.clipboard.writeText(id).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
+    });
+  }
+
+  function copySlug() {
+    void navigator.clipboard.writeText(subdomainUrl).then(() => {
+      setSlugCopied(true);
+      setTimeout(() => setSlugCopied(false), 1500);
     });
   }
 
@@ -132,6 +146,26 @@ export default function OrganizationDetailPage({
 
         {/* Action row */}
         <div className="flex shrink-0 items-center gap-2">
+          {/* Stats popover */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 gap-1.5">
+                <BarChart2 className="size-3.5" strokeWidth={1.75} />
+                {t('stats')}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-64 p-4">
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                {t('platformUsage')}
+              </p>
+              <dl className="space-y-3">
+                <InfoRow label={t('members')} value={data.stats.memberCount} />
+                <InfoRow label={t('bookings30d')} value={data.stats.bookingCount30d} />
+                <InfoRow label={t('totalRevenue')} value={formatSar(Number(data.stats.totalRevenue))} />
+              </dl>
+            </PopoverContent>
+          </Popover>
+
           <Button variant="outline" size="sm" className="h-8" onClick={() => setUpdateOpen(true)}>
             {t('edit')}
           </Button>
@@ -172,14 +206,62 @@ export default function OrganizationDetailPage({
         </div>
       ) : null}
 
-      {/* KPI strip */}
-      <KpiRow
-        items={[
-          { label: t('members'), value: data.stats.memberCount },
-          { label: t('bookings30d'), value: data.stats.bookingCount30d },
-          { label: t('totalRevenue'), value: formatSar(data.stats.totalRevenue) },
-        ]}
-      />
+      {/* Identity section */}
+      <section>
+        <h2 className="mb-3 text-[13px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+          {t('identity')}
+        </h2>
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm md:grid-cols-3">
+          <div>
+            <dt className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">{t('subdomain')}</dt>
+            <dd className="mt-1 flex items-center gap-1">
+              <span className="mono text-xs font-medium">{subdomainUrl}</span>
+              <button
+                onClick={copySlug}
+                className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+                aria-label={tc('copy')}
+              >
+                <Copy className="size-3" strokeWidth={1.75} />
+              </button>
+              <a
+                href={subdomainUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+              >
+                <ExternalLink className="size-3" strokeWidth={1.75} />
+              </a>
+              {slugCopied ? <span className="mono text-[10px] text-success">{tc('copied')}</span> : null}
+            </dd>
+          </div>
+          <InfoRow
+            label={t('vertical')}
+            value={data.vertical ? (locale === 'ar' ? data.vertical.nameAr : data.vertical.nameEn) : '—'}
+          />
+          <InfoRow
+            label={t('createdAt')}
+            value={new Date(data.createdAt).toLocaleDateString(dateLocale, {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            })}
+          />
+        </dl>
+      </section>
+
+      {/* Owner section */}
+      {data.owner ? (
+        <section>
+          <h2 className="mb-3 text-[13px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+            {t('owner')}
+          </h2>
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm md:grid-cols-3">
+            <InfoRow label={t('ownerName')} value={data.owner.name} />
+            <InfoRow label={t('ownerEmail')} value={data.owner.email} />
+            <InfoRow label={t('ownerPhone')} value={data.owner.phone} />
+          </dl>
+        </section>
+      ) : null}
 
       {/* Subscription */}
       <section>
@@ -243,6 +325,52 @@ export default function OrganizationDetailPage({
                 {formatSar(sub.plan.priceMonthly)}
               </dd>
             </div>
+
+            {/* Last invoice */}
+            {lastInvoice ? (
+              <>
+                <div>
+                  <dt className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+                    {t('lastInvoiceAmount')}
+                  </dt>
+                  <dd className="tabular mt-1 text-sm font-medium">{formatSar(lastInvoice.amount)}</dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+                    {t('lastInvoiceStatus')}
+                  </dt>
+                  <dd className="mt-1">
+                    <StatusDot status={lastInvoice.status} label={lastInvoice.status} />
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+                    {t('lastInvoiceDate')}
+                  </dt>
+                  <dd className="tabular mt-1 text-sm">
+                    {new Date(lastInvoice.createdAt).toLocaleDateString(dateLocale)}
+                  </dd>
+                </div>
+              </>
+            ) : null}
+
+            {/* Credit */}
+            {availableCredit > 0 ? (
+              <div>
+                <dt className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+                  {t('availableCredit')}
+                </dt>
+                <dd className="tabular mt-1 text-sm font-medium text-success">{formatSar(availableCredit)}</dd>
+              </div>
+            ) : null}
+
+            {/* Dunning warning */}
+            {hasDunning ? (
+              <div className="col-span-full flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" />
+                {t('dunningWarning')}
+              </div>
+            ) : null}
           </dl>
         )}
       </section>

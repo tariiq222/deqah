@@ -308,7 +308,22 @@
       "periodStart": "Period start",
       "periodEnd": "Period end",
       "monthlyPrice": "Monthly price",
-      "priceSar": "{amount} SAR"
+      "priceSar": "{amount} SAR",
+      "stats": "Stats",
+      "platformUsage": "Platform usage",
+      "identity": "Identity",
+      "subdomain": "URL",
+      "vertical": "Vertical",
+      "createdAt": "Created",
+      "owner": "Owner",
+      "ownerName": "Name",
+      "ownerEmail": "Email",
+      "ownerPhone": "Phone",
+      "lastInvoiceAmount": "Last invoice",
+      "lastInvoiceStatus": "Invoice status",
+      "lastInvoiceDate": "Invoice date",
+      "availableCredit": "Available credit",
+      "dunningWarning": "Collection attempts failed — requires action"
     },
     "suspend": {
       "title": "Suspend organization",

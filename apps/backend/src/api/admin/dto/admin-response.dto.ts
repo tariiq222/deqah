@@ -124,6 +124,12 @@ export class OrganizationDetailDto {
   @ApiProperty({ format: 'date-time' })
   updatedAt!: Date;
 
+  @ApiPropertyOptional()
+  vertical?: { id: string; nameAr: string; nameEn: string } | null;
+
+  @ApiPropertyOptional()
+  owner?: { name: string | null; email: string; phone: string | null } | null;
+
   @ApiProperty({ type: OrganizationStatsDto })
   stats!: OrganizationStatsDto;
 }
