@@ -254,7 +254,7 @@ jobs:
         run: pnpm run build
 
   mobile:
-    name: Mobile (deqah-mobile)
+    name: Mobile (deqah-mobile typecheck + tests)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -285,6 +285,9 @@ jobs:
 
       - name: Mobile typecheck
         run: pnpm --filter deqah-mobile run typecheck
+
+      - name: Mobile tests
+        run: pnpm --filter deqah-mobile run test
 
   test-isolation-permissive:
     name: Tenant Isolation E2E (permissive)
@@ -601,11 +604,80 @@ jobs:
         working-directory: apps/dashboard
         run: pnpm run openapi:generate
 
-      - name: Warn if snapshot drifted (non-blocking)
-        continue-on-error: true
-        run: git diff --exit-code apps/backend/openapi.json apps/dashboard/lib/types/api.generated.ts
+      - name: Fail if OpenAPI snapshot or generated client drifted
+        run: |
+          if ! git diff --exit-code apps/backend/openapi.json apps/dashboard/lib/types/api.generated.ts; then
+            echo "::error::OpenAPI snapshot or generated client is out of date. Run 'pnpm openapi:sync' locally and commit the result."
+            exit 1
+          fi
 
       - name: Coverage check (non-blocking — 322 known doc gaps)
         continue-on-error: true
         working-directory: apps/backend
         run: pnpm run check:openapi-coverage
+
+  dashboard-test:
+    name: Dashboard unit tests (vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.10.0
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build shared packages (required by dashboard)
+        run: pnpm --filter "@deqah/shared" run build && pnpm --filter "@deqah/api-client" run build && pnpm --filter "@deqah/ui" run build
+
+      - name: Run dashboard tests
+        run: pnpm --filter dashboard run test
+
+  admin-test:
+    name: Admin unit tests (vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.10.0
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build shared packages (required by admin)
+        run: pnpm --filter "@deqah/shared" run build && pnpm --filter "@deqah/api-client" run build && pnpm --filter "@deqah/ui" run build
+
+      - name: Run admin tests
+        run: pnpm --filter admin run test
