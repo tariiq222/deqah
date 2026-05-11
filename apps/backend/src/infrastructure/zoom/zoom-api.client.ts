@@ -1,4 +1,4 @@
-import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { createHash } from 'crypto';
 
 export interface ZoomMeetingRequest {
@@ -19,9 +19,33 @@ interface ZoomTokenResponse {
 }
 
 @Injectable()
-export class ZoomApiClient {
+export class ZoomApiClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ZoomApiClient.name);
   private readonly tokenCache = new Map<string, { token: string; expiresAt: number }>();
+  private sweepInterval?: NodeJS.Timeout;
+
+  onModuleInit(): void {
+    this.sweepInterval = setInterval(() => this.sweep(), 5 * 60_000);
+    this.sweepInterval.unref?.();
+  }
+
+  onModuleDestroy(): void {
+    if (this.sweepInterval) clearInterval(this.sweepInterval);
+  }
+
+  private sweep(): void {
+    const now = Date.now();
+    let removed = 0;
+    for (const [key, entry] of this.tokenCache) {
+      if (entry.expiresAt < now) {
+        this.tokenCache.delete(key);
+        removed++;
+      }
+    }
+    if (removed > 0) {
+      this.logger.debug(`Swept ${removed} expired token cache entries (size: ${this.tokenCache.size})`);
+    }
+  }
 
   async getAccessToken(
     orgId: string,

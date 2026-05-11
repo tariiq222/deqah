@@ -3,6 +3,8 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  OnModuleDestroy,
+  OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -44,10 +46,11 @@ const SCOPES = 'ZohoInvoice.fullaccess.all';
 const STATE_TTL_MS = 5 * 60 * 1000;
 
 @Injectable()
-export class ZohoOAuthService {
+export class ZohoOAuthService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ZohoOAuthService.name);
   private readonly tokenCache = new Map<string, CachedToken>();
   private readonly stateSigningKey: Buffer;
+  private sweepInterval?: NodeJS.Timeout;
 
   constructor(private readonly cfg: ConfigService) {
     // Reuse JWT_ACCESS_SECRET as the OAuth-state HMAC key. The state is short-
@@ -58,6 +61,29 @@ export class ZohoOAuthService {
       throw new InternalServerErrorException('JWT_ACCESS_SECRET missing');
     }
     this.stateSigningKey = createHash('sha256').update(secret).digest();
+  }
+
+  onModuleInit(): void {
+    this.sweepInterval = setInterval(() => this.sweep(), 5 * 60_000);
+    this.sweepInterval.unref?.();
+  }
+
+  onModuleDestroy(): void {
+    if (this.sweepInterval) clearInterval(this.sweepInterval);
+  }
+
+  private sweep(): void {
+    const now = Date.now();
+    let removed = 0;
+    for (const [key, entry] of this.tokenCache) {
+      if (entry.expiresAt < now) {
+        this.tokenCache.delete(key);
+        removed++;
+      }
+    }
+    if (removed > 0) {
+      this.logger.debug(`Swept ${removed} expired token cache entries (size: ${this.tokenCache.size})`);
+    }
   }
 
   // ─── Authorization URL ────────────────────────────────────────────────

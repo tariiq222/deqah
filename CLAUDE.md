@@ -13,11 +13,13 @@ Deqah is a **multi-tenant SaaS** for clinics. One deployment serves many clinics
 
 ## Orchestration
 
-Day-to-day work uses **superpowers skills** (`superpowers:writing-plans`, `superpowers:executing-plans`, `superpowers:dispatching-parallel-agents`, `superpowers:brainstorming`, …). These are the actual workflow.
+The active orchestration system is **Kilo-native**, defined in `AGENTS.md` (this repo) and `docs/ai/ADR-002-KILO-NATIVE-ORCHESTRATION.md`.
 
-A separate **Maestro v10** scaffold lives in `docs/ai/MAESTRO.md`, `AGENTS.md`, `docs/ai/PATHS.md`, `docs/ai/QUICK_REFERENCE.md`, `agents/*`, `.claude/commands/*`, `.claude/output-styles/maestro.md` — invoke when explicitly asked (`/plan`, `/execute`, `/verify`, `/maestro`). It's available, not mandatory.
-
-For non-trivial work (touching 2+ files), use either pipeline. Don't freelance.
+- Slash command: `/orchestrate "<task>"` — see `.kilo/command/orchestrate.md`.
+- Agents live in `.kilo/agent/*.md` (planner, risk classifier, executor, validator, tests analyzer, PR author, rescue).
+- Runtime state in `.kilo/orchestrator/` (gitignored).
+- Token distribution target: Opus 10% / Sonnet 25% / MiniMax 65% (per `~/.config/kilo/AGENTS.md`).
+- For superseded designs see `docs/ai/ADR-001-DEQAH-RUNTIME-CORE.md` (historical) — do not follow.
 
 ## Tech Stack
 

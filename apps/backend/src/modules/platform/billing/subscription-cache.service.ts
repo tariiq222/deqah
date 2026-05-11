@@ -1,4 +1,4 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit, Optional } from '@nestjs/common';
 import { Prisma, SubscriptionStatus } from '@prisma/client';
 import { ClsService } from 'nestjs-cls';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
@@ -50,10 +50,12 @@ export const CLOCK = Symbol('SubscriptionCache.Clock');
  * TenantContextService BEFORE the tenant extension has a chance to inject.
  */
 @Injectable()
-export class SubscriptionCacheService {
+export class SubscriptionCacheService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(SubscriptionCacheService.name);
   private readonly cache = new Map<string, CachedPlanLimits>();
   private readonly ttlMs: number;
   private readonly clock: Clock;
+  private sweepInterval?: NodeJS.Timeout;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -62,6 +64,29 @@ export class SubscriptionCacheService {
   ) {
     this.ttlMs = options?.ttlMs ?? 60_000;
     this.clock = options?.clock ?? { now: () => Date.now() };
+  }
+
+  onModuleInit(): void {
+    this.sweepInterval = setInterval(() => this.sweep(), 5 * 60_000);
+    this.sweepInterval.unref?.();
+  }
+
+  onModuleDestroy(): void {
+    if (this.sweepInterval) clearInterval(this.sweepInterval);
+  }
+
+  private sweep(): void {
+    const now = this.clock.now();
+    let removed = 0;
+    for (const [key, entry] of this.cache) {
+      if (entry.expiresAt < now) {
+        this.cache.delete(key);
+        removed++;
+      }
+    }
+    if (removed > 0) {
+      this.logger.debug(`Swept ${removed} expired cache entries (size: ${this.cache.size})`);
+    }
   }
 
   async get(organizationId: string): Promise<CachedPlanLimits | null> {

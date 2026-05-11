@@ -3,6 +3,9 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
   UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
@@ -29,11 +32,14 @@ interface AuthenticatedRequest {
 }
 
 @Injectable()
-export class FeatureGuard implements CanActivate {
+export class FeatureGuard implements CanActivate, OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(FeatureGuard.name);
   /** Static so external listeners can invalidate without holding a reference to the guard instance. */
   private static readonly sharedCache = new Map<string, CachedFeatures>();
   private readonly cache = FeatureGuard.sharedCache;
   private readonly ttlMs = 60_000;
+  /** Static to match sharedCache — one sweeper per process regardless of how many guard instances exist. */
+  private static sweepInterval?: NodeJS.Timeout;
 
   /** Invalidate cached features for one organization. */
   static invalidate(organizationId: string): void {
@@ -51,6 +57,34 @@ export class FeatureGuard implements CanActivate {
     private readonly cacheService: SubscriptionCacheService,
     private readonly counters: UsageCounterService,
   ) {}
+
+  onModuleInit(): void {
+    if (!FeatureGuard.sweepInterval) {
+      FeatureGuard.sweepInterval = setInterval(() => this.sweep(), 5 * 60_000);
+      FeatureGuard.sweepInterval.unref?.();
+    }
+  }
+
+  onModuleDestroy(): void {
+    if (FeatureGuard.sweepInterval) {
+      clearInterval(FeatureGuard.sweepInterval);
+      FeatureGuard.sweepInterval = undefined;
+    }
+  }
+
+  private sweep(): void {
+    const now = Date.now();
+    let removed = 0;
+    for (const [key, entry] of this.cache) {
+      if (entry.expiresAt < now) {
+        this.cache.delete(key);
+        removed++;
+      }
+    }
+    if (removed > 0) {
+      this.logger.debug(`Swept ${removed} expired cache entries (size: ${this.cache.size})`);
+    }
+  }
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
     const featureKey = this.reflector.get<FeatureKey>(

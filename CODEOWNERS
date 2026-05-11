@@ -11,154 +11,140 @@
 # GOVERNANCE & ARCHITECTURE (high sensitivity)
 # ─────────────────────────────────────────────
 CLAUDE.md                                @tariq
-ARCHITECTURE.md                          @tariq
 CONTRIBUTING.md                          @tariq
 CODEOWNERS                               @tariq
-/dashboard/DESIGN-SYSTEM.md              @tariq
-/dashboard/ARCHITECTURE.md               @tariq
-/dashboard/components-policy.md          @tariq
+/apps/dashboard/DESIGN-SYSTEM.md         @tariq
 
 # ─────────────────────────────────────────────
 # INFRASTRUCTURE & DOCKER
 # ─────────────────────────────────────────────
 docker/                                  @tariq
-*.dockerfile                             @tariq
-docker-compose*.yml                      @tariq
+**/Dockerfile                            @tariq
 .env.example                             @tariq
 
 # ─────────────────────────────────────────────
 # DATABASE & MIGRATIONS
 # ─────────────────────────────────────────────
-backend/prisma/schema/                   @tariq
-backend/prisma/migrations/               @tariq
-backend/prisma/seed*.ts                  @tariq
-docs/operations/migration-log.md         @tariq
+apps/backend/prisma/schema/              @tariq
+apps/backend/prisma/migrations/          @tariq
+apps/backend/prisma/seed*.ts             @tariq
+docs/operations/                         @tariq
 
 # ─────────────────────────────────────────────
-# SECURITY & AUTH
+# IDENTITY (auth, JWT, OTP, users, memberships, RBAC)
 # ─────────────────────────────────────────────
-backend/src/modules/auth/                @tariq
-backend/src/common/guards/               @tariq
-backend/src/common/decorators/           @tariq
+apps/backend/src/modules/identity/       @tariq
+apps/backend/src/common/auth/            @tariq
+apps/backend/src/common/guards/          @tariq
+apps/backend/src/common/tenant/          @tariq
 
 # ─────────────────────────────────────────────
 # PAYMENTS & FINANCIAL (high sensitivity)
 # ─────────────────────────────────────────────
-backend/src/modules/payments/            @tariq
-backend/src/modules/invoices/            @tariq
-backend/src/modules/coupons/             @tariq
-dashboard/src/app/(dashboard)/payments/  @tariq
-dashboard/src/app/(dashboard)/invoices/  @tariq
-dashboard/src/components/features/payments/ @tariq
-dashboard/src/components/features/invoices/ @tariq
+apps/backend/src/modules/finance/        @tariq
+apps/dashboard/app/(dashboard)/payments/ @tariq
+apps/dashboard/app/(dashboard)/invoices/ @tariq
+apps/dashboard/app/(dashboard)/coupons/  @tariq
+apps/dashboard/app/(dashboard)/subscription/ @tariq
+apps/dashboard/components/features/payments/ @tariq
+apps/dashboard/components/features/invoices/ @tariq
+apps/dashboard/components/features/coupons/  @tariq
+apps/dashboard/components/features/billing/  @tariq
 
 # ─────────────────────────────────────────────
 # BOOKING SYSTEM (core clinical flow)
 # ─────────────────────────────────────────────
-backend/src/modules/bookings/            @tariq
-dashboard/src/app/(dashboard)/bookings/  @tariq
-dashboard/src/components/features/bookings/ @tariq
-dashboard/src/hooks/use-bookings*.ts     @tariq
+apps/backend/src/modules/bookings/       @tariq
+apps/dashboard/app/(dashboard)/bookings/ @tariq
+apps/dashboard/components/features/bookings/ @tariq
+apps/dashboard/hooks/use-bookings*.ts    @tariq
 
 # ─────────────────────────────────────────────
-# PATIENT DATA (privacy sensitive)
+# PEOPLE (clients, employees) — privacy sensitive
 # ─────────────────────────────────────────────
-backend/src/modules/patients/            @tariq
-dashboard/src/app/(dashboard)/patients/  @tariq
-dashboard/src/components/features/patients/ @tariq
-
-# ─────────────────────────────────────────────
-# PRACTITIONERS & AVAILABILITY
-# ─────────────────────────────────────────────
-backend/src/modules/practitioners/       @tariq
-dashboard/src/app/(dashboard)/practitioners/ @tariq
-dashboard/src/components/features/practitioners/ @tariq
+apps/backend/src/modules/people/         @tariq
+apps/dashboard/app/(dashboard)/clients/  @tariq
+apps/dashboard/app/(dashboard)/employees/ @tariq
+apps/dashboard/components/features/clients/ @tariq
+apps/dashboard/components/features/employees/ @tariq
 
 # ─────────────────────────────────────────────
 # AI CHATBOT
 # ─────────────────────────────────────────────
-backend/src/modules/chatbot/             @tariq
-dashboard/src/app/(dashboard)/chatbot/   @tariq
-dashboard/src/components/features/chatbot/ @tariq
+apps/backend/src/modules/ai/             @tariq
+apps/dashboard/app/(dashboard)/chatbot/  @tariq
+apps/dashboard/components/features/chatbot/ @tariq
 
 # ─────────────────────────────────────────────
-# BRANDING CONFIGURATION
+# ORGANIZATION EXPERIENCE (branding, intake forms, ratings, services)
 # ─────────────────────────────────────────────
-backend/src/modules/org-experience/branding/ @tariq
-dashboard/src/app/(dashboard)/branding/  @tariq
-dashboard/src/components/features/branding/ @tariq
+apps/backend/src/modules/org-experience/ @tariq
+apps/dashboard/app/(dashboard)/branding/ @tariq
+apps/dashboard/app/(dashboard)/intake-forms/ @tariq
+apps/dashboard/app/(dashboard)/ratings/  @tariq
+apps/dashboard/app/(dashboard)/services/ @tariq
+apps/dashboard/components/features/branding/ @tariq
+apps/dashboard/components/features/intake-forms/ @tariq
+apps/dashboard/components/features/services/ @tariq
 
 # ─────────────────────────────────────────────
-# ROLES & PERMISSIONS (CASL / RBAC)
+# ROLES & PERMISSIONS UI (backend RBAC already covered by IDENTITY)
 # ─────────────────────────────────────────────
-backend/src/modules/roles/               @tariq
-backend/src/modules/permissions/         @tariq
-dashboard/src/app/(dashboard)/users/     @tariq
-dashboard/src/components/features/users/ @tariq
+apps/dashboard/app/(dashboard)/users/    @tariq
+apps/dashboard/components/features/users/ @tariq
 
 # ─────────────────────────────────────────────
-# NOTIFICATIONS & TASKS (async jobs)
+# COMMUNICATIONS (notifications, email, sms, chat)
 # ─────────────────────────────────────────────
-backend/src/modules/notifications/       @tariq
-backend/src/modules/tasks/               @tariq
-backend/src/common/queue/                @tariq
-dashboard/src/app/(dashboard)/notifications/ @tariq
+apps/backend/src/modules/comms/          @tariq
+apps/dashboard/app/(dashboard)/notifications/ @tariq
+apps/dashboard/app/(dashboard)/contact-messages/ @tariq
+apps/dashboard/components/features/notifications/ @tariq
+apps/dashboard/components/features/contact-messages/ @tariq
+apps/dashboard/components/features/email-config/ @tariq
+apps/dashboard/components/features/sms/  @tariq
 
 # ─────────────────────────────────────────────
-# REPORTS & ANALYTICS
+# OPS (cron, reports, activity log, health)
 # ─────────────────────────────────────────────
-backend/src/modules/reports/             @tariq
-dashboard/src/app/(dashboard)/reports/   @tariq
-dashboard/src/components/features/reports/ @tariq
+apps/backend/src/modules/ops/            @tariq
+apps/dashboard/app/(dashboard)/reports/  @tariq
+apps/dashboard/app/(dashboard)/activity-log/ @tariq
+apps/dashboard/components/features/reports/ @tariq
+apps/dashboard/components/features/activity-log/ @tariq
 
 # ─────────────────────────────────────────────
-# RATINGS & FEEDBACK
+# ORG CONFIG (branches, departments, business hours)
 # ─────────────────────────────────────────────
-backend/src/modules/ratings/             @tariq
-backend/src/modules/problem-reports/     @tariq
-dashboard/src/app/(dashboard)/ratings/   @tariq
-dashboard/src/app/(dashboard)/problem-reports/ @tariq
+apps/backend/src/modules/org-config/     @tariq
+apps/dashboard/app/(dashboard)/branches/ @tariq
+apps/dashboard/app/(dashboard)/departments/ @tariq
+apps/dashboard/app/(dashboard)/categories/ @tariq
+apps/dashboard/components/features/branches/ @tariq
+apps/dashboard/components/features/departments/ @tariq
 
 # ─────────────────────────────────────────────
-# SERVICES & SPECIALTIES (catalog)
+# PLATFORM (super-admin, billing, problem-reports, tenant registration)
 # ─────────────────────────────────────────────
-backend/src/modules/services/            @tariq
-backend/src/modules/specialties/         @tariq
-dashboard/src/app/(dashboard)/services/  @tariq
-dashboard/src/components/features/services/ @tariq
+apps/backend/src/modules/platform/       @tariq
 
 # ─────────────────────────────────────────────
-# BRANCHES (multi-location)
+# INTEGRATIONS (zoho, zoom)
 # ─────────────────────────────────────────────
-backend/src/modules/branches/            @tariq
-dashboard/src/app/(dashboard)/branches/  @tariq
-dashboard/src/components/features/branches/ @tariq
-
-# ─────────────────────────────────────────────
-# INTAKE FORMS
-# ─────────────────────────────────────────────
-backend/src/modules/intake-forms/        @tariq
-dashboard/src/app/(dashboard)/intake-forms/ @tariq
-dashboard/src/components/features/intake-forms/ @tariq
-
-# ─────────────────────────────────────────────
-# ACTIVITY LOG (audit trail)
-# ─────────────────────────────────────────────
-backend/src/modules/activity-log/        @tariq
-dashboard/src/app/(dashboard)/activity-log/ @tariq
-dashboard/src/components/features/activity-log/ @tariq
+apps/backend/src/modules/integrations/   @tariq
+apps/dashboard/components/features/zoho/ @tariq
+apps/dashboard/components/features/zoom/ @tariq
 
 # ─────────────────────────────────────────────
 # DESIGN SYSTEM TOKENS
 # ─────────────────────────────────────────────
-dashboard/src/app/globals.css            @tariq
-dashboard/src/lib/ds.ts                  @tariq
-dashboard/tailwind.config.ts             @tariq
+apps/dashboard/app/globals.css           @tariq
+apps/dashboard/lib/ds.ts                 @tariq
 
 # ─────────────────────────────────────────────
 # SHARED PRIMITIVES (shadcn — do not modify)
 # ─────────────────────────────────────────────
-dashboard/src/components/ui/             @tariq
+apps/dashboard/components/ui/            @tariq
 
 # ─────────────────────────────────────────────
 # CI/CD & PACKAGE MANAGEMENT
@@ -166,4 +152,4 @@ dashboard/src/components/ui/             @tariq
 .github/                                 @tariq
 turbo.json                               @tariq
 package.json                             @tariq
-package-lock.json                        @tariq
+pnpm-lock.yaml                           @tariq
