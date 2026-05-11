@@ -1,11 +1,13 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, Headers, HttpCode, HttpStatus, Post, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
-import { ApiTags, ApiOperation, ApiCreatedResponse, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiCreatedResponse, ApiOkResponse, ApiResponse } from '@nestjs/swagger';
 import { ApiPublicResponses, ApiErrorDto } from '../../common/swagger';
+import { Public } from '../../common/guards/jwt.guard';
 import { RegisterTenantDto } from '../../modules/platform/tenant-registration/register-tenant.dto';
 import { RegisterTenantHandler } from '../../modules/platform/tenant-registration/register-tenant.handler';
+import { CheckTenantExistsHandler, type CheckTenantExistsResult } from '../../modules/platform/tenant-registration/check-tenant-exists/check-tenant-exists.handler';
 import { GetCurrentUserHandler } from '../../modules/identity/get-current-user/get-current-user.handler';
 import { flattenPermissions } from '../../modules/identity/casl/flatten-permissions';
 
@@ -15,9 +17,22 @@ import { flattenPermissions } from '../../modules/identity/casl/flatten-permissi
 export class PublicTenantsController {
   constructor(
     private readonly registerTenant: RegisterTenantHandler,
+    private readonly checkTenantExists: CheckTenantExistsHandler,
     private readonly getCurrentUser: GetCurrentUserHandler,
     private readonly config: ConfigService,
   ) {}
+
+  @Public()
+  @Throttle({ default: { ttl: 60_000, limit: 60 } })
+  @Get('exists')
+  @ApiOperation({ summary: 'Check tenant existence by subdomain (public)' })
+  @ApiOkResponse({ description: 'Tenant existence result' })
+  async existsEndpoint(
+    @Headers('x-forwarded-host') xfh: string | undefined,
+    @Headers('host') host: string | undefined,
+  ): Promise<CheckTenantExistsResult> {
+    return this.checkTenantExists.execute(xfh ?? host);
+  }
 
   @Post('register')
   @Throttle({ default: { ttl: 60_000, limit: 3 } })
