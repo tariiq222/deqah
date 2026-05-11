@@ -9,12 +9,21 @@ import { withCronLeader } from '../../../common/helpers/cron-leader.helper';
 /** How many unpublished outbox rows to process per tick. */
 const BATCH_SIZE = 50;
 
+/** After this many failed attempts the row is marked terminal (FAILED). */
+const MAX_ATTEMPTS = 10;
+
 /**
  * CR-5: Outbox publisher cron.
  *
  * Runs every 5 seconds (registered in CronTasksService).
- * Selects up to BATCH_SIZE OutboxEvent rows where publishedAt IS NULL,
+ * Selects up to BATCH_SIZE OutboxEvent rows where status = PENDING,
+ * lockedUntil has expired, and failedAt IS NULL (not yet terminal),
  * forwards each to EventBusService, then stamps publishedAt = now().
+ *
+ * Failure handling (S2):
+ *   On publish error, attemptCount is incremented.
+ *   Once attemptCount reaches MAX_ATTEMPTS the row is marked FAILED
+ *   (failedAt + failureReason set) and excluded from future polling.
  *
  * At-most-once delivery per tick: if the process crashes between publish and
  * the UPDATE, the row remains unpublished and will be retried on the next
@@ -47,10 +56,12 @@ export class OutboxPublisherCron {
       const now = new Date();
       const lockUntil = new Date(now.getTime() + 30_000);
 
-      const rows = await this.prisma.$allTenants.$queryRaw<{ id: string; eventType: string; payload: unknown }[]>`
-        SELECT id, "eventType", "payload" FROM "OutboxEvent"
+      // Exclude terminal rows (failedAt IS NOT NULL) from the poll.
+      const rows = await this.prisma.$allTenants.$queryRaw<{ id: string; eventType: string; payload: unknown; attemptCount: number }[]>`
+        SELECT id, "eventType", "payload", "attemptCount" FROM "OutboxEvent"
         WHERE status = 'PENDING'
         AND ("lockedUntil" IS NULL OR "lockedUntil" < ${now})
+        AND "failedAt" IS NULL
         ORDER BY "createdAt" ASC
         LIMIT ${BATCH_SIZE_NUM}
         FOR UPDATE SKIP LOCKED
@@ -77,9 +88,30 @@ export class OutboxPublisherCron {
           );
           publishedIds.push(row.id);
         } catch (err) {
-          this.logger.error(
-            `Failed to publish outbox event ${row.id} (${row.eventType})`,
-            err instanceof Error ? err.stack : err,
+          const nextAttempt = (row.attemptCount ?? 0) + 1;
+          const isTerminal = nextAttempt >= MAX_ATTEMPTS;
+          await this.prisma.$allTenants.outboxEvent.update({
+            where: { id: row.id },
+            data: {
+              attemptCount: nextAttempt,
+              ...(isTerminal && {
+                status: 'FAILED',
+                failedAt: new Date(),
+                failureReason: (err instanceof Error ? err.message : String(err)).slice(0, 500),
+              }),
+            },
+          });
+          this.logger.warn(
+            {
+              err: err instanceof Error ? err.message : err,
+              eventId: row.id,
+              eventType: row.eventType,
+              attemptCount: nextAttempt,
+              isTerminal,
+            },
+            isTerminal
+              ? 'outbox event reached max attempts — marked FAILED'
+              : 'outbox event publish failed — will retry',
           );
         }
       }

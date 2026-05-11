@@ -29,6 +29,9 @@ const buildTxPrisma = () => ({
   subscription: {
     update: jest.fn().mockResolvedValue({}),
   },
+  outboxEvent: {
+    create: jest.fn().mockResolvedValue({}),
+  },
 });
 
 const buildPrisma = (txPrisma = buildTxPrisma()) => ({
@@ -63,10 +66,6 @@ const buildIssueInvoice = () => ({
   execute: jest.fn().mockResolvedValue({}),
 });
 
-const buildEventBus = () => ({
-  publish: jest.fn().mockResolvedValue(undefined),
-});
-
 const buildRlsTx = (prisma: ReturnType<typeof buildPrisma>) =>
   ({
     withBypassTransaction: jest.fn((fn: (tx: unknown) => Promise<unknown>) => fn(prisma._txPrisma)),
@@ -83,7 +82,6 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildMailer() as never,
       buildConfig() as never,
       buildIssueInvoice() as never,
-      buildEventBus() as never,
       buildRlsTx(prisma),
     );
 
@@ -98,6 +96,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
     prisma.subscriptionInvoice.findFirst.mockResolvedValue({
       id: 'inv-1',
       amount: 299,
+      currency: 'SAR',
       subscription: buildSub({ id: 'sub-1', status: 'TRIALING', organizationId: 'org-A' }),
     });
     const handler = new RecordSubscriptionPaymentHandler(
@@ -107,7 +106,6 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildMailer() as never,
       buildConfig() as never,
       buildIssueInvoice() as never,
-      buildEventBus() as never,
       buildRlsTx(prisma),
     );
 
@@ -126,6 +124,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
     prisma.subscriptionInvoice.findFirst.mockResolvedValue({
       id: 'inv-1',
       amount: 299,
+      currency: 'SAR',
       subscription: buildSub({ id: 'sub-1', status: 'PAST_DUE', organizationId: 'org-A' }),
     });
     const handler = new RecordSubscriptionPaymentHandler(
@@ -135,7 +134,6 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildMailer() as never,
       buildConfig() as never,
       buildIssueInvoice() as never,
-      buildEventBus() as never,
       buildRlsTx(prisma),
     );
 
@@ -153,7 +151,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
     const prisma = buildPrisma(txPrisma);
     // ACTIVE → chargeSuccess is not a valid transition — use PAST_DUE
     const sub = buildSub({ id: 'sub-1', status: 'PAST_DUE', organizationId: 'org-A' });
-    prisma.subscriptionInvoice.findFirst.mockResolvedValue({ id: 'inv-1', amount: 299, subscription: sub });
+    prisma.subscriptionInvoice.findFirst.mockResolvedValue({ id: 'inv-1', amount: 299, currency: 'SAR', subscription: sub });
 
     const handler = new RecordSubscriptionPaymentHandler(
       prisma as never,
@@ -162,7 +160,6 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildMailer() as never,
       buildConfig() as never,
       buildIssueInvoice() as never,
-      buildEventBus() as never,
       buildRlsTx(prisma),
     );
 
@@ -181,6 +178,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
     prisma.subscriptionInvoice.findFirst.mockResolvedValue({
       id: 'inv-1',
       amount: 299,
+      currency: 'SAR',
       subscription: buildSub({ id: 'sub-1', status: 'PAST_DUE', organizationId: 'org-A' }),
     });
     const handler = new RecordSubscriptionPaymentHandler(
@@ -190,7 +188,6 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildMailer() as never,
       buildConfig() as never,
       buildIssueInvoice() as never,
-      buildEventBus() as never,
       buildRlsTx(prisma),
     );
 
@@ -209,6 +206,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
     prisma.subscriptionInvoice.findFirst.mockResolvedValue({
       id: 'inv-1',
       amount: 299,
+      currency: 'SAR',
       subscription: buildSub({ id: 'sub-1', status: 'PAST_DUE', organizationId: 'org-A' }),
     });
     const handler = new RecordSubscriptionPaymentHandler(
@@ -218,7 +216,6 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildMailer() as never,
       buildConfig() as never,
       buildIssueInvoice() as never,
-      buildEventBus() as never,
       buildRlsTx(prisma),
     );
 
@@ -242,6 +239,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
     prisma.subscriptionInvoice.findFirst.mockResolvedValue({
       id: 'inv-1',
       amount: 299,
+      currency: 'SAR',
       subscription: buildSub({ id: 'sub-1', status: 'TRIALING', organizationId: 'org-A' }),
     });
     const handler = new RecordSubscriptionPaymentHandler(
@@ -251,7 +249,6 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildMailer() as never,
       buildConfig() as never,
       buildIssueInvoice() as never,
-      buildEventBus() as never,
       buildRlsTx(prisma),
     );
 
@@ -266,6 +263,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
     prisma.subscriptionInvoice.findFirst.mockResolvedValue({
       id: 'inv-1',
       amount: 299,
+      currency: 'SAR',
       subscription: buildSub({ id: 'sub-1', status: 'TRIALING', organizationId: 'org-A' }),
     });
     const mailer = buildMailer();
@@ -276,7 +274,6 @@ describe('RecordSubscriptionPaymentHandler', () => {
       mailer as never,
       buildConfig() as never,
       buildIssueInvoice() as never,
-      buildEventBus() as never,
       buildRlsTx(prisma),
     );
 
@@ -292,6 +289,44 @@ describe('RecordSubscriptionPaymentHandler', () => {
     );
   });
 
+  // ─── S2: outbox event written inside the transaction ──────────────────────
+  it('writes an OutboxEvent inside the transaction on successful payment', async () => {
+    const txPrisma = buildTxPrisma();
+    const prisma = buildPrisma(txPrisma);
+    prisma.subscriptionInvoice.findFirst.mockResolvedValue({
+      id: 'inv-1',
+      amount: 299,
+      currency: 'SAR',
+      subscription: buildSub({ id: 'sub-1', status: 'PAST_DUE', organizationId: 'org-A' }),
+    });
+    const handler = new RecordSubscriptionPaymentHandler(
+      prisma as never,
+      buildCache() as never,
+      new SubscriptionStateMachine(),
+      buildMailer() as never,
+      buildConfig() as never,
+      buildIssueInvoice() as never,
+      buildRlsTx(prisma),
+    );
+
+    await handler.execute({ invoiceId: 'inv-1', moyasarPaymentId: 'pay-xyz' });
+
+    expect(txPrisma.outboxEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          aggregateId: 'inv-1',
+          eventType: 'platform.subscription_invoice.paid',
+          payload: expect.objectContaining({
+            organizationId: 'org-A',
+            subscriptionId: 'sub-1',
+            invoiceId: 'inv-1',
+            moyasarPaymentId: 'pay-xyz',
+          }),
+        }),
+      }),
+    );
+  });
+
   // ─── Bug B2 — period-end advancement ───────────────────────────────────
   // Without these guards a successful charge leaves `currentPeriodEnd` in
   // the past and the cron immediately re-selects the same subscription.
@@ -302,6 +337,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
     prisma.subscriptionInvoice.findFirst.mockResolvedValue({
       id: 'inv-1',
       amount: 299,
+      currency: 'SAR',
       subscription: buildSub({
         id: 'sub-1',
         status: 'PAST_DUE',
@@ -317,7 +353,6 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildMailer() as never,
       buildConfig() as never,
       buildIssueInvoice() as never,
-      buildEventBus() as never,
       buildRlsTx(prisma),
     );
 
@@ -339,6 +374,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
     prisma.subscriptionInvoice.findFirst.mockResolvedValue({
       id: 'inv-1',
       amount: 1990,
+      currency: 'SAR',
       subscription: buildSub({
         id: 'sub-1',
         status: 'PAST_DUE',
@@ -354,7 +390,6 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildMailer() as never,
       buildConfig() as never,
       buildIssueInvoice() as never,
-      buildEventBus() as never,
       buildRlsTx(prisma),
     );
 
@@ -378,6 +413,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
     prisma.subscriptionInvoice.findFirst.mockResolvedValue({
       id: 'inv-1',
       amount: 299,
+      currency: 'SAR',
       subscription: buildSub({
         id: 'sub-1',
         status: 'PAST_DUE',
@@ -393,7 +429,6 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildMailer() as never,
       buildConfig() as never,
       buildIssueInvoice() as never,
-      buildEventBus() as never,
       buildRlsTx(prisma),
     );
 
@@ -418,6 +453,7 @@ describe('RecordSubscriptionPaymentHandler', () => {
     prisma.subscriptionInvoice.findFirst.mockResolvedValue({
       id: 'inv-1',
       amount: 299,
+      currency: 'SAR',
       subscription: buildSub({ id: 'sub-1', status: 'PAST_DUE', organizationId: 'org-A' }),
     });
     const handler = new RecordSubscriptionPaymentHandler(
@@ -427,7 +463,6 @@ describe('RecordSubscriptionPaymentHandler', () => {
       buildMailer() as never,
       buildConfig() as never,
       buildIssueInvoice() as never,
-      buildEventBus() as never,
       buildRlsTx(prisma),
     );
 

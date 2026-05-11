@@ -90,15 +90,19 @@ model Report {
 // publishedAt IS NULL means not yet published.
 
 model OutboxEvent {
-  id          String    @id @default(uuid()) @db.Uuid
-  aggregateId String
-  eventType   String
-  payload     Json
-  status      String    @default("PENDING") // PENDING | PUBLISHED | FAILED
-  lockedUntil DateTime? @db.Timestamptz(3)
-  publishedAt DateTime? @db.Timestamptz(3)
-  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  id            String    @id @default(uuid()) @db.Uuid
+  aggregateId   String
+  eventType     String
+  payload       Json
+  status        String    @default("PENDING") // PENDING | PUBLISHED | FAILED
+  lockedUntil   DateTime? @db.Timestamptz(3)
+  publishedAt   DateTime? @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+  attemptCount  Int       @default(0)
+  failedAt      DateTime? @db.Timestamptz(3)
+  failureReason String?
 
   @@index([publishedAt], map: "OutboxEvent_publishedAt_idx")
   @@index([status, lockedUntil], map: "OutboxEvent_status_locked_idx")
+  @@index([failedAt], map: "OutboxEvent_failedAt_idx")
 }

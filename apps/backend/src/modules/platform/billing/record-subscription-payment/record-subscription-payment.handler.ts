@@ -6,8 +6,6 @@ import { SubscriptionStateMachine } from '../subscription-state-machine';
 import { PlatformMailerService } from '../../../../infrastructure/mail';
 import { IssueInvoiceHandler } from '../issue-invoice/issue-invoice.handler';
 import { advanceBillingPeriodEnd } from '../billing-period.util';
-import { EventBusService } from '../../../../infrastructure/events';
-import { SubscriptionInvoicePaidEvent } from '../events/subscription-invoice-paid.event';
 
 export interface RecordSubscriptionPaymentCommand {
   invoiceId: string;
@@ -25,7 +23,6 @@ export class RecordSubscriptionPaymentHandler {
     private readonly mailer: PlatformMailerService,
     private readonly config: ConfigService,
     private readonly issueInvoice: IssueInvoiceHandler,
-    private readonly eventBus: EventBusService,
     private readonly rlsTx: RlsTransactionService,
   ) {}
 
@@ -72,6 +69,24 @@ export class RecordSubscriptionPaymentHandler {
           lastFailureReason: null,
         },
       });
+      // S2: Write the outbox event inside the transaction so Zoho mirror
+      // delivery is guaranteed-atomic with the payment state change.
+      // OutboxPublisherCron picks this up within 5 s and forwards to EventBusService.
+      await tx.outboxEvent.create({
+        data: {
+          aggregateId: invoice.id,
+          eventType: 'platform.subscription_invoice.paid',
+          payload: {
+            organizationId: sub.organizationId,
+            subscriptionId: sub.id,
+            invoiceId: invoice.id,
+            moyasarPaymentId: cmd.moyasarPaymentId,
+            amount: invoice.amount.toString(),
+            currency: invoice.currency,
+            paidAt: now.toISOString(),
+          },
+        },
+      });
     });
 
     this.cache.invalidate(sub.organizationId);
@@ -104,27 +119,6 @@ export class RecordSubscriptionPaymentHandler {
         invoiceId: invoice.id,
         receiptUrl: `${baseUrl}/billing/${invoice.id}`,
       });
-    }
-
-    // Publish a domain event so downstream integrations (Zoho SaaS-billing
-    // mirror) can react asynchronously without coupling. Non-fatal — the
-    // bus uses BullMQ at-least-once and a publish failure must not roll
-    // back the in-DB payment state.
-    try {
-      const event = new SubscriptionInvoicePaidEvent({
-        subscriptionInvoiceId: invoice.id,
-        organizationId: sub.organizationId,
-        subscriptionId: sub.id,
-        amount: Number(invoice.amount),
-        currency: invoice.currency,
-        moyasarPaymentId: cmd.moyasarPaymentId,
-        paidAt: now,
-      });
-      await this.eventBus.publish(event.eventName, event.toEnvelope());
-    } catch (err) {
-      this.logger.warn(
-        `Failed to publish subscription_invoice.paid for ${invoice.id}: ${(err as Error).message}`,
-      );
     }
 
     return { ok: true };
