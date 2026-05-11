@@ -115,20 +115,16 @@ export class TenantResolverMiddleware implements NestMiddleware {
 
     const isPublicRoute = this.isPublicRoute(path);
 
-    // Priority:
-    //   1. JWT claim (authenticated users)
-    //   2. X-Org-Id header (super-admins only — never trusted from regular users)
-    //   3. Subdomain resolver on public routes (CR-4) — maps <slug>.deqah.net to
+    // Priority (TAR-10: super-admin X-Org-Id override is enforced by JwtGuard
+    // because Nest middleware runs before Passport — `req.user` is unavailable
+    // here. This middleware only handles unauthenticated paths.):
+    //   1. JWT claim (authenticated users) — stamped by JwtGuard, NOT here.
+    //   2. Subdomain resolver on public routes (CR-4) — maps <slug>.deqah.net to
     //      organizationId. When a subdomain is present, X-Org-Id MUST either match
     //      or be absent. Mismatch → 400 (cross-tenant header injection attack).
-    //   4. X-Org-Id header on UNAUTHENTICATED public routes with NO subdomain
+    //   3. X-Org-Id header on UNAUTHENTICATED public routes with NO subdomain
     //      (mobile tenant-lock: mobile hits raw API domain, no subdomain present).
-    //   5. DEFAULT_ORGANIZATION_ID (permissive mode only)
-    const fromSuperAdminHeader =
-      req.user?.isSuperAdmin === true
-        ? this.parseUuidHeader(req.headers['x-org-id'])
-        : undefined;
-
+    //   4. DEFAULT_ORGANIZATION_ID (permissive mode only)
     if (!isPublicRoute && !req.user) {
       if (mode === 'permissive') {
         this.ctx.set({
@@ -181,8 +177,11 @@ export class TenantResolverMiddleware implements NestMiddleware {
         ? this.config.get<string>('DEFAULT_ORGANIZATION_ID', DEFAULT_ORGANIZATION_ID)
         : undefined;
 
+    // fromJwt is included as a defensive fallback for the rare case of an
+    // authenticated PUBLIC route where JwtGuard did not run (public routes
+    // bypass it). JwtGuard is the primary path for authenticated requests.
     const organizationId =
-      fromSuperAdminHeader ?? fromJwt ?? fromSubdomain ?? fromPublicHeader ?? fromDefault;
+      fromJwt ?? fromSubdomain ?? fromPublicHeader ?? fromDefault;
 
     if (!organizationId) {
       throw new TenantResolutionError(

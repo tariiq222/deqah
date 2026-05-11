@@ -121,19 +121,29 @@ describe('TenantResolverMiddleware', () => {
     });
   });
 
-  it('strict mode: accepts explicit header when super-admin', async () => {
+  // TAR-10: super-admin X-Org-Id override is now enforced by JwtGuard
+  // (runs after Passport populates req.user), not by this middleware
+  // (which runs before guards). The middleware never sees a populated
+  // req.user for authenticated routes. See jwt.guard.spec.ts for the
+  // super-admin override coverage. Here we only verify the middleware
+  // safely no-ops for authenticated private routes regardless of headers.
+  it('strict mode: authenticated private route with X-Org-Id defers entirely to JwtGuard (TAR-10)', async () => {
     const mw = await build({ TENANT_ENFORCEMENT: 'strict' });
     const headerOrg = '550e8400-e29b-41d4-a716-446655440000';
     await new Promise<void>((done) => {
       cls.run(async () => {
+        // Middleware is invoked WITHOUT req.user (Passport hasn't run yet
+        // in production); req.user is set later by JwtGuard. The middleware
+        // must not throw and must not set a context that JwtGuard would
+        // then have to overwrite.
         await mw.use(
           req({
-            user: { id: 'u1', role: 'SUPER_ADMIN', isSuperAdmin: true },
+            originalUrl: '/api/v1/dashboard/bookings',
             headers: { 'x-org-id': headerOrg },
           }),
           {} as never,
           () => {
-            expect(ctx.getOrganizationId()).toBe(headerOrg);
+            expect(ctx.get()).toBeUndefined();
             done();
           },
         );

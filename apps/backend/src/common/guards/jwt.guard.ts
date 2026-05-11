@@ -15,6 +15,12 @@ export const IS_PUBLIC_KEY = 'isPublic';
 const ORG_SUSPENSION_CACHE_TTL_SECONDS = 30;
 const ACTIVE_ORG_CACHE_SENTINEL = 'active';
 
+// RFC 4122 UUID (any version, including the all-zero placeholder used as
+// DEFAULT_ORGANIZATION_ID). Used to validate the X-Org-Id super-admin
+// override header before honoring it.
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const SUSPENSION_HINT_AR =
   'حسابك معلّق. صاحب الحساب يمكنه تحديث طريقة الدفع لإعادة التفعيل.';
 const SUSPENSION_HINT_EN =
@@ -65,8 +71,9 @@ export class JwtGuard extends AuthGuard('jwt') {
     const activated = await Promise.resolve(super.canActivate(ctx));
     const req = ctx.switchToHttp().getRequest<{
       user?: AuthenticatedReqUser;
+      headers?: Record<string, string | string[] | undefined>;
     }>();
-    this.stampTenantContext(req.user);
+    this.stampTenantContext(req.user, req.headers);
 
     const allowDuringSuspension = this.reflector.getAllAndOverride<boolean>(
       ALLOW_DURING_SUSPENSION_KEY,
@@ -190,15 +197,52 @@ export class JwtGuard extends AuthGuard('jwt') {
     return `org-suspension:${organizationId}`;
   }
 
-  private stampTenantContext(user?: AuthenticatedReqUser): void {
-    if (!user?.organizationId) return;
+  /**
+   * Stamps the per-request tenant context from the authenticated user.
+   *
+   * Runs after Passport has populated `req.user`, so this is the canonical
+   * point to resolve tenant for authenticated requests (TAR-10). The
+   * TenantResolverMiddleware now only handles unauthenticated paths
+   * (public routes, subdomain binding, auth-bootstrap bypass).
+   *
+   * Super-admin override: when `user.isSuperAdmin === true` and a
+   * well-formed UUID `X-Org-Id` header is present, that org wins over the
+   * super-admin's own JWT `organizationId` claim. This is how platform
+   * operators inspect / act on a specific tenant. The header is ignored
+   * for non-super-admin users (security: never trust caller-supplied org).
+   */
+  private stampTenantContext(
+    user?: AuthenticatedReqUser,
+    headers?: Record<string, string | string[] | undefined>,
+  ): void {
+    if (!user) return;
+
+    const overrideOrgId =
+      user.isSuperAdmin === true
+        ? this.parseUuidHeader(headers?.['x-org-id'])
+        : undefined;
+    const organizationId = overrideOrgId ?? user.organizationId;
+
+    if (!organizationId) return;
 
     this.tenantContext.set({
-      organizationId: user.organizationId,
+      organizationId,
       membershipId: user.membershipId ?? '',
       id: user.id ?? user.sub ?? '',
       role: user.role ?? '',
       isSuperAdmin: user.isSuperAdmin === true,
     });
+  }
+
+  /**
+   * Validates a header value as a well-formed UUID. Mirrors the helper in
+   * TenantResolverMiddleware — duplicated here to keep guard tenant
+   * resolution self-contained (avoids a cross-module import cycle with
+   * the tenant module, which depends on guards transitively).
+   */
+  private parseUuidHeader(value: unknown): string | undefined {
+    if (typeof value !== 'string') return undefined;
+    const trimmed = value.trim();
+    return UUID_REGEX.test(trimmed) ? trimmed : undefined;
   }
 }
