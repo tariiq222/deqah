@@ -1,6 +1,7 @@
 import { DashboardCommsController } from './comms.controller';
 import { REQUIRE_FEATURE_KEY } from '../../modules/platform/billing/feature.decorator';
 import { FeatureKey } from '@deqah/shared/constants/feature-keys';
+import { CHECK_PERMISSIONS_KEY, RequiredPermission } from '../../common/guards/casl.guard';
 
 const fn = <T = unknown>(val: T = {} as T) => ({ execute: jest.fn().mockResolvedValue(val) });
 
@@ -135,4 +136,51 @@ describe('@RequireFeature metadata — SMS_PROVIDER_PER_TENANT', () => {
     );
     expect(meta).toBe(FeatureKey.SMS_PROVIDER_PER_TENANT);
   });
+});
+
+// ── CASL permission decorator coverage (TAR-47) ────────────────────────────
+// Every dashboard route in this controller must carry an explicit
+// @CheckPermissions decorator. Missing decorators previously fail-opened
+// (parent: TAR-41 / TAR-47).
+
+describe('@CheckPermissions decorator coverage (TAR-47)', () => {
+  const PROTOTYPE = DashboardCommsController.prototype as unknown as Record<string, unknown>;
+  const expected: Array<{ method: string; permission: RequiredPermission }> = [
+    { method: 'getSmsConfigEndpoint', permission: { action: 'manage', subject: 'Setting' } },
+    { method: 'upsertSmsConfigEndpoint', permission: { action: 'manage', subject: 'Setting' } },
+    { method: 'testSmsConfigEndpoint', permission: { action: 'manage', subject: 'Setting' } },
+    { method: 'getEmailConfigEndpoint', permission: { action: 'manage', subject: 'Setting' } },
+    { method: 'upsertEmailConfigEndpoint', permission: { action: 'manage', subject: 'Setting' } },
+    { method: 'testEmailConfigEndpoint', permission: { action: 'manage', subject: 'Setting' } },
+    { method: 'listSmsDeliveriesEndpoint', permission: { action: 'read', subject: 'Setting' } },
+    { method: 'listContactMessagesEndpoint', permission: { action: 'read', subject: 'Setting' } },
+    { method: 'updateContactMessageStatusEndpoint', permission: { action: 'update', subject: 'Setting' } },
+    { method: 'listNotificationsEndpoint', permission: { action: 'read', subject: 'Booking' } },
+    { method: 'getUnreadCountEndpoint', permission: { action: 'read', subject: 'Booking' } },
+    { method: 'markReadEndpoint', permission: { action: 'update', subject: 'Booking' } },
+    { method: 'listEmailTemplatesEndpoint', permission: { action: 'read', subject: 'Setting' } },
+    { method: 'createEmailTemplateEndpoint', permission: { action: 'manage', subject: 'Setting' } },
+    { method: 'getEmailTemplateEndpoint', permission: { action: 'read', subject: 'Setting' } },
+    { method: 'previewEmailTemplateEndpoint', permission: { action: 'read', subject: 'Setting' } },
+    { method: 'updateEmailTemplateEndpoint', permission: { action: 'manage', subject: 'Setting' } },
+    { method: 'listConversationsEndpoint', permission: { action: 'read', subject: 'Booking' } },
+    { method: 'listMessagesEndpoint', permission: { action: 'read', subject: 'Booking' } },
+    { method: 'getConversationEndpoint', permission: { action: 'read', subject: 'Booking' } },
+    { method: 'closeConversationEndpoint', permission: { action: 'update', subject: 'Booking' } },
+    { method: 'sendStaffMessageEndpoint', permission: { action: 'update', subject: 'Booking' } },
+    { method: 'listDeliveryLogs', permission: { action: 'read', subject: 'Setting' } },
+    { method: 'getEmailFallbackQuota', permission: { action: 'read', subject: 'Billing' } },
+  ];
+
+  it.each(expected)(
+    '$method declares CheckPermissions($permission.action, $permission.subject)',
+    ({ method, permission }) => {
+      const meta = Reflect.getMetadata(
+        CHECK_PERMISSIONS_KEY,
+        PROTOTYPE[method] as object,
+      ) as RequiredPermission[] | undefined;
+      expect(meta).toBeDefined();
+      expect(meta).toEqual(expect.arrayContaining([expect.objectContaining(permission)]));
+    },
+  );
 });

@@ -1,6 +1,7 @@
 import { DashboardAiController } from './ai.controller';
 import { REQUIRE_FEATURE_KEY } from '../../modules/platform/billing/feature.decorator';
 import { FeatureKey } from '@deqah/shared/constants/feature-keys';
+import { CHECK_PERMISSIONS_KEY, RequiredPermission } from '../../common/guards/casl.guard';
 
 const fn = <T = unknown>(val: T = {} as T) => ({ execute: jest.fn().mockResolvedValue(val) });
 const kbFn = () => ({
@@ -74,4 +75,34 @@ describe('@RequireFeature metadata — AI_CHATBOT', () => {
     );
     expect(meta).toBe(FeatureKey.AI_CHATBOT);
   });
+});
+
+// ── CASL permission decorator coverage (TAR-47) ────────────────────────────
+// Every dashboard route in this controller must carry an explicit
+// @CheckPermissions decorator. Missing decorators previously fail-opened
+// (parent: TAR-41 / TAR-47).
+
+describe('@CheckPermissions decorator coverage (TAR-47)', () => {
+  const PROTOTYPE = DashboardAiController.prototype as unknown as Record<string, unknown>;
+  const expected: Array<{ method: string; permission: RequiredPermission }> = [
+    { method: 'listDocuments', permission: { action: 'read', subject: 'Setting' } },
+    { method: 'getDocument', permission: { action: 'read', subject: 'Setting' } },
+    { method: 'updateDocument', permission: { action: 'manage', subject: 'Setting' } },
+    { method: 'deleteDocument', permission: { action: 'manage', subject: 'Setting' } },
+    { method: 'getChatbotConfigEndpoint', permission: { action: 'read', subject: 'Setting' } },
+    { method: 'upsertChatbotConfigEndpoint', permission: { action: 'manage', subject: 'Setting' } },
+    { method: 'chatCompletionEndpoint', permission: { action: 'read', subject: 'Booking' } },
+  ];
+
+  it.each(expected)(
+    '$method declares CheckPermissions($permission.action, $permission.subject)',
+    ({ method, permission }) => {
+      const meta = Reflect.getMetadata(
+        CHECK_PERMISSIONS_KEY,
+        PROTOTYPE[method] as object,
+      ) as RequiredPermission[] | undefined;
+      expect(meta).toBeDefined();
+      expect(meta).toEqual(expect.arrayContaining([expect.objectContaining(permission)]));
+    },
+  );
 });

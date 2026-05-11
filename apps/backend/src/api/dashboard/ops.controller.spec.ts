@@ -2,6 +2,7 @@ import { DashboardOpsController } from './ops.controller';
 import { ReportFormat } from '@prisma/client';
 import { REQUIRE_FEATURE_KEY } from '../../modules/platform/billing/feature.decorator';
 import { FeatureKey } from '@deqah/shared/constants/feature-keys';
+import { CHECK_PERMISSIONS_KEY, RequiredPermission } from '../../common/guards/casl.guard';
 
 const fn = <T = unknown>(val: T = {} as T) => ({ execute: jest.fn().mockResolvedValue(val) });
 const ORG_ID = 'org-00000000-0000-0000-0000-000000000001';
@@ -80,4 +81,29 @@ describe('@RequireFeature metadata — ACTIVITY_LOG', () => {
     );
     expect(meta).toBe(FeatureKey.ACTIVITY_LOG);
   });
+});
+
+// ── CASL permission decorator coverage (TAR-47) ────────────────────────────
+// Every dashboard route in this controller must carry an explicit
+// @CheckPermissions decorator. Missing decorators previously fail-opened
+// (parent: TAR-41 / TAR-47).
+
+describe('@CheckPermissions decorator coverage (TAR-47)', () => {
+  const PROTOTYPE = DashboardOpsController.prototype as unknown as Record<string, unknown>;
+  const expected: Array<{ method: string; permission: RequiredPermission }> = [
+    { method: 'generateReportEndpoint', permission: { action: 'manage', subject: 'Report' } },
+    { method: 'listActivityEndpoint', permission: { action: 'read', subject: 'Report' } },
+  ];
+
+  it.each(expected)(
+    '$method declares CheckPermissions($permission.action, $permission.subject)',
+    ({ method, permission }) => {
+      const meta = Reflect.getMetadata(
+        CHECK_PERMISSIONS_KEY,
+        PROTOTYPE[method] as object,
+      ) as RequiredPermission[] | undefined;
+      expect(meta).toBeDefined();
+      expect(meta).toEqual(expect.arrayContaining([expect.objectContaining(permission)]));
+    },
+  );
 });

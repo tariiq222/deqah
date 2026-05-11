@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { DashboardMediaController } from './media.controller';
+import { CHECK_PERMISSIONS_KEY, RequiredPermission } from '../../common/guards/casl.guard';
 
 const FILE_ID = '123e4567-e89b-12d3-a456-426614174000';
 const fn = <T = unknown>(val: T = {} as T) => ({ execute: jest.fn().mockResolvedValue(val) });
@@ -79,4 +80,31 @@ describe('DashboardMediaController', () => {
       expect.objectContaining({ fileId: FILE_ID, expiresIn: 3600 }),
     );
   });
+});
+
+// ── CASL permission decorator coverage (TAR-47) ────────────────────────────
+// Every dashboard route in this controller must carry an explicit
+// @CheckPermissions decorator. Missing decorators previously fail-opened
+// (parent: TAR-41 / TAR-47).
+
+describe('@CheckPermissions decorator coverage (TAR-47)', () => {
+  const PROTOTYPE = DashboardMediaController.prototype as unknown as Record<string, unknown>;
+  const expected: Array<{ method: string; permission: RequiredPermission }> = [
+    { method: 'uploadFileEndpoint', permission: { action: 'manage', subject: 'Setting' } },
+    { method: 'getFileEndpoint', permission: { action: 'read', subject: 'Setting' } },
+    { method: 'deleteFileEndpoint', permission: { action: 'manage', subject: 'Setting' } },
+    { method: 'presignedUrlEndpoint', permission: { action: 'read', subject: 'Setting' } },
+  ];
+
+  it.each(expected)(
+    '$method declares CheckPermissions($permission.action, $permission.subject)',
+    ({ method, permission }) => {
+      const meta = Reflect.getMetadata(
+        CHECK_PERMISSIONS_KEY,
+        PROTOTYPE[method] as object,
+      ) as RequiredPermission[] | undefined;
+      expect(meta).toBeDefined();
+      expect(meta).toEqual(expect.arrayContaining([expect.objectContaining(permission)]));
+    },
+  );
 });

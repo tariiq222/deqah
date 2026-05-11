@@ -10,7 +10,7 @@ import {
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtGuard } from '../../common/guards/jwt.guard';
-import { CaslGuard } from '../../common/guards/casl.guard';
+import { CaslGuard, CheckPermissions } from '../../common/guards/casl.guard';
 import { CurrentUser, JwtUser } from '../../common/auth/current-user.decorator';
 import { ApiStandardResponses } from '../../common/swagger';
 import { UploadFileHandler } from '../../modules/media/files/upload-file.handler';
@@ -65,6 +65,7 @@ export class DashboardMediaController {
       },
     },
   })
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   uploadFileEndpoint(
     @UploadedFile() file: Express.Multer.File | undefined,
     @Body() body: UploadFileDto,
@@ -102,6 +103,7 @@ export class DashboardMediaController {
       },
     },
   })
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   @ApiNotFoundResponse({ description: 'File not found' })
   getFileEndpoint(
     @Param('id', ParseUUIDPipe) id: string,
@@ -109,6 +111,7 @@ export class DashboardMediaController {
     return this.getFile.execute(id);
   }
 
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a file by ID' })
@@ -135,6 +138,7 @@ export class DashboardMediaController {
       },
     },
   })
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   @ApiNotFoundResponse({ description: 'File not found' })
   presignedUrlEndpoint(
     @Param('id', ParseUUIDPipe) id: string,

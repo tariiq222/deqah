@@ -8,7 +8,7 @@ import {
 } from '@nestjs/swagger';
 import { CurrentUser, JwtUser } from '../../common/auth/current-user.decorator';
 import { JwtGuard } from '../../common/guards/jwt.guard';
-import { CaslGuard } from '../../common/guards/casl.guard';
+import { CaslGuard, CheckPermissions } from '../../common/guards/casl.guard';
 import { ApiStandardResponses } from '../../common/swagger';
 import { ListNotificationsHandler } from '../../modules/comms/notifications/list-notifications.handler';
 import { ListNotificationsDto } from '../../modules/comms/notifications/list-notifications.dto';
@@ -95,6 +95,7 @@ export class DashboardCommsController {
   @RequireFeature(FeatureKey.SMS_PROVIDER_PER_TENANT)
   @ApiOperation({ summary: 'Get SMS provider configuration (owner-scoped)' })
   @ApiOkResponse({ description: 'OrganizationSmsConfig view (no secrets)' })
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @Get('settings/sms')
   getSmsConfigEndpoint() {
     return this.getOrgSmsConfig.execute();
@@ -104,6 +105,7 @@ export class DashboardCommsController {
   @ApiOperation({ summary: 'Upsert SMS provider configuration' })
   @ApiOkResponse({ description: 'Updated OrganizationSmsConfig view' })
   @HttpCode(HttpStatus.OK)
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @Post('settings/sms')
   upsertSmsConfigEndpoint(@Body() dto: UpsertOrgSmsConfigDto) {
     return this.upsertOrgSmsConfig.execute(dto);
@@ -113,6 +115,7 @@ export class DashboardCommsController {
   @ApiOperation({ summary: 'Send a test SMS via the configured provider' })
   @ApiOkResponse({ description: 'Test result' })
   @HttpCode(HttpStatus.OK)
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @Post('settings/sms/test')
   testSmsConfigEndpoint(@Body() dto: TestSmsConfigDto) {
     return this.testSmsConfig.execute(dto);
@@ -122,6 +125,7 @@ export class DashboardCommsController {
 
   @ApiOperation({ summary: 'Get email provider configuration (owner-scoped)' })
   @ApiOkResponse({ description: 'OrganizationEmailConfig view (no secrets)' })
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @Get('settings/email')
   getEmailConfigEndpoint() {
     return this.getOrgEmailConfig.execute();
@@ -130,6 +134,7 @@ export class DashboardCommsController {
   @ApiOperation({ summary: 'Upsert email provider configuration' })
   @ApiOkResponse({ description: 'Updated OrganizationEmailConfig view' })
   @HttpCode(HttpStatus.OK)
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @Post('settings/email')
   upsertEmailConfigEndpoint(@Body() dto: UpsertOrgEmailConfigDto) {
     return this.upsertOrgEmailConfig.execute(dto);
@@ -138,6 +143,7 @@ export class DashboardCommsController {
   @ApiOperation({ summary: 'Send a test email via the configured provider' })
   @ApiOkResponse({ description: 'Test result' })
   @HttpCode(HttpStatus.OK)
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @Post('settings/email/test')
   testEmailConfigEndpoint(@Body() dto: TestEmailConfigDto) {
     return this.testEmailConfig.execute(dto);
@@ -145,6 +151,7 @@ export class DashboardCommsController {
 
   @ApiOperation({ summary: 'List the 50 most recent SMS deliveries' })
   @ApiOkResponse({ description: 'Recent SmsDelivery rows (owner-scoped)' })
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   @Get('settings/sms/deliveries')
   async listSmsDeliveriesEndpoint() {
     const organizationId = this.tenant.requireOrganizationIdOrDefault();
@@ -171,6 +178,7 @@ export class DashboardCommsController {
 
   @ApiOperation({ summary: 'List contact messages' })
   @ApiOkResponse({ description: 'Paginated contact messages' })
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   @Get('contact-messages')
   listContactMessagesEndpoint(@Query() query: ListContactMessagesDto) {
     return this.listContactMessages.execute({
@@ -183,6 +191,7 @@ export class DashboardCommsController {
   @ApiOperation({ summary: 'Update contact message status' })
   @ApiParam({ name: 'id', description: 'Contact message UUID' })
   @ApiOkResponse({ description: 'Updated message' })
+  @CheckPermissions({ action: 'update', subject: 'Setting' })
   @Patch('contact-messages/:id/status')
   updateContactMessageStatusEndpoint(
     @Param('id', ParseUUIDPipe) id: string,
@@ -195,6 +204,7 @@ export class DashboardCommsController {
 
   @ApiOperation({ summary: 'List notifications for the current staff user' })
   @ApiOkResponse({ description: 'Paginated notification list' })
+  @CheckPermissions({ action: 'read', subject: 'Booking' })
   @Get('notifications')
   listNotificationsEndpoint(
     @CurrentUser() user: JwtUser,
@@ -211,6 +221,7 @@ export class DashboardCommsController {
 
   @ApiOperation({ summary: 'Get unread notification count for the current staff user' })
   @ApiOkResponse({ description: 'Unread count value' })
+  @CheckPermissions({ action: 'read', subject: 'Booking' })
   @Get('notifications/unread-count')
   getUnreadCountEndpoint(
     @CurrentUser() user: JwtUser,
@@ -223,6 +234,7 @@ export class DashboardCommsController {
 
   @ApiOperation({ summary: 'Mark notifications as read (all or a single one)' })
   @ApiNoContentResponse({ description: 'Notifications marked as read' })
+  @CheckPermissions({ action: 'update', subject: 'Booking' })
   @Patch('notifications/mark-read')
   @HttpCode(HttpStatus.NO_CONTENT)
   markReadEndpoint(
@@ -240,6 +252,7 @@ export class DashboardCommsController {
 
   @ApiOperation({ summary: 'List email templates' })
   @ApiOkResponse({ description: 'Paginated email template list' })
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   @Get('email-templates')
   @RequireFeature(FeatureKey.EMAIL_TEMPLATES)
   listEmailTemplatesEndpoint(
@@ -253,6 +266,7 @@ export class DashboardCommsController {
 
   @ApiOperation({ summary: 'Create an email template' })
   @ApiCreatedResponse({ description: 'Email template created' })
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @Post('email-templates')
   @HttpCode(HttpStatus.CREATED)
   @RequireFeature(FeatureKey.EMAIL_TEMPLATES)
@@ -265,6 +279,7 @@ export class DashboardCommsController {
   @ApiOperation({ summary: 'Get a single email template by ID' })
   @ApiOkResponse({ description: 'Email template details' })
   @ApiParam({ name: 'id', description: 'Email template UUID', example: '00000000-0000-0000-0000-000000000000' })
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   @Get('email-templates/:id')
   @RequireFeature(FeatureKey.EMAIL_TEMPLATES)
   getEmailTemplateEndpoint(
@@ -276,6 +291,7 @@ export class DashboardCommsController {
   @ApiOperation({ summary: 'Preview a rendered email template' })
   @ApiOkResponse({ description: 'Rendered HTML preview' })
   @ApiParam({ name: 'id', description: 'Email template UUID', example: '00000000-0000-0000-0000-000000000000' })
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   @Post('email-templates/:id/preview')
   @HttpCode(HttpStatus.OK)
   @RequireFeature(FeatureKey.EMAIL_TEMPLATES)
@@ -292,6 +308,7 @@ export class DashboardCommsController {
   @ApiOperation({ summary: 'Update an email template' })
   @ApiOkResponse({ description: 'Updated email template' })
   @ApiParam({ name: 'id', description: 'Email template UUID', example: '00000000-0000-0000-0000-000000000000' })
+  @CheckPermissions({ action: 'manage', subject: 'Setting' })
   @Patch('email-templates/:id')
   @RequireFeature(FeatureKey.EMAIL_TEMPLATES)
   updateEmailTemplateEndpoint(
@@ -305,6 +322,7 @@ export class DashboardCommsController {
 
   @ApiOperation({ summary: 'List chat conversations' })
   @ApiOkResponse({ description: 'Paginated conversation list' })
+  @CheckPermissions({ action: 'read', subject: 'Booking' })
   @Get('chat/conversations')
   listConversationsEndpoint(
     @Query() query: ListConversationsDto,
@@ -320,6 +338,7 @@ export class DashboardCommsController {
   @ApiOperation({ summary: 'List messages in a conversation' })
   @ApiOkResponse({ description: 'Cursor-paginated message list' })
   @ApiParam({ name: 'id', description: 'Conversation UUID', example: '00000000-0000-0000-0000-000000000000' })
+  @CheckPermissions({ action: 'read', subject: 'Booking' })
   @Get('chat/conversations/:id/messages')
   listMessagesEndpoint(
     @Param('id', ParseUUIDPipe) id: string,
@@ -335,6 +354,7 @@ export class DashboardCommsController {
   @ApiOperation({ summary: 'Get a single conversation by ID' })
   @ApiOkResponse({ description: 'Conversation details' })
   @ApiParam({ name: 'id', description: 'Conversation UUID', example: '00000000-0000-0000-0000-000000000000' })
+  @CheckPermissions({ action: 'read', subject: 'Booking' })
   @Get('chat/conversations/:id')
   getConversationEndpoint(
     @Param('id', ParseUUIDPipe) id: string,
@@ -345,6 +365,7 @@ export class DashboardCommsController {
   @ApiOperation({ summary: 'Close a conversation' })
   @ApiOkResponse({ description: 'Conversation closed' })
   @ApiParam({ name: 'id', description: 'Conversation UUID', example: '00000000-0000-0000-0000-000000000000' })
+  @CheckPermissions({ action: 'update', subject: 'Booking' })
   @Patch('chat/conversations/:id/close')
   @HttpCode(HttpStatus.OK)
   closeConversationEndpoint(
@@ -356,6 +377,7 @@ export class DashboardCommsController {
   @ApiOperation({ summary: 'Send a staff message in a conversation' })
   @ApiCreatedResponse({ description: 'Message sent' })
   @ApiParam({ name: 'id', description: 'Conversation UUID', example: '00000000-0000-0000-0000-000000000000' })
+  @CheckPermissions({ action: 'update', subject: 'Booking' })
   @Post('chat/conversations/:id/messages')
   @HttpCode(HttpStatus.CREATED)
   sendStaffMessageEndpoint(
@@ -370,6 +392,7 @@ export class DashboardCommsController {
     });
   }
 
+  @CheckPermissions({ action: 'read', subject: 'Setting' })
   @Get('delivery-logs')
   @ApiOperation({ summary: 'List email delivery logs for this organization' })
   @ApiOkResponse({ description: 'Paginated delivery log' })
@@ -379,6 +402,7 @@ export class DashboardCommsController {
     return this.listTenantDeliveryLogs.execute(dto);
   }
 
+  @CheckPermissions({ action: 'read', subject: 'Billing' })
   @Get('email-fallback-quota')
   @ApiOperation({ summary: 'Get platform email fallback quota usage for this billing period' })
   @ApiOkResponse({ description: 'Current usage vs plan limit for email_fallback_monthly' })
