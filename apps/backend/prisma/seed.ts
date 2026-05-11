@@ -17,6 +17,9 @@ const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD;
 const DEFAULT_ORG_ID = '00000000-0000-0000-0000-000000000001';
 
 async function main() {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('prisma db seed must not run in production');
+  }
   const prisma = new PrismaClient({
     adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
   });
@@ -239,7 +242,7 @@ async function main() {
   await prisma.$disconnect();
 
   console.log('─────────────────────────────────────────────');
-  console.log(`✔  Admin  : ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
+  console.log(`✔  Admin  : ${ADMIN_EMAIL}`);
   console.log(`✔  Super admin: ${SUPER_ADMIN_EMAIL}`);
   console.log(`✔  Branding singleton ready`);
   console.log(`✔  OrganizationSettings singleton ready`);

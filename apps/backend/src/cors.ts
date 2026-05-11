@@ -13,7 +13,8 @@ import { SLUG_REGEX } from './common/tenant/subdomain-resolver.service';
 export function configureCors(app: INestApplication): void {
   const rootDomain = process.env.PLATFORM_ROOT_DOMAIN || 'localhost';
   const escaped = rootDomain.replace(/\./g, '\\.');
-  const wildcardRegex = new RegExp(`^https?://([a-z0-9-]+\\.)?${escaped}(:\\d+)?$`, 'i');
+  const scheme = process.env.NODE_ENV === 'production' ? 'https' : 'https?';
+  const wildcardRegex = new RegExp(`^${scheme}://([a-z0-9-]+\\.)?${escaped}(:\\d+)?$`, 'i');
   const fixedAllowed = (process.env.CORS_ORIGINS ?? '')
     .split(',').map((s) => s.trim()).filter(Boolean);
   const devDefaults = process.env.NODE_ENV === 'production'
