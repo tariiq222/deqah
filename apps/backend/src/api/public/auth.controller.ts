@@ -173,6 +173,7 @@ export class AuthController {
     // Membership is a scoped model and login runs before tenant context is
     // resolved — use $allTenants under super-admin CLS, same pattern as
     // LoginHandler.execute() and refreshEndpoint() below.
+    // SAFE: auth controller; $allTenants used for cross-org token operations (refresh, logout, switch-org)
     const membership = await this.cls.run(async () => {
       this.cls.set(SUPER_ADMIN_CONTEXT_CLS_KEY, true);
       return this.prisma.$allTenants.membership.findFirst({

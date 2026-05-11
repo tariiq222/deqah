@@ -29,6 +29,7 @@ export class ListSubscriptionInvoicesHandler {
     }
 
     const [rawItems, total] = await Promise.all([
+      // SAFE: super-admin handler; reads subscription invoices across all tenants for billing oversight
       this.prisma.$allTenants.subscriptionInvoice.findMany({
         where,
         orderBy: { createdAt: 'desc' },

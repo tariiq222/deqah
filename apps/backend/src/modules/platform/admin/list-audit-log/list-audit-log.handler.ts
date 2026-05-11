@@ -28,6 +28,7 @@ export class ListAuditLogHandler {
     }
 
     const [items, total] = await Promise.all([
+      // SAFE: super-admin handler; reads platform audit log across all tenants
       this.prisma.$allTenants.superAdminActionLog.findMany({
         where,
         orderBy: { createdAt: 'desc' },

@@ -20,6 +20,7 @@ export class LogPlatformSettingUpdateHandler {
     const previousValue = cmd.settingIsSecret ? '***' : cmd.previousValue;
     const nextValue = cmd.settingIsSecret ? '***' : cmd.nextValue;
 
+    // SAFE: super-admin handler; $allTenants used to write platform audit log
     await this.prisma.$allTenants.superAdminActionLog.create({
       data: {
         superAdminUserId: cmd.superAdminUserId,

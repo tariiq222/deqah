@@ -59,6 +59,7 @@ export class InvoiceTenantHandler {
       };
     }
 
+    // SAFE: platform billing handler; reads across tenants to mirror invoice to Zoho
     const invoice = await this.prisma.$allTenants.subscriptionInvoice.findFirst({
       where: { id: input.subscriptionInvoiceId },
       include: {

@@ -19,6 +19,7 @@ export class ApiWebhooksGraceCron {
   async run() {
     if (!this.config.get<boolean>('BILLING_CRON_ENABLED', false)) return;
 
+    // SAFE: cron job running as platform-level op; uses $allTenants for cross-org webhook grace enforcement
     const subs = await this.prisma.$allTenants.subscription.findMany({
       where: {
         OR: [

@@ -124,6 +124,7 @@ export class MoyasarSubscriptionWebhookHandler {
     // Stage 4: enter tenant context for scoped writes.
     // Also set SUPER_ADMIN_CONTEXT_CLS_KEY so that billing handlers can call
     // prisma.$allTenants for cross-tenant owner email lookup without throwing.
+    // SAFE: webhook handler; $allTenants used for cross-tenant subscription lookup after payment
     return this.cls.run(async () => {
       this.cls.set(TENANT_CLS_KEY, {
         organizationId: invoice.subscription.organizationId,

@@ -47,7 +47,8 @@ export class HealthCheckHandler {
     try {
       const queue = this.bullMq.getQueue('ops-cron');
       const counts = await queue.getJobCounts();
-      return { bullmq: { status: 'up', ...counts } };
+      const stalled = await queue.getJobCountByTypes('stalled');
+      return { bullmq: { status: 'up', ...counts, stalled } };
     } catch (err) {
       return { bullmq: { status: 'down', message: err instanceof Error ? err.message : 'queue error' } };
     }

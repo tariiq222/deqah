@@ -16,6 +16,7 @@ export class ListPlansAdminHandler {
     const skip = (page - 1) * perPage;
 
     const [items, total] = await Promise.all([
+      // SAFE: super-admin handler; reads platform-level Plan table (not tenant-scoped)
       this.prisma.$allTenants.plan.findMany({
         skip,
         take: perPage,

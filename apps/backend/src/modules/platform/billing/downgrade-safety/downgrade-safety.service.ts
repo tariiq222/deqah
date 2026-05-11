@@ -332,6 +332,7 @@ export class DowngradeSafetyService {
   ): Promise<number> {
     switch (kind) {
       case FeatureKey.BRANCHES:
+        // SAFE: platform admin service; $allTenants used intentionally for cross-org limit enforcement
         return this.prisma.$allTenants.branch.count({
           where: { organizationId, isActive: true },
         });

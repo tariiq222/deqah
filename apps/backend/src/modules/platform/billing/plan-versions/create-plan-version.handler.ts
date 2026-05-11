@@ -6,6 +6,7 @@ export class CreatePlanVersionHandler {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(cmd: { planId: string }) {
+    // SAFE: platform admin; $allTenants used to read/write platform-level Plan and PlanVersion models
     const plan = await this.prisma.$allTenants.plan.findFirst({
       where: { id: cmd.planId },
     });

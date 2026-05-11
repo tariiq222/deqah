@@ -17,6 +17,7 @@ export class CustomDomainGraceCron {
   async run() {
     if (!this.config.get<boolean>('BILLING_CRON_ENABLED', false)) return;
 
+    // SAFE: cron job running as platform-level op; uses $allTenants for cross-org grace-period enforcement
     const orgs = await this.prisma.$allTenants.organizationSettings.findMany({
       where: { customDomainGraceUntil: { not: null } },
       select: {

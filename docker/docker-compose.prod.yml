@@ -146,6 +146,7 @@ services:
       context: ..
       dockerfile: apps/dashboard/Dockerfile
     container_name: deqah-dashboard
+    stop_grace_period: 40s
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -177,6 +178,7 @@ services:
       context: ..
       dockerfile: apps/admin/Dockerfile
     container_name: deqah-admin
+    stop_grace_period: 40s
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -243,6 +245,7 @@ services:
       context: ..
       dockerfile: apps/marketing/Dockerfile
     container_name: deqah-marketing
+    stop_grace_period: 40s
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -269,6 +272,7 @@ services:
         max-file: "5"
 
   postgres:
+    stop_grace_period: 40s
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -294,6 +298,7 @@ services:
         max-file: "5"
 
   redis:
+    stop_grace_period: 40s
     restart: unless-stopped
     volumes:
       - ./redis.conf:/etc/redis/redis.conf:ro
@@ -321,6 +326,7 @@ services:
         max-file: "3"
 
   minio:
+    stop_grace_period: 40s
     restart: unless-stopped
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
@@ -365,6 +371,7 @@ services:
       echo '0 2 * * * /scripts/backup.sh >> /var/log/backup.log 2>&1' > /etc/crontabs/root &&
       crond -f -l 2
       "
+    stop_grace_period: 40s
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pgrep crond || exit 1"]
@@ -385,6 +392,7 @@ services:
   nginx:
     image: nginx:1.27-alpine
     container_name: deqah-nginx
+    stop_grace_period: 40s
     restart: unless-stopped
     ports:
       - "80:80"
@@ -441,6 +449,7 @@ services:
       echo '30 2 * * * /scripts/backup-minio.sh >> /var/log/minio-backup.log 2>&1' | crontab - &&
       crond -f -l 2
       "
+    stop_grace_period: 40s
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pgrep crond || exit 1"]
