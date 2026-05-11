@@ -43,7 +43,7 @@ export class RefundPaymentHandler {
     // SELECT FOR UPDATE prevents two concurrent requests from both reading
     // Payment.status=COMPLETED and proceeding to issue a double-refund.
     const { payment, refundAmount, refundRequestId, idempotencyKey } =
-      await this.prisma.$transaction(async (tx) => {
+      await this.rlsTx.withTransaction(async (tx) => {
         // Lock the payment row for the duration of this transaction.
         const rows = await tx.$queryRaw<
           Array<{
@@ -80,6 +80,11 @@ export class RefundPaymentHandler {
           amount: row.amount,
           invoice,
         };
+
+        await tx.payment.update({
+          where: { id: cmd.paymentId },
+          data: { status: 'REFUNDING' },
+        });
 
         const refAmt = cmd.amount ?? Number(lockedPayment.amount);
         const reqId = randomUUID();
