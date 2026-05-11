@@ -37,7 +37,7 @@ describe('JwtStrategy', () => {
       customRoleId: null, customRole: null, isActive: true,
     } as never);
 
-    const result = await strategy.validate({ sub: 'u1', email: 'a@b.com', role: 'ADMIN', customRoleId: null, permissions: [], features: [] });
+    const result = await strategy.validate({ sub: 'u1', email: 'a@b.com', role: 'ADMIN', customRoleId: null, permissions: [], features: [], organizationId: 'org-1' });
     expect(result.id).toBe('u1');
     expect(result.permissions).toBeDefined();
   });
@@ -84,19 +84,35 @@ describe('JwtStrategy', () => {
     expect(result.impersonationSessionId).toBe('imp-1');
   });
 
-  it('treats missing tenant claims as undefined (backward compat)', async () => {
+  it('rejects non-superadmin token missing organizationId claim (no backward compat window)', async () => {
     prisma.user.findUnique.mockResolvedValue({
       id: 'u1', email: 'a@b.com', role: 'ADMIN',
+      customRoleId: null, customRole: null, isActive: true,
+      isSuperAdmin: false,
+    } as never);
+
+    await expect(
+      strategy.validate({
+        sub: 'u1', email: 'a@b.com', role: 'ADMIN',
+        customRoleId: null, permissions: [], features: [],
+        // no organizationId
+      }),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('allows isSuperAdmin=true token without organizationId claim', async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: 'sa1', email: 'sa@b.com', role: 'SUPER_ADMIN', isSuperAdmin: true,
       customRoleId: null, customRole: null, isActive: true,
     } as never);
 
     const result = await strategy.validate({
-      sub: 'u1', email: 'a@b.com', role: 'ADMIN',
+      sub: 'sa1', email: 'sa@b.com', role: 'SUPER_ADMIN',
       customRoleId: null, permissions: [], features: [],
+      // no organizationId — valid for super-admin
     });
+    expect(result.isSuperAdmin).toBe(true);
     expect(result.organizationId).toBeUndefined();
-    expect(result.membershipId).toBeUndefined();
-    expect(result.isSuperAdmin).toBe(false);
   });
 
   it('exposes both `id` and `sub` (P0: 36 controller usages of user.sub depend on this)', async () => {
@@ -108,6 +124,7 @@ describe('JwtStrategy', () => {
     const result = await strategy.validate({
       sub: 'u-7', email: 'a@b.com', role: 'ADMIN',
       customRoleId: null, permissions: [], features: [],
+      organizationId: 'org-x', // required: non-superadmin token must carry org claim
     });
 
     expect(result.id).toBe('u-7');

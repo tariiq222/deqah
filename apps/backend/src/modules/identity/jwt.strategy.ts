@@ -65,6 +65,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       }
     }
 
+    // Reject non-superadmin tokens that are missing the org claim.
+    // Pre-rollout tokens (no organizationId) should no longer circulate;
+    // issueTokenPair always sets organizationId. A missing claim means a
+    // forged or severely outdated token — reject it.
+    if (!user.isSuperAdmin && !payload.organizationId) {
+      throw new UnauthorizedException('Token missing tenant claim');
+    }
+
     // P0-6: If the JWT carries a tokenVersion, verify it matches the DB value.
     // Stale tokenVersion means the session was revoked (logout/switch-org/password change).
     if (typeof payload.tokenVersion === 'number' && user.tokenVersion !== payload.tokenVersion) {
