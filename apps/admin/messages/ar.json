@@ -308,7 +308,22 @@
       "periodStart": "بداية الفترة",
       "periodEnd": "نهاية الفترة",
       "monthlyPrice": "السعر الشهري",
-      "priceSar": "{amount} SAR"
+      "priceSar": "{amount} SAR",
+      "stats": "إحصائيات",
+      "platformUsage": "استخدام المنصة",
+      "identity": "الهوية",
+      "subdomain": "الرابط",
+      "vertical": "القطاع",
+      "createdAt": "تاريخ الإنشاء",
+      "owner": "المالك",
+      "ownerName": "الاسم",
+      "ownerEmail": "البريد الإلكتروني",
+      "ownerPhone": "الجوال",
+      "lastInvoiceAmount": "آخر فاتورة",
+      "lastInvoiceStatus": "حالة الفاتورة",
+      "lastInvoiceDate": "تاريخ الفاتورة",
+      "availableCredit": "الرصيد المتاح",
+      "dunningWarning": "فشلت محاولات التحصيل — يحتاج تدخلاً"
     },
     "suspend": {
       "title": "تعليق المنظمة",
