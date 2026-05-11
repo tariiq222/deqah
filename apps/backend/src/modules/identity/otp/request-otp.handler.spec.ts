@@ -254,7 +254,7 @@ describe('RequestOtpHandler', () => {
     expect(result).toEqual({ success: true });
     // Confirm the Redis SET was called with the right key pattern and TTL
     expect(redisSetMock).toHaveBeenCalledWith(
-      'otp:cooldown:+966500000000:MOBILE_LOGIN',
+      'otp:cooldown:global:+966500000000:MOBILE_LOGIN',
       '1',
       'EX',
       60,

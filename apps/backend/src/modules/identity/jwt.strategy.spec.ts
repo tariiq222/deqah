@@ -21,7 +21,10 @@ describe('JwtStrategy', () => {
       providers: [
         JwtStrategy,
         { provide: ConfigService, useValue: { getOrThrow: jest.fn().mockReturnValue('secret-key') } },
-        { provide: PrismaService, useValue: { user: { findUnique: jest.fn() } } },
+        { provide: PrismaService, useValue: {
+          user: { findUnique: jest.fn() },
+          membership: { findFirst: jest.fn().mockResolvedValue({ id: 'm1' }) },
+        } },
         { provide: CaslAbilityFactory, useValue: { buildForUser: jest.fn().mockReturnValue({ rules: [] }) } },
         { provide: ClsService, useValue: makeClsMock() },
       ],
@@ -160,7 +163,7 @@ describe('JwtStrategy', () => {
         { provide: PrismaService, useValue: { user: { findUnique: jest.fn().mockResolvedValue({
           id: 'u1', email: 'a@b.com', role: 'ADMIN',
           customRoleId: null, customRole: null, isActive: true,
-        }) } } },
+        }) }, membership: { findFirst: jest.fn().mockResolvedValue({ id: 'm1' }) } } },
         {
           provide: CaslAbilityFactory,
           useValue: { buildForUser: jest.fn().mockReturnValue({ rules: [] }) },

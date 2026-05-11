@@ -4,6 +4,7 @@ import { CancellationReason } from '@prisma/client';
 export type BookingRefundType = 'NONE' | 'FULL' | 'PARTIAL';
 
 export interface BookingCancelledPayload {
+  organizationId: string;
   bookingId: string;
   clientId: string;
   employeeId: string;

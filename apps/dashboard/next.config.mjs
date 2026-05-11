@@ -81,7 +81,7 @@ const nextConfig = {
 export default withSentryConfig(nextConfig, {
   org: 'webvue',
   project: 'deqah-dashboard',
-  url: 'http://100.124.231.44:8000/',
+  url: 'https://errors.webvue.pro/',
   silent: true,
   disableLogger: true,
   // Source-map upload only runs when SENTRY_AUTH_TOKEN is present

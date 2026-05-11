@@ -84,6 +84,9 @@ describe('LoginHandler', () => {
     prisma.user.findUnique.mockResolvedValue(mockUser as never);
     passwordService.verify.mockResolvedValue(true);
     tokenService.issueTokenPair.mockResolvedValue({ accessToken: 'acc', refreshToken: 'ref' });
+    prisma.$allTenants.membership.findMany.mockResolvedValue([{
+      id: 'mem-1', organizationId: '00000000-0000-0000-0000-000000000001', role: 'ADMIN',
+    }]);
 
     const result = await handler.execute({ email: 'admin@clinic.sa', password: 'secret' });
     expect(result.accessToken).toBe('acc');
@@ -143,20 +146,14 @@ describe('LoginHandler', () => {
       );
     });
 
-    it('falls back to DEFAULT_ORGANIZATION_ID when user has no membership row', async () => {
+    it('throws when non-superadmin user has no membership row', async () => {
       prisma.user.findUnique.mockResolvedValue({ ...mockUser, lastActiveOrganizationId: null } as never);
       passwordService.verify.mockResolvedValue(true);
       prisma.$allTenants.membership.findMany.mockResolvedValue([]);
 
-      await handler.execute({ email: 'admin@clinic.sa', password: 'secret' });
-
-      expect(tokenService.issueTokenPair).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({
-          organizationId: '00000000-0000-0000-0000-000000000001',
-          membershipId: undefined,
-        }),
-      );
+      await expect(
+        handler.execute({ email: 'admin@clinic.sa', password: 'secret' }),
+      ).rejects.toThrow('No active membership found for this account');
     });
 
     it('marks isSuperAdmin true when user.isSuperAdmin is true', async () => {
@@ -240,7 +237,9 @@ describe('LoginHandler', () => {
         lockedUntil: pastDate,
       } as never);
       passwordService.verify.mockResolvedValue(true);
-      prisma.$allTenants.membership.findMany.mockResolvedValue([]);
+      prisma.$allTenants.membership.findMany.mockResolvedValue([{
+        id: 'mem-1', organizationId: '00000000-0000-0000-0000-000000000001', role: 'ADMIN',
+      }]);
 
       await handler.execute({ email: 'admin@clinic.sa', password: 'correct' });
 

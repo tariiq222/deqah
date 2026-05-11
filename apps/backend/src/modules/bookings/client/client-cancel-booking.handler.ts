@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { BookingStatus, RefundType } from '@prisma/client';
+import { BookingStatus, CancellationReason, RefundType } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
 import { RlsTransactionService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
@@ -79,6 +79,8 @@ export class ClientCancelBookingHandler {
       : RefundType.NONE;
 
     let refundRequestId: string | null = null;
+    let paymentId: string | null = null;
+    let idempotencyKey: string | null = null;
 
     const updated = await this.rlsTx.withTransaction(async (tx) => {
       const cancelled = await tx.booking.update({
@@ -110,21 +112,25 @@ export class ClientCancelBookingHandler {
             tx,
             { paymentId: completedPayment.id, reason: `Booking ${cmd.bookingId} cancellation (${refundType})`, performedBy: cmd.clientId },
           );
+          paymentId = completedPayment.id;
           refundRequestId = created.refundRequestId;
+          idempotencyKey = created.idempotencyKey;
         }
       }
       return cancelled;
     });
 
     const event = new BookingCancelledEvent({
+      organizationId,
       bookingId: booking.id,
       clientId: booking.clientId,
       employeeId: booking.employeeId,
-      reason: 'CLIENT_REQUESTED' as never,
+      reason: CancellationReason.CLIENT_REQUESTED,
       cancelNotes: cmd.reason ?? undefined,
       refundType,
-      paymentId: null,
+      paymentId,
       refundRequestId,
+      idempotencyKey,
     });
     await this.eventBus.publish(event.eventName, event.toEnvelope());
 

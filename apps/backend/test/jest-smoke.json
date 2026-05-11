@@ -8,7 +8,9 @@
   },
   "setupFiles": ["<rootDir>/test/jest.setup.ts"],
   "testTimeout": 60000,
+  "openHandlesTimeout": 5000,
   "maxWorkers": 1,
+  "modulePathIgnorePatterns": ["<rootDir>/dist/"],
   "transformIgnorePatterns": ["node_modules/(?!(uuid)/)"],
   "moduleNameMapper": {
     "^@deqah/shared$": "<rootDir>/../../packages/shared/index.ts",
