@@ -35,7 +35,6 @@ export function AuditLogFilterBar({
   onReset,
 }: Props) {
   const t = useTranslations('auditLog');
-  const tc = useTranslations('common');
   const isFiltered = actionType !== 'all' || organizationId !== '';
 
   return (

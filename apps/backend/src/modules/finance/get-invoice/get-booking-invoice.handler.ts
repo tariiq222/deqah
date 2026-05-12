@@ -33,6 +33,8 @@ export class GetBookingInvoiceHandler {
       vatRate: Number(invoice.vatRate),
       vatAmt: Number(invoice.vatAmt),
       total: Number(invoice.total),
+      refundedAmount: Number(invoice.refundedAmount),
+      refundedVatAmt: Number(invoice.refundedVatAmt),
       currency: invoice.currency,
       status: invoice.status,
       issuedAt: invoice.issuedAt?.toISOString() ?? null,

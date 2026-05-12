@@ -19,7 +19,7 @@ describe('RefundPaymentHandler', () => {
       $queryRaw: jest.fn().mockResolvedValue([]),
       payment: { findFirst: jest.fn(), update: jest.fn(), findUniqueOrThrow: jest.fn() },
       refundRequest: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null), update: jest.fn(), updateMany: jest.fn().mockResolvedValue({ count: 1 }), findUniqueOrThrow: jest.fn() },
-      invoice: { findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'inv_1', bookingId: 'bk_1', clientId: 'cli_1', currency: 'SAR', organizationId: 'org_1' }), update: jest.fn(), findUnique: jest.fn() },
+      invoice: { findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'inv_1', bookingId: 'bk_1', clientId: 'cli_1', currency: 'SAR', organizationId: 'org_1', total: '115.00', vatAmt: '15.00', refundedAmount: '0.00' }), update: jest.fn(), findUnique: jest.fn() },
     };
     eventBus = { publish: jest.fn().mockResolvedValue(undefined) };
 
@@ -182,6 +182,27 @@ describe('RefundPaymentHandler', () => {
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
+  it('sets status PARTIALLY_REFUNDED and stores proportional VAT when refund < invoice total', async () => {
+    // Invoice total=115 SAR (100 subtotal + 15 VAT), refund=57.5 SAR (half)
+    prisma.invoice.findUniqueOrThrow.mockResolvedValue({ id: 'inv_1', bookingId: 'bk_1', clientId: 'cli_1', currency: 'SAR', organizationId: 'org_1', total: '115.00', vatAmt: '15.00', refundedAmount: '0.00' });
+    prisma.$queryRaw.mockResolvedValueOnce([buildPaymentRow({ amount: 57.5 })]);
+    prisma.refundRequest.create.mockResolvedValue({ id: 'rr_1' });
+    moyasar.createRefund.mockResolvedValue({ id: 'ref_partial', amount: 5750, currency: 'SAR', status: 'refunded', paymentId: 'moyasar_pay_abc', createdAt: new Date().toISOString() });
+    prisma.refundRequest.update.mockResolvedValue({});
+    prisma.payment.update.mockResolvedValue({});
+    prisma.invoice.update.mockResolvedValue({});
+
+    await handler.execute({ paymentId: 'pay_1', reason: 'partial', amount: 57.5 });
+
+    expect(prisma.invoice.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        status: 'PARTIALLY_REFUNDED',
+        refundedAmount: 57.5,
+        refundedVatAmt: 7.5,
+      }),
+    }));
+  });
+
   describe('createRefundRequestInTx', () => {
     it('acquires SELECT FOR UPDATE lock on the Payment row', async () => {
       prisma.$queryRaw.mockResolvedValueOnce([buildPaymentRow()]);
@@ -304,6 +325,7 @@ describe('RefundPaymentHandler', () => {
 
       expect(rlsTx.withTransaction).toHaveBeenCalledTimes(1);
       const withTransactionCall = (rlsTx.withTransaction as jest.Mock).mock.calls[0][0];
+      prisma.invoice.findUniqueOrThrow.mockResolvedValueOnce({ total: '100.00', vatAmt: '15.00', refundedAmount: '0.00' });
       await withTransactionCall(prisma);
       expect(prisma.refundRequest.updateMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expect.objectContaining({ id: 'rr_1' }),
@@ -315,7 +337,7 @@ describe('RefundPaymentHandler', () => {
       }));
       expect(prisma.invoice.update).toHaveBeenCalledWith(expect.objectContaining({
         where: { id: 'inv_1' },
-        data: { status: 'REFUNDED' },
+        data: expect.objectContaining({ status: 'REFUNDED', refundedAmount: expect.any(Number), refundedVatAmt: expect.any(Number) }),
       }));
     });
 

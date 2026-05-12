@@ -5,10 +5,7 @@
 # Stage 1 (deps):         install all workspace deps — cached layer
 # Stage 2 (shared-build): compile packages/shared into dist/ — fixes TS2307
 # Stage 3 (app-build):    compile the Next.js app (adds arch-native CSS binaries here)
-# Stage 4 (runner):       minimal runtime image
-#
-# Note: Admin does NOT have output:'standalone' in next.config.mjs,
-# so the runner copies the full .next + node_modules.
+# Stage 4 (runner):       minimal standalone runtime image
 
 # ── Stage 1: deps ────────────────────────────────────────────────────────────
 FROM node:20-bookworm-slim AS deps
@@ -97,18 +94,14 @@ ENV PORT=5104
 ENV HOSTNAME=0.0.0.0
 ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY --from=app-build /app/node_modules                  ./node_modules
-COPY --from=app-build /app/package.json                  ./package.json
-COPY --from=app-build /app/packages                      ./packages
-COPY --from=app-build /app/apps/admin/package.json       ./apps/admin/package.json
-COPY --from=app-build /app/apps/admin/next.config.mjs    ./apps/admin/next.config.mjs
-COPY --from=app-build /app/apps/admin/.next              ./apps/admin/.next
+COPY --from=app-build /app/apps/admin/.next/standalone   ./
+COPY --from=app-build /app/apps/admin/.next/static       ./apps/admin/.next/static
 COPY --from=app-build /app/apps/admin/public             ./apps/admin/public
 
-WORKDIR /app/apps/admin
+WORKDIR /app
 EXPOSE 5104
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD node -e "require('http').get('http://localhost:5104',r=>process.exit(r.statusCode<400?0:1)).on('error',()=>process.exit(1))"
 
-CMD ["npx", "next", "start", "-p", "5104", "-H", "0.0.0.0"]
+CMD ["node", "apps/admin/server.js"]

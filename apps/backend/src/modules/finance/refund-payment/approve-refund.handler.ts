@@ -7,6 +7,7 @@ import { PrismaService, RlsTransactionService } from '../../../infrastructure/da
 import { EventBusService } from '../../../infrastructure/events';
 import { MoyasarApiClient } from '../moyasar-api/moyasar-api.client';
 import { RefundCompletedEvent } from '../events/refund-completed.event';
+import { computeRefundAccounting } from './refund-vat.helper';
 
 export interface ApproveRefundCommand {
   refundRequestId: string;
@@ -81,9 +82,23 @@ export class ApproveRefundHandler {
           },
         });
 
+        const invoiceForAccounting = await tx.invoice.findUniqueOrThrow({
+          where: { id: refundRequest.invoiceId },
+          select: { total: true, vatAmt: true, refundedAmount: true },
+        });
+        const accounting = computeRefundAccounting({
+          invoiceTotal: invoiceForAccounting.total,
+          invoiceVatAmt: invoiceForAccounting.vatAmt,
+          alreadyRefundedAmount: invoiceForAccounting.refundedAmount,
+          thisRefundAmount: Number(refundRequest.amount),
+        });
         const invoice = await tx.invoice.update({
           where: { id: refundRequest.invoiceId },
-          data: { status: 'REFUNDED' },
+          data: {
+            status: accounting.newInvoiceStatus,
+            refundedAmount: accounting.newRefundedAmount,
+            refundedVatAmt: accounting.newRefundedVatAmt,
+          },
           select: { id: true, bookingId: true, currency: true },
         });
 

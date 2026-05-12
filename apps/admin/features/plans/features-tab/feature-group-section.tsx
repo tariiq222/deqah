@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import type { FeatureKey } from '@deqah/shared';
 import { FeatureRow } from './feature-row';
-import { InfoTooltip } from './info-tooltip';
 import type { CatalogEntry } from './filter';
 import type { PlanLimits } from '../plan-limits';
 import { QUANT_FIELD_MAP } from '../plan-limits';

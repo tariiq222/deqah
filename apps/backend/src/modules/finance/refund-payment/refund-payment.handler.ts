@@ -6,6 +6,7 @@ import { EventBusService } from '../../../infrastructure/events';
 import { RefundCompletedEvent } from '../events/refund-completed.event';
 import { MoyasarApiClient } from '../moyasar-api/moyasar-api.client';
 import { assertValidTransition } from '../payment-state-machine';
+import { computeRefundAccounting } from './refund-vat.helper';
 
 interface CreateRefundRequestInTxResult {
   refundRequestId: string;
@@ -119,9 +120,23 @@ export class RefundPaymentHandler {
           refundedAmount: { increment: Number(refundReq.amount) },
         },
       });
+      const currentInvoice = await tx.invoice.findUniqueOrThrow({
+        where: { id: refundReq.invoiceId },
+        select: { total: true, vatAmt: true, refundedAmount: true },
+      });
+      const accounting = computeRefundAccounting({
+        invoiceTotal: currentInvoice.total,
+        invoiceVatAmt: currentInvoice.vatAmt,
+        alreadyRefundedAmount: currentInvoice.refundedAmount,
+        thisRefundAmount: Number(refundReq.amount),
+      });
       await tx.invoice.update({
         where: { id: refundReq.invoiceId },
-        data: { status: 'REFUNDED' },
+        data: {
+          status: accounting.newInvoiceStatus,
+          refundedAmount: accounting.newRefundedAmount,
+          refundedVatAmt: accounting.newRefundedVatAmt,
+        },
       });
     });
   }
@@ -259,9 +274,23 @@ const moyasarRefund = await this.moyasar.createRefund(refundReq.organizationId, 
           refundedAmount: { increment: Number(refundReq.amount) },
         },
       });
+      const currentInvoice = await tx.invoice.findUniqueOrThrow({
+        where: { id: refundReq.invoiceId },
+        select: { total: true, vatAmt: true, refundedAmount: true },
+      });
+      const accounting = computeRefundAccounting({
+        invoiceTotal: currentInvoice.total,
+        invoiceVatAmt: currentInvoice.vatAmt,
+        alreadyRefundedAmount: currentInvoice.refundedAmount,
+        thisRefundAmount: Number(refundReq.amount),
+      });
       await tx.invoice.update({
         where: { id: refundReq.invoiceId },
-        data: { status: 'REFUNDED' },
+        data: {
+          status: accounting.newInvoiceStatus,
+          refundedAmount: accounting.newRefundedAmount,
+          refundedVatAmt: accounting.newRefundedVatAmt,
+        },
       });
     });
 
@@ -405,9 +434,23 @@ const moyasarRefund = await this.moyasar.createRefund(refundReq.organizationId, 
             refundedAmount: { increment: refundAmount },
           },
         });
+        const currentInvoice = await tx.invoice.findUniqueOrThrow({
+          where: { id: payment.invoice.id },
+          select: { total: true, vatAmt: true, refundedAmount: true },
+        });
+        const accounting = computeRefundAccounting({
+          invoiceTotal: currentInvoice.total,
+          invoiceVatAmt: currentInvoice.vatAmt,
+          alreadyRefundedAmount: currentInvoice.refundedAmount,
+          thisRefundAmount: refundAmount,
+        });
         await tx.invoice.update({
           where: { id: payment.invoice.id },
-          data: { status: 'REFUNDED' },
+          data: {
+            status: accounting.newInvoiceStatus,
+            refundedAmount: accounting.newRefundedAmount,
+            refundedVatAmt: accounting.newRefundedVatAmt,
+          },
         });
         return updated;
       });

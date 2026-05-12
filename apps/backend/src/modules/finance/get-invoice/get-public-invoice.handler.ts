@@ -14,6 +14,8 @@ export interface GetPublicInvoiceResult {
   vatRate: number;
   vatAmt: number;
   total: number;
+  refundedAmount: number;
+  refundedVatAmt: number;
   currency: string;
   status: string;
   issuedAt: string | null;
@@ -52,6 +54,8 @@ export class GetPublicInvoiceHandler {
       vatRate: Number(invoice.vatRate),
       vatAmt: Number(invoice.vatAmt),
       total: Number(invoice.total),
+      refundedAmount: Number(invoice.refundedAmount),
+      refundedVatAmt: Number(invoice.refundedVatAmt),
       currency: invoice.currency,
       status: invoice.status,
       issuedAt: invoice.issuedAt?.toISOString() ?? null,

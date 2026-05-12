@@ -1,7 +1,12 @@
 import { withSentryConfig } from '@sentry/nextjs';
 import createNextIntlPlugin from 'next-intl/plugin';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const withNextIntl = createNextIntlPlugin('./i18n.ts');
+const appDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(appDir, '../..');
+const shouldUploadSentryArtifacts = process.env.CI === 'true' && Boolean(process.env.SENTRY_AUTH_TOKEN);
 
 const securityHeaders = [
   {
@@ -29,6 +34,8 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
+  outputFileTracingRoot: repoRoot,
   transpilePackages: ['@deqah/ui', '@deqah/api-client', '@deqah/shared'],
   skipTrailingSlashRedirect: true,
   // Production builds: don't fail on existing lint/type warnings — those
@@ -57,5 +64,13 @@ export default withSentryConfig(withNextIntl(nextConfig), {
   url: 'https://errors.webvue.pro/',
   silent: true,
   disableLogger: true,
+  useRunAfterProductionCompileHook: shouldUploadSentryArtifacts,
+  webpack: { disableSentryConfig: !shouldUploadSentryArtifacts },
+  sourcemaps: { disable: !shouldUploadSentryArtifacts },
+  release: {
+    create: shouldUploadSentryArtifacts,
+    finalize: shouldUploadSentryArtifacts,
+    setCommits: shouldUploadSentryArtifacts ? { auto: true, ignoreMissing: true } : false,
+  },
   authToken: process.env.SENTRY_AUTH_TOKEN,
 });

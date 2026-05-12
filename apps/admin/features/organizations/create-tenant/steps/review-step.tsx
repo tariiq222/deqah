@@ -6,10 +6,6 @@ import { useListPlans } from '@/features/plans/list-plans/use-list-plans';
 import { useListVerticals } from '@/features/verticals/list-verticals/use-list-verticals';
 import type { WizardForm } from '../create-tenant-dialog';
 
-export function isReviewStepValid(_form: WizardForm): boolean {
-  return true;
-}
-
 interface Props {
   form: WizardForm;
   onEditStep: (step: 1 | 2 | 3) => void;

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@deqah/ui/primitives/button';
 import { applyPresetFlat } from './presets';
 import type { PlanLimits } from '../plan-limits';
-import { FEATURE_CATALOG, type FeatureKey } from '@deqah/shared';
+import { FEATURE_CATALOG } from '@deqah/shared';
 
 type CardPreset = 'STARTER' | 'PRO' | 'ENTERPRISE';
 

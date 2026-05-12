@@ -5,7 +5,7 @@ import { Button } from '@deqah/ui/primitives/button';
 import { Input } from '@deqah/ui/primitives/input';
 import { Label } from '@deqah/ui/primitives/label';
 import { OwnerUserCombobox } from '../owner-user-combobox';
-import type { OwnerMode, WizardForm } from '../create-tenant-dialog';
+import type { WizardForm } from '../create-tenant-dialog';
 
 interface Props {
   form: WizardForm;

@@ -13,7 +13,6 @@ import { ErrorBanner } from '@/components/error-banner';
 export default function AuditLogPage() {
   const pathname = usePathname();
   const t = useTranslations('auditLog');
-  const tc = useTranslations('common');
   const [page, setPage] = useState(1);
   const [actionType, setActionType] = useState<string>('all');
   const [organizationId, setOrganizationId] = useState('');

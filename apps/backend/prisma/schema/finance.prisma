@@ -8,6 +8,7 @@ enum InvoiceStatus {
   ISSUED
   PAID
   PARTIALLY_PAID
+  PARTIALLY_REFUNDED
   VOID
   REFUNDED
 }
@@ -46,6 +47,8 @@ model Invoice {
   vatRate        Decimal       @default(0.15) @db.Decimal(5, 4)
   vatAmt         Decimal       @db.Decimal(12, 2)
   total          Decimal       @db.Decimal(12, 2)
+  refundedAmount Decimal       @default(0) @db.Decimal(12, 2)
+  refundedVatAmt Decimal       @default(0) @db.Decimal(12, 2)
   currency       String        @default("SAR")
   status         InvoiceStatus @default(DRAFT)
   issuedAt       DateTime?

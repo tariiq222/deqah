@@ -1,4 +1,10 @@
 import { withSentryConfig } from '@sentry/nextjs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const appDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(appDir, "../..");
+const shouldUploadSentryArtifacts = process.env.CI === "true" && Boolean(process.env.SENTRY_AUTH_TOKEN);
 
 const securityHeaders = [
   {
@@ -28,6 +34,8 @@ const securityHeaders = [
 const isProduction = process.env.NODE_ENV === "production"
 
 const nextConfig = {
+  output: "standalone",
+  outputFileTracingRoot: repoRoot,
   transpilePackages: ["@deqah/ui", "@deqah/shared", "@deqah/api-client"],
   skipTrailingSlashRedirect: true,
   // Production builds: don't fail on existing lint/type warnings — those
@@ -84,6 +92,13 @@ export default withSentryConfig(nextConfig, {
   url: 'https://errors.webvue.pro/',
   silent: true,
   disableLogger: true,
-  // Source-map upload only runs when SENTRY_AUTH_TOKEN is present
+  useRunAfterProductionCompileHook: shouldUploadSentryArtifacts,
+  webpack: { disableSentryConfig: !shouldUploadSentryArtifacts },
+  sourcemaps: { disable: !shouldUploadSentryArtifacts },
+  release: {
+    create: shouldUploadSentryArtifacts,
+    finalize: shouldUploadSentryArtifacts,
+    setCommits: shouldUploadSentryArtifacts ? { auto: true, ignoreMissing: true } : false,
+  },
   authToken: process.env.SENTRY_AUTH_TOKEN,
 });

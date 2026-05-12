@@ -23,7 +23,6 @@ interface Props {
 
 export function ImpersonateDialog({ organizationId, organizationName }: Props) {
   const t = useTranslations('organizations.impersonate');
-  const tc = useTranslations('common');
   const [open, setOpen] = useState(false);
   const [targetUserId, setTargetUserId] = useState('');
   const mutation = useStartImpersonation();

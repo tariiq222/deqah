@@ -171,6 +171,28 @@ Or rebuild + redeploy from CI:
 gh workflow run build-images.yml --ref main -f apps=all
 ```
 
+## Database pre-deploy gates
+
+Before running `prisma migrate deploy` on a live database with existing
+Booking/Payment traffic, check whether
+`20260511030000_fix_outbox_payment_booking_schema` is still pending:
+
+```bash
+pnpm --filter=backend exec prisma migrate status
+```
+
+If it is pending, pre-create the heavy indexes concurrently first:
+
+```bash
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
+  -f scripts/ops/predeploy-20260511030000-concurrent-indexes.sql
+```
+
+Then run the normal migration deploy. Do not edit the existing migration file;
+it is immutable. The pre-deploy script creates the same index names, so the
+old migration's `CREATE INDEX IF NOT EXISTS` statements skip without taking
+long write-blocking locks on `Booking` or `Payment`.
+
 ## Pre-launch checks (one-time, before public traffic)
 
 These env vars start as placeholders. Replace them in Dokploy → application → Environment before going public:

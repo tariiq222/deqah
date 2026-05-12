@@ -143,7 +143,6 @@ export function hydrateLimits(raw: Record<string, unknown> | undefined): PlanLim
   const known = new Set(Object.keys(out));
   for (const key of Object.keys(raw)) {
     if (!known.has(key)) {
-      // eslint-disable-next-line no-console
       console.warn(
         `[plan-limits] hydrateLimits: dropping unknown key "${key}" — ` +
           "not present in PlanLimits. Add it to plan-limits.ts (and " +

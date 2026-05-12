@@ -13,6 +13,8 @@ const mockInvoice = {
   vatRate: '0.15',
   vatAmt: '13.50',
   total: '103.50',
+  refundedAmount: '0.00',
+  refundedVatAmt: '0.00',
   currency: 'SAR',
   status: 'PAID',
   issuedAt: new Date('2026-04-17T10:00:00Z'),

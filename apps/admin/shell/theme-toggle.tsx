@@ -39,12 +39,11 @@ function writeCookie(theme: Theme) {
 }
 
 export function ThemeToggle() {
-  const [active, setActive] = useState<Theme>('system');
+  const [active, setActive] = useState<Theme>(() => {
+    if (typeof window === 'undefined') return 'system';
+    return readCurrentTheme();
+  });
   const t = useTranslations('theme');
-
-  useEffect(() => {
-    setActive(readCurrentTheme());
-  }, []);
 
   // When system is active, keep in sync with OS changes
   useEffect(() => {
