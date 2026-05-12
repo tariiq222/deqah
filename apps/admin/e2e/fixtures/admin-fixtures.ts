@@ -5,6 +5,8 @@
  */
 import { test as base, request as pwRequest, type Page, type APIRequestContext } from '@playwright/test';
 
+/* eslint-disable react-hooks/rules-of-hooks -- Playwright fixture API uses `use` as a callback, not a React hook */
+
 const BACKEND = process.env.PW_BACKEND_URL ?? 'http://localhost:5100';
 const ADMIN = process.env.PW_ADMIN_URL ?? 'http://localhost:5104';
 const EMAIL = process.env.PW_SUPER_ADMIN_EMAIL;

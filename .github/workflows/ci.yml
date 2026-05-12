@@ -107,7 +107,7 @@ jobs:
 
       - name: Check schema drift
         working-directory: apps/backend
-        run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema --exit-code
+        run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema --exit-code
 
       - name: Unit tests
         working-directory: apps/backend
@@ -247,10 +247,14 @@ jobs:
 
       - name: Build dashboard
         working-directory: apps/dashboard
+        env:
+          NEXT_PUBLIC_HCAPTCHA_SITE_KEY: "10000000-ffff-ffff-ffff-000000000001"
         run: pnpm run build
 
       - name: Build admin
         working-directory: apps/admin
+        env:
+          NEXT_PUBLIC_HCAPTCHA_SITE_KEY: "10000000-ffff-ffff-ffff-000000000001"
         run: pnpm run build
 
       - name: Build marketing
