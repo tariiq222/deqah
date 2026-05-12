@@ -47,7 +47,7 @@ const buildPrisma = () => {
     invoice: {
       findFirst: jest.fn(),
       update: jest.fn(),
-      findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'inv-1', bookingId: 'book-1', clientId: 'client-1', currency: 'SAR', organizationId: 'org-1' }),
+      findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'inv-1', bookingId: 'book-1', clientId: 'client-1', currency: 'SAR', organizationId: 'org-1', total: '100', vatAmt: '15', refundedAmount: '0' }),
     },
     refundRequest: {
       findFirst: jest.fn().mockResolvedValue(null),

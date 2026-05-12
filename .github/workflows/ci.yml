@@ -164,6 +164,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma Client
+        working-directory: apps/backend
+        run: npx prisma generate
+
       # Build shared packages first so typecheck can find compiled output
       - name: Build shared packages
         run: pnpm --filter "@deqah/shared" run build
