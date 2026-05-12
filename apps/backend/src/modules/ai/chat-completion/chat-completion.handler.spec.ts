@@ -23,7 +23,7 @@ const mockSearch = () => ({
 
 const mockChat = () => ({
   isAvailable: jest.fn().mockReturnValue(true),
-  complete: jest.fn().mockResolvedValue('You can book online through Deqah.'),
+  complete: jest.fn().mockResolvedValue({ content: 'You can book online through Deqah.', tokensUsed: 42, model: 'anthropic/claude-3.5-haiku' }),
 });
 
 const dto = {

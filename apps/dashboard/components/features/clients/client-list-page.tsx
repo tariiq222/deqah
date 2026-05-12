@@ -6,7 +6,6 @@ import { toast } from "sonner"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Add01Icon,
-  Download04Icon,
   UserMultiple02Icon,
   CheckmarkCircle02Icon,
   Cancel01Icon,
@@ -34,7 +33,7 @@ import type { Client } from "@/lib/types/client"
 export function ClientListPage() {
   const router = useRouter()
   const { t, locale } = useLocale()
-  const { user } = useAuth()
+  const { user, canDo } = useAuth()
   // Vertical-aware label: "العملاء"/"Clients" for clinic verticals,
   // "المرضى"/"Patients" for medical, "المتدربون"/"Members" for fitness, …
   const { t: term } = useTerminology(user?.verticalSlug ?? undefined)
@@ -75,14 +74,12 @@ export function ClientListPage() {
         title={titleLabel}
         description={t("clients.description")}
       >
-        <Button variant="outline" className="gap-2 rounded-full px-5" disabled>
-          <HugeiconsIcon icon={Download04Icon} size={16} />
-          {t("clients.export")}
-        </Button>
-        <Button className="gap-2 rounded-full px-5" onClick={() => router.push("/clients/create")}>
-          <HugeiconsIcon icon={Add01Icon} size={16} />
-          {t("clients.addClient")}
-        </Button>
+        {canDo("Client", "create") && (
+          <Button className="gap-2 rounded-full px-5" onClick={() => router.push("/clients/create")}>
+            <HugeiconsIcon icon={Add01Icon} size={16} />
+            {t("clients.addClient")}
+          </Button>
+        )}
       </PageHeader>
 
       {stats.isLoading ? (
@@ -135,7 +132,9 @@ export function ClientListPage() {
           emptyAction={
             hasFilters
               ? { label: t("clients.filters.reset"), onClick: () => { resetSearch(); setIsActive(undefined) } }
-              : { label: t("clients.addClient"), onClick: () => router.push("/clients/create") }
+              : canDo("Client", "create")
+                ? { label: t("clients.addClient"), onClick: () => router.push("/clients/create") }
+                : undefined
           }
           serverPaginated
           page={meta?.page ?? page}

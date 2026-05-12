@@ -8,8 +8,14 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface CompletionResult {
+  content: string;
+  tokensUsed: number;
+  model: string;
+}
+
 export interface IChatService {
-  complete(messages: ChatMessage[], model?: string, options?: { maxTokens?: number }): Promise<string>;
+  complete(messages: ChatMessage[], model?: string, options?: { maxTokens?: number }): Promise<CompletionResult>;
   stream(messages: ChatMessage[], model?: string): AsyncIterable<string>;
   isAvailable(): boolean;
 }
@@ -46,14 +52,18 @@ export class ChatAdapter implements IChatService, OnModuleInit {
     return !!this.client;
   }
 
-  async complete(messages: ChatMessage[], model?: string, options?: { maxTokens?: number }): Promise<string> {
+  async complete(messages: ChatMessage[], model?: string, options?: { maxTokens?: number }): Promise<CompletionResult> {
     if (!this.client) throw new Error('ChatAdapter is not available — set OPENROUTER_API_KEY');
     const response = await this.client.chat.completions.create({
       model: model ?? this.defaultModel,
       messages,
       ...(options?.maxTokens !== undefined ? { max_tokens: options.maxTokens } : {}),
     });
-    return response.choices[0]?.message?.content ?? '';
+    return {
+      content: response.choices[0]?.message?.content ?? '',
+      tokensUsed: response.usage?.total_tokens ?? 0,
+      model: response.model ?? model ?? this.defaultModel,
+    };
   }
 
   async *stream(messages: ChatMessage[], model?: string): AsyncIterable<string> {

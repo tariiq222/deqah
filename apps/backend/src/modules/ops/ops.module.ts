@@ -34,6 +34,7 @@ import { RunOrphanAuditHandler } from './orphan-audit/run-orphan-audit.handler';
 import { ReconcileUsageCountersHandler } from './cron-tasks/reconcile-usage-counters/reconcile-usage-counters.handler';
 import { ReconcileRefundsCron } from './cron-tasks/reconcile-refunds.cron';
 import { OutboxPublisherCron } from './cron-tasks/outbox-publisher.cron';
+import { AuthenticaBalanceCheckCron } from './cron-tasks/authentica-balance-check.cron';
 
 const handlers = [
   LogActivityHandler,
@@ -68,6 +69,8 @@ const cronHandlers = [
   ReconcileRefundsCron,
   // CR-5 — outbox publisher
   OutboxPublisherCron,
+  // TAR-83 — Authentica daily balance monitor
+  AuthenticaBalanceCheckCron,
 ];
 
 // Note: UsageAggregatorService, SubscriptionStateMachine and

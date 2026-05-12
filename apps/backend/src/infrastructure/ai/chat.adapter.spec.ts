@@ -43,12 +43,14 @@ describe('ChatAdapter', () => {
         completions: {
           create: jest.fn().mockResolvedValue({
             choices: [{ message: { content: 'Hi there' } }],
+            usage: { total_tokens: 10 },
+            model: 'openai/gpt-4o-mini',
           }),
         },
       },
     };
     const result = await adapter.complete([{ role: 'user', content: 'Hello' }]);
-    expect(result).toBe('Hi there');
+    expect(result).toEqual({ content: 'Hi there', tokensUsed: 10, model: 'openai/gpt-4o-mini' });
   });
 
   it('stream yields content chunks from OpenAI streaming response', async () => {

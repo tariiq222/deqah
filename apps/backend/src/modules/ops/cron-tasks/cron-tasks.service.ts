@@ -20,6 +20,8 @@ import { RunOrphanAuditHandler } from '../orphan-audit/run-orphan-audit.handler'
 import { ReconcileUsageCountersHandler } from './reconcile-usage-counters/reconcile-usage-counters.handler';
 import { ReconcileRefundsCron } from './reconcile-refunds.cron';
 import { OutboxPublisherCron } from './outbox-publisher.cron';
+import { AuthenticaBalanceCheckCron } from './authentica-balance-check.cron';
+import * as Sentry from '@sentry/nestjs';
 
 const QUEUE_NAME = 'ops-cron';
 
@@ -43,6 +45,7 @@ export const CRON_JOBS = {
   RECONCILE_USAGE_COUNTERS: 'reconcile-usage-counters',
   RECONCILE_REFUNDS: 'reconcile-refunds',
   OUTBOX_PUBLISHER: 'outbox-publisher',
+  AUTHENTICA_BALANCE_CHECK: 'authentica-balance-check',
 } as const;
 
 @Injectable()
@@ -71,6 +74,7 @@ export class CronTasksService implements OnModuleInit {
     private readonly reconcileUsageCounters: ReconcileUsageCountersHandler,
     private readonly reconcileRefunds: ReconcileRefundsCron,
     private readonly outboxPublisher: OutboxPublisherCron,
+    private readonly authenticaBalanceCheck: AuthenticaBalanceCheckCron,
   ) {}
 
   onModuleInit(): void {
@@ -101,6 +105,7 @@ export class CronTasksService implements OnModuleInit {
       { name: CRON_JOBS.RECONCILE_USAGE_COUNTERS, cron: '0 3 * * *' }, // daily at 03:00 KSA (= UTC+3)
       { name: CRON_JOBS.RECONCILE_REFUNDS, cron: '*/15 * * * *' },    // every 15 min
       { name: CRON_JOBS.OUTBOX_PUBLISHER, cron: '*/1 * * * *' },      // every minute (BullMQ min granularity; real tick is every 5s via worker loop)
+      { name: CRON_JOBS.AUTHENTICA_BALANCE_CHECK, cron: '0 8 * * *' }, // daily at 08:00 AST
     ];
 
     for (const { name, cron } of jobs) {
@@ -187,6 +192,9 @@ export class CronTasksService implements OnModuleInit {
           case CRON_JOBS.OUTBOX_PUBLISHER:
             await this.outboxPublisher.execute();
             break;
+          case CRON_JOBS.AUTHENTICA_BALANCE_CHECK:
+            await this.authenticaBalanceCheck.execute();
+            break;
           default:
             this.logger.warn(`Unknown cron job: ${job.name}`);
             return;
@@ -208,6 +216,7 @@ export class CronTasksService implements OnModuleInit {
           `Cron ${job?.name ?? 'unknown'} EXHAUSTED retries — job ${job?.id} → DLQ`,
           err.stack,
         );
+        Sentry.captureException(err, { tags: { cron: job?.name ?? 'unknown', jobId: job?.id ?? 'unknown' } });
       }
     });
   }

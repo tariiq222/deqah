@@ -22,6 +22,7 @@ import { NoShowBookingHandler } from './no-show-booking/no-show-booking.handler'
 import { ExpireBookingHandler } from './expire-booking/expire-booking.handler';
 import { ListBookingStatusLogHandler } from './list-booking-status-log/list-booking-status-log.handler';
 import { PaymentCompletedEventHandler } from './payment-completed-handler/payment-completed.handler';
+import { OnBookingCancelledPromoteWaitlistHandler } from './waitlist/on-booking-cancelled-promote-waitlist.handler';
 import { GetBookingSettingsHandler } from './get-booking-settings/get-booking-settings.handler';
 import { UpsertBookingSettingsHandler } from './upsert-booking-settings/upsert-booking-settings.handler';
 import { RequestCancelBookingHandler } from './request-cancel-booking/request-cancel-booking.handler';
@@ -44,6 +45,7 @@ import { GetPublicGroupSessionHandler } from './public/get-public-group-session.
 import { BookGroupSessionHandler } from './public/book-group-session.handler';
 import { CreateEmployeeBookingHandler } from './create-employee-booking/create-employee-booking.handler';
 import { ValidateCouponService } from './coupons/validate-coupon.service';
+import { CancelRecurringSeriesHandler } from './cancel-recurring-series/cancel-recurring-series.handler';
 
 const handlers = [
   CreateBookingHandler,
@@ -82,6 +84,7 @@ const handlers = [
   GetPublicGroupSessionHandler,
   BookGroupSessionHandler,
   ValidateCouponService,
+  CancelRecurringSeriesHandler,
 ];
 
 @Module({
@@ -95,13 +98,17 @@ const handlers = [
     FinanceModule,
   ],
   controllers: [DashboardBookingsController],
-  providers: [...handlers, PaymentCompletedEventHandler],
-  exports: [...handlers, CheckAvailabilityHandler, ListClientBookingsHandler, ClientCancelBookingHandler, ClientRescheduleBookingHandler, ValidateCouponService],
+  providers: [...handlers, PaymentCompletedEventHandler, OnBookingCancelledPromoteWaitlistHandler],
+  exports: [...handlers, CheckAvailabilityHandler, ListClientBookingsHandler, ClientCancelBookingHandler, ClientRescheduleBookingHandler, ValidateCouponService, CancelRecurringSeriesHandler],
 })
 export class BookingsModule implements OnModuleInit {
-  constructor(private readonly paymentCompletedHandler: PaymentCompletedEventHandler) {}
+  constructor(
+    private readonly paymentCompletedHandler: PaymentCompletedEventHandler,
+    private readonly promoteWaitlist: OnBookingCancelledPromoteWaitlistHandler,
+  ) {}
 
   onModuleInit(): void {
     this.paymentCompletedHandler.register();
+    this.promoteWaitlist.register();
   }
 }

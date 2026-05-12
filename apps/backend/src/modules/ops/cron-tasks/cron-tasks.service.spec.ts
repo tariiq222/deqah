@@ -39,6 +39,7 @@ type CronDeps = [
   never, // reconcileUsageCounters (Phase 5 / Task 11)
   never, // reconcileRefunds (CR-6)
   never, // outboxPublisher
+  never, // authenticaBalanceCheck (TAR-83)
 ];
 
 /** Build cron mocks (all crons except BullMqService itself). */
@@ -63,6 +64,7 @@ const buildAllMocks = () => [
   buildCronMock(), // reconcileUsageCounters    [17]
   buildCronMock(), // reconcileRefunds (CR-6)   [18]
   buildCronMock(), // outboxPublisher           [19]
+  buildCronMock(), // authenticaBalanceCheck    [20]
 ] as const;
 
 const buildService = (bullMq: ReturnType<typeof buildBullMq>, mocks: ReturnType<typeof buildAllMocks>) =>
