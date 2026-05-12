@@ -8,6 +8,7 @@ import { PasswordService } from '../shared/password.service';
 import { RegisterDto } from './register.dto';
 import { OtpPurpose, OtpChannel } from '@prisma/client';
 import { TenantContextService } from '../../../common/tenant';
+import { maskIdentifier } from '../../../common/helpers/mask-pii.helper';
 
 @Injectable()
 export class RegisterHandler {
@@ -67,7 +68,7 @@ export class RegisterHandler {
         },
       });
       clientId = updated.id;
-      this.logger.log(`Guest-to-account merge: client ${clientId} (${identifier})`);
+      this.logger.log(`Guest-to-account merge: client ${clientId} (${maskIdentifier(identifier)})`);
     } else {
       const created = await this.prisma.client.create({
         data: {
@@ -83,7 +84,7 @@ export class RegisterHandler {
         },
       });
       clientId = created.id;
-      this.logger.log(`New client registration: ${clientId} (${identifier})`);
+      this.logger.log(`New client registration: ${clientId} (${maskIdentifier(identifier)})`);
     }
 
     const tokens = await this.clientTokens.issueTokenPair(

@@ -5,6 +5,7 @@ import { PasswordService } from '../shared/password.service';
 import { ClientTokenService } from '../shared/client-token.service';
 import { ClientLoginDto } from './client-login.dto';
 import { TenantContextService } from '../../../common/tenant';
+import { maskEmail } from '../../../common/helpers/mask-pii.helper';
 
 const MAX_EMAIL_ATTEMPTS = 5;
 const MAX_IP_ATTEMPTS = 20;
@@ -97,7 +98,7 @@ export class ClientLoginHandler {
       { organizationId },
     );
 
-    this.logger.log(`Client login: ${client.id} (${client.email})`);
+    this.logger.log(`Client login: ${client.id} (${maskEmail(client.email ?? '')})`);
 
     return {
       accessToken: tokens.accessToken,

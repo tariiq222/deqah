@@ -4,6 +4,7 @@ import { randomBytes, createHash } from 'crypto';
 import { PrismaService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant';
 import { SendEmailHandler } from '../../comms/send-email/send-email.handler';
+import { maskEmail } from '../../../common/helpers/mask-pii.helper';
 
 const TOKEN_TTL_MS = 30 * 60 * 1000;
 const EMAIL_TEMPLATE_SLUG = 'user_email_verification';
@@ -79,7 +80,7 @@ export class RequestEmailVerificationHandler {
       },
     });
 
-    this.logger.log(`Email verification link sent to ${user.email}`);
+    this.logger.log(`Email verification link sent to ${maskEmail(user.email)}`);
     return { success: true };
   }
 }

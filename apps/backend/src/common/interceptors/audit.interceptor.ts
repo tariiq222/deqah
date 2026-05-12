@@ -256,8 +256,10 @@ export class AuditInterceptor implements NestInterceptor {
           userAgent,
         },
       });
-    } catch {
-      // Silent - already logged in caller
+    } catch (err) {
+      this.logger.error(
+        `AuditInterceptor: failed to persist ActivityLog [entity=${entity} userId=${userId ?? 'unknown'}]: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 }

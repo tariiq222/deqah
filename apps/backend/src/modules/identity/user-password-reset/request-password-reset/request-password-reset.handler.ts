@@ -4,6 +4,7 @@ import { randomBytes, createHash } from 'crypto';
 import { PrismaService } from '../../../../infrastructure/database';
 import { SendEmailHandler } from '../../../comms/send-email/send-email.handler';
 import { RequestPasswordResetDto } from './request-password-reset.dto';
+import { maskEmail } from '../../../../common/helpers/mask-pii.helper';
 
 const TOKEN_TTL_MS = 30 * 60 * 1000;
 
@@ -62,6 +63,6 @@ export class RequestPasswordResetHandler {
       },
     });
 
-    this.logger.log(`Password reset email sent to ${user.email}`);
+    this.logger.log(`Password reset email sent to ${maskEmail(user.email)}`);
   }
 }
