@@ -36,6 +36,10 @@ interface MockPrisma {
   organizationPaymentConfig: {
     findUnique: jest.Mock;
   };
+  webhookEvent: {
+    create: jest.Mock;
+    update: jest.Mock;
+  };
   $transaction: jest.Mock;
 }
 
@@ -62,6 +66,10 @@ function buildPrisma(invoiceOverride?: Record<string, unknown> | null, configOve
       findUnique: jest.fn().mockResolvedValue(
         configOverride === null ? null : configOverride ?? buildPaymentConfig(ORG_A),
       ),
+    },
+    webhookEvent: {
+      create: jest.fn().mockResolvedValue({ id: 'whe-1' }),
+      update: jest.fn().mockResolvedValue({ id: 'whe-1' }),
     },
     $transaction: jest.fn(async <T>(fn: (tx: MockPrisma) => Promise<T>): Promise<T> => {
       return fn(prisma);
@@ -107,14 +115,19 @@ interface HandlerOverrides {
   cls?: ReturnType<typeof buildCls>;
 }
 
+const buildAppMetrics = () => ({
+  paymentAttempts: { labels: jest.fn().mockReturnValue({ inc: jest.fn() }) },
+});
+
 function makeHandler(overrides: HandlerOverrides = {}) {
   const prisma = overrides.prisma ?? buildPrisma();
   const eventBus = overrides.eventBus ?? buildEventBus();
   const creds = overrides.creds ?? buildCreds();
   const cls = overrides.cls ?? buildCls();
   const rlsTx = { withTransaction: jest.fn(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma)) };
-  const handler = new MoyasarWebhookHandler(prisma as never, eventBus as never, cls as never, creds as never, rlsTx as never);
-  return { handler, prisma, eventBus, creds, cls };
+  const appMetrics = buildAppMetrics();
+  const handler = new MoyasarWebhookHandler(prisma as never, eventBus as never, cls as never, creds as never, rlsTx as never, appMetrics as never);
+  return { handler, prisma, eventBus, creds, cls, appMetrics };
 }
 
 describe('MoyasarWebhookHandler', () => {
@@ -171,9 +184,15 @@ describe('MoyasarWebhookHandler', () => {
       expect(envelope.payload.organizationId).toBe(ORG_B);
     });
 
-    it('skips silently when payment already COMPLETED (idempotent)', async () => {
+    it('skips silently when webhook event already processed (idempotent via P2002)', async () => {
       const prisma = buildPrisma();
-      prisma.payment.findFirst = jest.fn().mockResolvedValue(buildPayment(ORG_A));
+      // Simulate duplicate delivery: webhookEvent.create throws P2002
+      prisma.webhookEvent.create = jest.fn().mockRejectedValue(
+        new (require('@prisma/client').Prisma.PrismaClientKnownRequestError)(
+          'Unique constraint failed',
+          { code: 'P2002', clientVersion: '7.8.0', meta: { target: ['provider', 'eventId'] } },
+        ),
+      );
       const { handler, eventBus } = makeHandler({ prisma });
       const result = await handler.execute(makeReq());
       expect(prisma.payment.upsert).not.toHaveBeenCalled();

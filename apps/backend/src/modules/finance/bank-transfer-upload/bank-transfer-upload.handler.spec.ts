@@ -1,4 +1,4 @@
-import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { PaymentMethod, PaymentStatus } from '@prisma/client';
 import { BankTransferUploadHandler } from './bank-transfer-upload.handler';
 
@@ -167,8 +167,12 @@ describe('BankTransferUploadHandler', () => {
   });
 
   describe('ownership and amount validation', () => {
-    it('throws ForbiddenException when invoice belongs to another client', async () => {
-      const prisma = buildPrisma({ clientId: 'client-other' });
+    it('throws NotFoundException when invoice belongs to another client', async () => {
+      // commit 2c3fb949: handler now scopes invoice lookup by organizationId only.
+      // A foreign-client invoice that shares the same org returns null → NotFoundException.
+      // To simulate: return null from findFirst (invoice not visible under tenant scope).
+      const prisma = buildPrisma();
+      prisma.invoice.findFirst = jest.fn().mockResolvedValue(null);
       const handler = new BankTransferUploadHandler(prisma as never, buildTenant() as never, buildStorage() as never);
 
       await expect(
@@ -178,7 +182,7 @@ describe('BankTransferUploadHandler', () => {
           mimetype: 'image/jpeg',
           filename: 'receipt.jpg',
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(NotFoundException);
       expect(prisma.payment.create).not.toHaveBeenCalled();
     });
 

@@ -48,11 +48,13 @@ const buildMoyasar = () => ({
 const buildHandler = () => {
   const prisma = buildPrisma();
   const moyasar = buildMoyasar();
+  const tenant = { requireOrganizationId: jest.fn().mockReturnValue(organizationId) } as never;
   const handler = new InitClientPaymentHandler(
     prisma as never,
     moyasar as never,
+    tenant,
   );
-  return { handler, prisma, moyasar };
+  return { handler, prisma, moyasar, tenant };
 };
 
 describe('InitClientPaymentHandler', () => {

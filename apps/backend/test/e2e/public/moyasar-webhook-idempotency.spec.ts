@@ -28,7 +28,7 @@ describe('Moyasar Webhook — Idempotency (e2e-style)', () => {
   });
 
   beforeEach(async () => {
-    await cleanTables(['Payment', 'Invoice', 'Booking', 'OtpCode', 'Client', 'Employee', 'Service', 'Branch', 'OrganizationPaymentConfig']);
+    await cleanTables(['Payment', 'WebhookEvent', 'Invoice', 'Booking', 'OtpCode', 'Client', 'Employee', 'Service', 'Branch', 'OrganizationPaymentConfig']);
 
     const [client, employee, service, branch] = await Promise.all([
       seedClient(testPrisma as never),
@@ -122,7 +122,7 @@ describe('Moyasar Webhook — Idempotency (e2e-style)', () => {
   });
 
   afterAll(async () => {
-    await cleanTables(['Payment', 'Invoice', 'Booking', 'OtpCode', 'Client', 'Employee', 'Service', 'Branch', 'OrganizationPaymentConfig']);
+    await cleanTables(['Payment', 'WebhookEvent', 'Invoice', 'Booking', 'OtpCode', 'Client', 'Employee', 'Service', 'Branch', 'OrganizationPaymentConfig']);
   });
 
   const makeWebhookRequest = (paymentId: string, status: 'paid' | 'failed' = 'paid') => {

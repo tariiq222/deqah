@@ -135,7 +135,7 @@ describe('Media files handlers', () => {
       expect(prisma.file.create).toHaveBeenCalledTimes(1);
       const createArg = prisma.file.create.mock.calls[0][0].data;
       expect(createArg.bucket).toBe('deqah');
-      expect(createArg.storageKey).toMatch(/^[0-9a-f-]+\.png$/);
+      expect(createArg.storageKey).toMatch(/^[^/]+\/[0-9a-f-]+\.png$/);
       expect(result).toEqual(mockFile);
     });
 

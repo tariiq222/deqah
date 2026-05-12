@@ -17,9 +17,9 @@ describe('RefundPaymentHandler', () => {
     prisma = {
       $transaction: jest.fn(), // must NOT be called after fix#3
       $queryRaw: jest.fn().mockResolvedValue([]),
-      payment: { findFirst: jest.fn(), update: jest.fn() },
-      refundRequest: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null), update: jest.fn() },
-      invoice: { findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'inv_1', bookingId: 'bk_1', clientId: 'cli_1', currency: 'SAR', organizationId: 'org_1' }), update: jest.fn() },
+      payment: { findFirst: jest.fn(), update: jest.fn(), findUniqueOrThrow: jest.fn() },
+      refundRequest: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null), update: jest.fn(), updateMany: jest.fn().mockResolvedValue({ count: 1 }), findUniqueOrThrow: jest.fn() },
+      invoice: { findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'inv_1', bookingId: 'bk_1', clientId: 'cli_1', currency: 'SAR', organizationId: 'org_1' }), update: jest.fn(), findUnique: jest.fn() },
     };
     eventBus = { publish: jest.fn().mockResolvedValue(undefined) };
 
@@ -272,16 +272,17 @@ describe('RefundPaymentHandler', () => {
   });
 
   describe('finalizeRefundFromCancellation', () => {
-    const baseRefundReq = { id: 'rr_1', paymentId: 'pay_1', amount: 100, invoiceId: 'inv_1', organizationId: 'org_1' };
+    const baseRefundReq = { id: 'rr_1', paymentId: 'pay_1', amount: 100, invoiceId: 'inv_1', organizationId: 'org_1', status: 'PROCESSING' };
     const basePayment = { id: 'pay_1', gatewayRef: 'moyasar_pay_abc' };
 
     beforeEach(() => {
-      prisma.refundRequest.findUniqueOrThrow = jest.fn().mockResolvedValue(baseRefundReq);
-      prisma.payment.findUniqueOrThrow = jest.fn().mockResolvedValue(basePayment);
+      prisma.refundRequest.findUniqueOrThrow.mockResolvedValue(baseRefundReq);
+      prisma.payment.findUniqueOrThrow.mockResolvedValue(basePayment);
       prisma.refundRequest.update.mockResolvedValue({});
+      prisma.refundRequest.updateMany.mockResolvedValue({ count: 1 });
       prisma.payment.update.mockResolvedValue({});
       prisma.invoice.update.mockResolvedValue({});
-      prisma.invoice.findUnique = jest.fn().mockResolvedValue({ id: 'inv_1', bookingId: 'bk_1', currency: 'SAR', organizationId: 'org_1' });
+      prisma.invoice.findUnique.mockResolvedValue({ id: 'inv_1', bookingId: 'bk_1', currency: 'SAR', organizationId: 'org_1' });
     });
 
     it('calls Moyasar with the idempotencyKey', async () => {
@@ -304,9 +305,9 @@ describe('RefundPaymentHandler', () => {
       expect(rlsTx.withTransaction).toHaveBeenCalledTimes(1);
       const withTransactionCall = (rlsTx.withTransaction as jest.Mock).mock.calls[0][0];
       await withTransactionCall(prisma);
-      expect(prisma.refundRequest.update).toHaveBeenCalledWith(expect.objectContaining({
-        where: { id: 'rr_1' },
-        data: { status: 'COMPLETED', gatewayRef: 'ref_xyz' },
+      expect(prisma.refundRequest.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ id: 'rr_1' }),
+        data: expect.objectContaining({ status: 'COMPLETED', gatewayRef: 'ref_xyz' }),
       }));
       expect(prisma.payment.update).toHaveBeenCalledWith(expect.objectContaining({
         where: { id: 'pay_1' },

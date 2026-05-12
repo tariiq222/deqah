@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as Sentry from '@sentry/nestjs';
+import * as Sentry from '@sentry/node';
 import { NotificationType, RecipientType } from '@prisma/client';
 import { EventBusService, type DomainEventEnvelope } from '../../../infrastructure/events';
 import { SendNotificationHandler } from '../send-notification/send-notification.handler';

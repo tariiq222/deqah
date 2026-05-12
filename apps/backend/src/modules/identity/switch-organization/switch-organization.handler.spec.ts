@@ -56,6 +56,8 @@ describe('SwitchOrganizationHandler', () => {
       id: 'm-2',
       organizationId: 'org-b',
       isActive: true,
+      role: undefined,
+      organization: { status: 'ACTIVE' },
     });
     prisma.user.findUnique.mockResolvedValue(userBase);
 
@@ -67,7 +69,7 @@ describe('SwitchOrganizationHandler', () => {
     expect(result).toEqual({ accessToken: 'acc', refreshToken: 'ref' });
     expect(tokens.issueTokenPair).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'user-1' }),
-      { organizationId: 'org-b', membershipId: 'm-2', isSuperAdmin: false },
+      expect.objectContaining({ organizationId: 'org-b', membershipId: 'm-2', isSuperAdmin: false }),
     );
   });
 
@@ -83,6 +85,7 @@ describe('SwitchOrganizationHandler', () => {
       id: 'm-3',
       organizationId: 'org-c',
       isActive: false,
+      organization: { status: 'ACTIVE' },
     });
     await expect(
       handler.execute({ userId: 'user-1', targetOrganizationId: 'org-c' }),
@@ -94,6 +97,7 @@ describe('SwitchOrganizationHandler', () => {
       id: 'm-4',
       organizationId: 'org-d',
       isActive: true,
+      organization: { status: 'ACTIVE' },
     });
     prisma.user.findUnique.mockResolvedValue({ ...userBase, isActive: false });
 
@@ -107,6 +111,7 @@ describe('SwitchOrganizationHandler', () => {
       id: 'm-6',
       organizationId: 'org-f',
       isActive: true,
+      organization: { status: 'ACTIVE' },
     });
     prisma.user.findUnique.mockResolvedValue(userBase);
 
@@ -124,6 +129,7 @@ describe('SwitchOrganizationHandler', () => {
       id: 'm-7',
       organizationId: 'org-g',
       isActive: true,
+      organization: { status: 'ACTIVE' },
     });
     prisma.user.findUnique.mockResolvedValue(userBase);
 
@@ -140,6 +146,7 @@ describe('SwitchOrganizationHandler', () => {
       id: 'm-5',
       organizationId: 'org-e',
       isActive: true,
+      organization: { status: 'ACTIVE' },
     });
     prisma.user.findUnique.mockResolvedValue({ ...userBase, isSuperAdmin: true });
 

@@ -9,7 +9,7 @@ const mockPrisma = () => ({
     create: jest.fn().mockResolvedValue({ id: 'session-1' }),
   },
   chatMessage: {
-    createMany: jest.fn().mockResolvedValue({ count: 2 }),
+    create: jest.fn().mockResolvedValue({ id: 'msg-1' }),
   },
 });
 
@@ -63,14 +63,19 @@ describe('ChatCompletionHandler', () => {
   it('persists user + assistant messages tagged with organizationId', async () => {
     const { handler, prisma } = build();
     await handler.execute(dto);
-    expect(prisma.chatMessage.createMany).toHaveBeenCalledWith(
+    // Handler calls chatMessage.create twice: once before the LLM call (user msg),
+    // once after (assistant msg). Verify both calls carry the correct fields.
+    expect(prisma.chatMessage.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.arrayContaining([
-          expect.objectContaining({ role: 'user', organizationId: 'org-A' }),
-          expect.objectContaining({ role: 'assistant', organizationId: 'org-A' }),
-        ]),
+        data: expect.objectContaining({ role: 'user', organizationId: 'org-A' }),
       }),
     );
+    expect(prisma.chatMessage.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ role: 'assistant', organizationId: 'org-A' }),
+      }),
+    );
+    expect(prisma.chatMessage.create).toHaveBeenCalledTimes(2);
   });
 
   it('throws if ChatAdapter is not available', async () => {

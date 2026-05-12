@@ -21,7 +21,7 @@ import { ReconcileUsageCountersHandler } from './reconcile-usage-counters/reconc
 import { ReconcileRefundsCron } from './reconcile-refunds.cron';
 import { OutboxPublisherCron } from './outbox-publisher.cron';
 import { AuthenticaBalanceCheckCron } from './authentica-balance-check.cron';
-import * as Sentry from '@sentry/nestjs';
+import * as Sentry from '@sentry/node';
 
 const QUEUE_NAME = 'ops-cron';
 

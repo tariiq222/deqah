@@ -15,12 +15,13 @@ const mockPayment = { id: 'pay-1', invoiceId: 'inv-1', status: PaymentStatus.COM
 describe('GetInvoiceHandler', () => {
   it('returns invoice with payments when client owns the invoice', async () => {
     const prisma = { invoice: { findFirst: jest.fn().mockResolvedValue(mockInvoice) } };
-    const handler = new GetInvoiceHandler(prisma as never);
+    const tenant = { requireOrganizationId: jest.fn().mockReturnValue('org-1') } as never;
+    const handler = new GetInvoiceHandler(prisma as never, tenant);
     const result = await handler.execute({ invoiceId: 'inv-1', clientId: 'client-1' });
     expect(result.id).toBe('inv-1');
     expect(prisma.invoice.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'inv-1' },
+        where: expect.objectContaining({ id: 'inv-1' }),
         include: expect.objectContaining({ payments: expect.anything() }),
       }),
     );
@@ -28,14 +29,16 @@ describe('GetInvoiceHandler', () => {
 
   it('throws ForbiddenException when client does not own the invoice', async () => {
     const prisma = { invoice: { findFirst: jest.fn().mockResolvedValue({ ...mockInvoice, clientId: 'client-other' }) } };
+    const tenant = { requireOrganizationId: jest.fn().mockReturnValue('org-1') } as never;
     await expect(
-      new GetInvoiceHandler(prisma as never).execute({ invoiceId: 'inv-1', clientId: 'client-1' }),
+      new GetInvoiceHandler(prisma as never, tenant).execute({ invoiceId: 'inv-1', clientId: 'client-1' }),
     ).rejects.toThrow(ForbiddenException);
   });
 
   it('throws NotFoundException when invoice not found', async () => {
     const prisma = { invoice: { findFirst: jest.fn().mockResolvedValue(null) } };
-    await expect(new GetInvoiceHandler(prisma as never).execute({ invoiceId: 'bad', clientId: 'client-1' }))
+    const tenant = { requireOrganizationId: jest.fn().mockReturnValue('org-1') } as never;
+    await expect(new GetInvoiceHandler(prisma as never, tenant).execute({ invoiceId: 'bad', clientId: 'client-1' }))
       .rejects.toThrow(NotFoundException);
   });
 });

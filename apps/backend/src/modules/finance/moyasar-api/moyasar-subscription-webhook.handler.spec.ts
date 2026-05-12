@@ -20,10 +20,12 @@ function buildSubscription(organizationId = ORG_ID) {
   return { id: 'sub-1', organizationId };
 }
 
-function buildInvoice(overrides?: { id?: string; subscription?: ReturnType<typeof buildSubscription> } | null) {
+function buildInvoice(overrides?: { id?: string; amount?: number; currency?: string; subscription?: ReturnType<typeof buildSubscription> } | null) {
   if (overrides === null) return null;
   return {
     id: 'inv-sub-1',
+    amount: 230,
+    currency: 'SAR',
     subscription: buildSubscription(),
     ...overrides,
   };
@@ -96,8 +98,9 @@ function p2002Error(): Prisma.PrismaClientKnownRequestError {
 }
 
 describe('MoyasarSubscriptionWebhookHandler', () => {
-  const paidEvent = { id: 'evt-1', type: 'payment_paid', data: { id: 'mpay-1', status: 'paid' } };
-  const failedEvent = { id: 'evt-2', type: 'payment_failed', data: { id: 'mpay-1', status: 'failed', source: { message: 'declined' } } };
+  // amount in halalas: invoice.amount=230 SAR → 23000 halalas; currency must match invoice.currency='SAR'
+  const paidEvent = { id: 'evt-1', type: 'payment_paid', data: { id: 'mpay-1', status: 'paid', amount: 23000, currency: 'SAR' } };
+  const failedEvent = { id: 'evt-2', type: 'payment_failed', data: { id: 'mpay-1', status: 'failed', amount: 23000, currency: 'SAR', source: { message: 'declined' } } };
 
   function rawBody(event: object): Buffer {
     return Buffer.from(JSON.stringify(event), 'utf8');
@@ -137,7 +140,7 @@ describe('MoyasarSubscriptionWebhookHandler', () => {
 
   it('uses "unknown" as failure reason when source.message is absent', async () => {
     const { handler, recordFailure } = makeHandler();
-    const noMsgEvent = { id: 'evt-3', type: 'payment_failed', data: { id: 'mpay-1', status: 'failed' } };
+    const noMsgEvent = { id: 'evt-3', type: 'payment_failed', data: { id: 'mpay-1', status: 'failed', amount: 23000, currency: 'SAR' } };
     await handler.execute(rawBody(noMsgEvent), sign(JSON.stringify(noMsgEvent)));
     expect(recordFailure.execute).toHaveBeenCalledWith(
       expect.objectContaining({ reason: 'unknown' }),
