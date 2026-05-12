@@ -21,6 +21,12 @@ export default defineConfig({
   },
   datasource: {
     url: process.env.DATABASE_URL,
-    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL ?? process.env.DATABASE_URL,
+    // Only set shadowDatabaseUrl when explicitly provided — Prisma rejects
+    // a shadow URL identical to the main URL, but `migrate diff` needs one
+    // to diff from a migrations directory. CI sets SHADOW_DATABASE_URL only
+    // for the drift-check step against a separate temporary DB.
+    ...(process.env.SHADOW_DATABASE_URL
+      ? { shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL }
+      : {}),
   },
 });

@@ -71,10 +71,12 @@ export function ReviewStep({ form, onEditStep, errorMessage }: Props) {
       </div>
 
       {errorMessage ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          {errorMessage}
-        </div>
+        <p className="text-sm text-destructive" role="alert">{errorMessage}</p>
       ) : null}
     </div>
   );
+}
+
+export function isReviewStepValid(_form: WizardForm): boolean {
+  return true;
 }

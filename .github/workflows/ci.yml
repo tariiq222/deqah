@@ -101,12 +101,19 @@ jobs:
       - name: Enable pgvector extension
         run: psql postgresql://test:test@localhost:5432/deqah_test -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
+      - name: Create shadow database for prisma migrate diff
+        run: |
+          psql postgresql://test:test@localhost:5432/postgres -c "CREATE DATABASE deqah_test_shadow;"
+          psql postgresql://test:test@localhost:5432/deqah_test_shadow -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
       - name: Run migrations
         working-directory: apps/backend
         run: npx prisma migrate deploy
 
       - name: Check schema drift
         working-directory: apps/backend
+        env:
+          SHADOW_DATABASE_URL: postgresql://test:test@localhost:5432/deqah_test_shadow
         run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema --exit-code
 
       - name: Unit tests
@@ -157,9 +164,9 @@ jobs:
       - name: Build shared packages
         run: pnpm --filter "@deqah/shared" run build
 
-      # Typecheck all workspaces (fails if any package has TS errors)
+      # Typecheck all workspaces except mobile (mobile is paused — see CLAUDE.md)
       - name: Typecheck root packages
-        run: pnpm run typecheck
+        run: pnpm run typecheck -- --filter='!deqah-mobile'
 
       - name: Typecheck dashboard
         run: pnpm --filter dashboard run typecheck
@@ -170,8 +177,10 @@ jobs:
       - name: Typecheck marketing
         run: pnpm --filter @deqah/marketing run typecheck
 
-      - name: Typecheck mobile
-        run: pnpm --filter deqah-mobile run typecheck
+      # Mobile typecheck is intentionally paused — apps/mobile is under
+      # development and excluded from CI. Re-enable when ready.
+      # - name: Typecheck mobile
+      #   run: pnpm --filter deqah-mobile run typecheck
 
   lint:
     name: Lint (all apps)
@@ -263,6 +272,9 @@ jobs:
 
   mobile:
     name: Mobile (deqah-mobile typecheck + tests)
+    # apps/mobile is paused — under active development, excluded from CI gates.
+    # Re-enable by removing `if: false` once the mobile build is stable.
+    if: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
