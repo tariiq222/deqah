@@ -18,7 +18,7 @@ import { NextRequest, NextResponse } from 'next/server';
  * - Root domain and non-deqah hosts pass through without a backend check.
  * - Reserved subdomains (www, api, admin, …) pass through immediately.
  * - Malformed slugs (fail regex) are rewritten to /workspace-not-found.
- * - Valid unknown slugs are verified against /api/v1/public/tenants/exists.
+ * - Valid unknown slugs are verified against /api/v1/tenants/exists.
  *   Missing tenants → /workspace-not-found. Fail-open on network errors.
  */
 
@@ -89,7 +89,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
     let res: Response;
     try {
-      res = await fetch(`${apiBase}/public/tenants/exists`, {
+      res = await fetch(`${apiBase}/tenants/exists`, {
         headers: { 'x-forwarded-host': hostname },
         cache: 'no-store',
         signal: controller.signal,

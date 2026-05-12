@@ -9,7 +9,7 @@ export interface TenantExistsResult {
 
 export async function checkTenantExistsSSR(host: string): Promise<TenantExistsResult> {
   try {
-    const res = await fetch(`${API_BASE}/public/tenants/exists`, {
+    const res = await fetch(`${API_BASE}/tenants/exists`, {
       headers: { "x-forwarded-host": host },
       cache: "no-store",
     })
