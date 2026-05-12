@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../database';
+import { RlsTransactionService } from '../../common/database/rls-transaction';
 
 const SENSITIVE_KEYS = /token|secret|password|key|authorization|ciphertext/i;
 const MAX_BODY_SIZE = 4096;
@@ -20,7 +20,7 @@ const MAX_BODY_SIZE = 4096;
 export class ZohoAuditService {
   private readonly logger = new Logger(ZohoAuditService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly rls: RlsTransactionService) {}
 
   /**
    * Record a mutating Zoho API call. Call this AFTER the fetch completes
@@ -55,23 +55,28 @@ export class ZohoAuditService {
     durationMs: number;
     error?: string;
   }): Promise<void> {
-    await this.prisma.integrationAuditLog.create({
-      data: {
-        organizationId: entry.organizationId,
-        provider: 'zoho-invoice',
-        method: entry.method,
-        path: entry.path,
-        statusCode: entry.statusCode,
-        requestBody: entry.requestBody
-          ? (redact(entry.requestBody) as Prisma.InputJsonValue)
-          : Prisma.DbNull,
-        responseBody: entry.responseBody
-          ? (truncateJson(redact(entry.responseBody), MAX_BODY_SIZE) as Prisma.InputJsonValue)
-          : Prisma.DbNull,
-        durationMs: entry.durationMs,
-        error: entry.error ?? null,
+    await this.rls.withTransaction(
+      async (tx) => {
+        await tx.integrationAuditLog.create({
+          data: {
+            organizationId: entry.organizationId,
+            provider: 'zoho-invoice',
+            method: entry.method,
+            path: entry.path,
+            statusCode: entry.statusCode,
+            requestBody: entry.requestBody
+              ? (redact(entry.requestBody) as Prisma.InputJsonValue)
+              : Prisma.DbNull,
+            responseBody: entry.responseBody
+              ? (truncateJson(redact(entry.responseBody), MAX_BODY_SIZE) as Prisma.InputJsonValue)
+              : Prisma.DbNull,
+            durationMs: entry.durationMs,
+            error: entry.error ?? null,
+          },
+        });
       },
-    });
+      { organizationId: entry.organizationId },
+    );
   }
 }
 
