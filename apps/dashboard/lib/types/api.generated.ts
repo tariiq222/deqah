@@ -976,7 +976,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Send a chat message and receive an AI reply (Server-Sent Events) */
+        /** Send a chat message and receive an AI reply */
         post: operations["DashboardAiController_chatCompletionEndpoint"];
         delete?: never;
         options?: never;
@@ -3542,6 +3542,57 @@ export interface paths {
         patch: operations["DashboardPlatformController_updateProblemReportStatusEndpoint"];
         trace?: never;
     };
+    "/api/v1/dashboard/refunds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List refund requests */
+        get: operations["RefundsController_listRefunds"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboard/refunds/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve a refund request */
+        post: operations["RefundsController_approveRefund"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboard/refunds/deny": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Deny a refund request */
+        post: operations["RefundsController_denyRefund"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/dashboard/stats": {
         parameters: {
             query?: never;
@@ -4903,57 +4954,6 @@ export interface paths {
         put?: never;
         /** Receive Zoho Invoice webhook events (mirror-only) */
         post: operations["PublicZohoWebhookController_handle"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/refunds": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List refund requests */
-        get: operations["RefundsController_listRefunds"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/refunds/approve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Approve a refund request */
-        post: operations["RefundsController_approveRefund"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/refunds/deny": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Deny a refund request */
-        post: operations["RefundsController_denyRefund"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12724,7 +12724,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Access token with user profile (refresh token delivered as httpOnly cookie ck_refresh) */
+            /** @description Access token with user profile (refresh token delivered as httpOnly cookie ck_refresh), or a 2FA challenge when super-admin login requires OTP */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -12735,6 +12735,8 @@ export interface operations {
                         accessToken?: string;
                         /** @example 900 */
                         expiresIn?: number;
+                        /** @description True when 2FA is required — use OTP flow to complete login */
+                        requiresOtp?: boolean;
                         user?: {
                             avatarUrl?: string | null;
                             /** Format: email */
@@ -13480,14 +13482,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description SSE stream of the AI reply — each event is a `data: <token>` line */
+            /** @description AI reply with session ID and sources count */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/event-stream": string;
-                };
+                content?: never;
             };
             /** @description Validation failed */
             400: {
@@ -26628,6 +26628,76 @@ export interface operations {
             };
         };
     };
+    RefundsController_listRefunds: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: Record<string, never>[];
+                        total?: number;
+                    };
+                };
+            };
+        };
+    };
+    RefundsController_approveRefund: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApproveRefundDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    RefundsController_denyRefund: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DenyRefundDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
     DashboardStatsController_getStatsEndpoint: {
         parameters: {
             query?: never;
@@ -31043,76 +31113,6 @@ export interface operations {
                     "application/json": {
                         received?: boolean;
                     };
-                };
-            };
-        };
-    };
-    RefundsController_listRefunds: {
-        parameters: {
-            query?: {
-                status?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data?: Record<string, never>[];
-                        total?: number;
-                    };
-                };
-            };
-        };
-    };
-    RefundsController_approveRefund: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ApproveRefundDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-        };
-    };
-    RefundsController_denyRefund: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DenyRefundDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
                 };
             };
         };

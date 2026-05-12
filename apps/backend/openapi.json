@@ -12244,6 +12244,10 @@
                       "example": 900,
                       "type": "number"
                     },
+                    "requiresOtp": {
+                      "description": "True when 2FA is required — use OTP flow to complete login",
+                      "type": "boolean"
+                    },
                     "user": {
                       "properties": {
                         "avatarUrl": {
@@ -12303,7 +12307,7 @@
                 }
               }
             },
-            "description": "Access token with user profile (refresh token delivered as httpOnly cookie ck_refresh)"
+            "description": "Access token with user profile (refresh token delivered as httpOnly cookie ck_refresh), or a 2FA challenge when super-admin login requires OTP"
           },
           "400": {
             "content": {
@@ -13297,15 +13301,7 @@
         },
         "responses": {
           "200": {
-            "content": {
-              "text/event-stream": {
-                "schema": {
-                  "description": "SSE token stream",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "SSE stream of the AI reply — each event is a `data: <token>` line"
+            "description": "AI reply with session ID and sources count"
           },
           "400": {
             "content": {
@@ -13353,7 +13349,7 @@
             "bearer": []
           }
         ],
-        "summary": "Send a chat message and receive an AI reply (Server-Sent Events)",
+        "summary": "Send a chat message and receive an AI reply",
         "tags": [
           "Dashboard / AI"
         ]
@@ -30711,6 +30707,129 @@
         ]
       }
     },
+    "/api/v1/dashboard/refunds": {
+      "get": {
+        "operationId": "RefundsController_listRefunds",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List refund requests",
+        "tags": [
+          "Dashboard / Refunds"
+        ]
+      }
+    },
+    "/api/v1/dashboard/refunds/approve": {
+      "post": {
+        "operationId": "RefundsController_approveRefund",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveRefundDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Approved refund result",
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Approve a refund request",
+        "tags": [
+          "Dashboard / Refunds"
+        ]
+      }
+    },
+    "/api/v1/dashboard/refunds/deny": {
+      "post": {
+        "operationId": "RefundsController_denyRefund",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DenyRefundDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Denied refund result",
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Deny a refund request",
+        "tags": [
+          "Dashboard / Refunds"
+        ]
+      }
+    },
     "/api/v1/dashboard/stats": {
       "get": {
         "operationId": "DashboardStatsController_getStatsEndpoint",
@@ -36708,129 +36827,6 @@
         "summary": "Receive Zoho Invoice webhook events (mirror-only)",
         "tags": [
           "Public / Zoho"
-        ]
-      }
-    },
-    "/api/v1/refunds": {
-      "get": {
-        "operationId": "RefundsController_listRefunds",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "status",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "data": {
-                      "items": {
-                        "type": "object"
-                      },
-                      "type": "array"
-                    },
-                    "total": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            },
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "List refund requests",
-        "tags": [
-          "Dashboard / Refunds"
-        ]
-      }
-    },
-    "/api/v1/refunds/approve": {
-      "post": {
-        "operationId": "RefundsController_approveRefund",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApproveRefundDto"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "description": "Approved refund result",
-                  "type": "object"
-                }
-              }
-            },
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Approve a refund request",
-        "tags": [
-          "Dashboard / Refunds"
-        ]
-      }
-    },
-    "/api/v1/refunds/deny": {
-      "post": {
-        "operationId": "RefundsController_denyRefund",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DenyRefundDto"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "description": "Denied refund result",
-                  "type": "object"
-                }
-              }
-            },
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Deny a refund request",
-        "tags": [
-          "Dashboard / Refunds"
         ]
       }
     },
