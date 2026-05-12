@@ -76,6 +76,7 @@ export const arChatbotExtended: Record<string, string> = {
   "intakeForms.activateSuccess": "تم تفعيل النموذج",
   "intakeForms.deactivateSuccess": "تم إيقاف النموذج",
   "intakeForms.updateError": "فشل التحديث",
+  "intakeForms.featureDisabled": "هذه الميزة غير متاحة في خطتك الحالية. يرجى الترقية للوصول إلى نماذج المعلومات.",
 
   // ─── التقارير — اختيار الممارس ───
   "reports.selectEmployee": "اختر ممارساً",

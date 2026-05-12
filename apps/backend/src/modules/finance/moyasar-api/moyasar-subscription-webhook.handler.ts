@@ -15,6 +15,10 @@ interface WebhookEventPayload {
   data: {
     id: string;
     status: string;
+    /** Payment amount in halalas (1 SAR = 100 halalas). */
+    amount: number;
+    /** ISO 4217 currency code, e.g. "SAR". */
+    currency?: string;
     source?: { message?: string };
   };
 }
@@ -119,6 +123,21 @@ export class MoyasarSubscriptionWebhookHandler {
       // Unknown payment — swallow and acknowledge
       this.logger.warn(`Subscription webhook: no invoice found for payment ${event.data.id}`);
       return { ok: true };
+    }
+
+    // Stage 4 pre-check: cross-check amount + currency to prevent spoofed low-value payments.
+    const expectedHalalas = Math.round(Number(invoice.amount) * 100);
+    if (event.data.amount !== expectedHalalas) {
+      this.logger.error(
+        `Subscription webhook amount mismatch for invoice ${invoice.id}: expected=${expectedHalalas} got=${event.data.amount}`,
+      );
+      throw new BadRequestException('Payment amount does not match subscription invoice');
+    }
+    if (event.data.currency?.toUpperCase() !== (invoice.currency ?? 'SAR').toUpperCase()) {
+      this.logger.error(
+        `Subscription webhook currency mismatch for invoice ${invoice.id}: expected=${invoice.currency} got=${event.data.currency}`,
+      );
+      throw new BadRequestException('Payment currency does not match subscription invoice');
     }
 
     // Stage 4: enter tenant context for scoped writes.

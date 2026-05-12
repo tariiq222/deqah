@@ -137,7 +137,6 @@ export class MobileClientPaymentsController {
     if (!file) throw new BadRequestException('receipt file is required');
     return this.bankTransferUpload.execute({
       invoiceId: body.invoiceId,
-      clientId: user.id,
       amount: body.amount,
       fileBuffer: file.buffer,
       mimetype: file.mimetype,

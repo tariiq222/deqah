@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@deqah/ui"
 import { useLocale } from "@/components/locale-provider"
 import { FeatureGate } from "@/components/feature-gate"
 import { FeatureKey } from "@deqah/shared/constants"
+import { FeatureDisabledState } from "@/components/features/feature-disabled-state"
 
 import { SessionsTab } from "@/components/features/chatbot/sessions-tab"
 import { KnowledgeBaseTab } from "@/components/features/chatbot/knowledge-base-tab"
@@ -16,7 +17,15 @@ export default function ChatbotPage() {
   const { t } = useLocale()
 
   return (
-    <FeatureGate feature={FeatureKey.AI_CHATBOT}>
+    <FeatureGate
+      feature={FeatureKey.AI_CHATBOT}
+      fallback={
+        <FeatureDisabledState
+          title={t("chatbot.title")}
+          description={t("chatbot.featureDisabled")}
+        />
+      }
+    >
     <ListPageShell>
       <Breadcrumbs />
 

@@ -36,6 +36,7 @@ export const arChatbot: Record<string, string> = {
   "chatbot.analytics.avgDuration": "متوسط المدة",
   "chatbot.analytics.handoffRate": "معدل التحويل",
   "chatbot.analytics.topQuestions": "أكثر الأسئلة",
+  "chatbot.featureDisabled": "هذه الميزة غير متاحة في خطتك الحالية. يرجى الترقية للوصول إلى الشات بوت الذكي.",
 
   // ─── Table ───
   "table.noResults": "لا توجد نتائج",

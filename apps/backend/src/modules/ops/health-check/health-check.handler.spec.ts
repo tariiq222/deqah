@@ -22,6 +22,10 @@ const buildPrisma = () => ({
   $queryRaw: jest.fn().mockResolvedValue([{ 1: 1 }]),
 });
 
+const buildMinio = () => ({
+  ping: jest.fn().mockResolvedValue(undefined),
+});
+
 describe('HealthCheckHandler', () => {
   it('returns healthy status when all checks pass', async () => {
     const handler = new HealthCheckHandler(
@@ -30,6 +34,7 @@ describe('HealthCheckHandler', () => {
       buildPrisma() as never,
       buildRedis() as never,
       buildBullMq() as never,
+      buildMinio() as never,
     );
     const result = await handler.execute();
     expect(result.status).toBe('ok');
@@ -44,6 +49,7 @@ describe('HealthCheckHandler', () => {
       buildPrisma() as never,
       buildRedis() as never,
       buildBullMq() as never,
+      buildMinio() as never,
     );
     await handler.execute();
     expect(healthService.check).toHaveBeenCalledWith(
@@ -59,6 +65,7 @@ describe('HealthCheckHandler', () => {
       buildPrisma() as never,
       buildRedis() as never,
       buildBullMq() as never,
+      buildMinio() as never,
     );
     const result = await handler.execute();
     expect(result.status).toBe('ok');
@@ -81,6 +88,7 @@ describe('HealthCheckHandler — private checks', () => {
       buildPrisma() as never,
       redis as never,
       buildBullMq() as never,
+      buildMinio() as never,
     );
     await handler.execute();
     const redisResult = await capturedChecks[1]();
@@ -106,6 +114,7 @@ describe('HealthCheckHandler — private checks', () => {
       buildPrisma() as never,
       buildRedis() as never,
       bullMq as never,
+      buildMinio() as never,
     );
     await handler.execute();
     const bullMqResult = await capturedChecks[2]();

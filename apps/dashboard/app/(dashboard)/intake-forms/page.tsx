@@ -20,6 +20,7 @@ import { Button } from "@deqah/ui"
 import { useLocale } from "@/components/locale-provider"
 import { FeatureGate } from "@/components/feature-gate"
 import { FeatureKey } from "@deqah/shared/constants"
+import { FeatureDisabledState } from "@/components/features/feature-disabled-state"
 import { getIntakeFormsColumns } from "@/components/features/intake-forms/intake-forms-columns"
 import { useIntakeForms, useIntakeFormMutations } from "@/hooks/use-intake-forms"
 import { mapApiForm } from "@/lib/mappers/intake-form"
@@ -73,7 +74,15 @@ export default function IntakeFormsPage() {
   })
 
   return (
-    <FeatureGate feature={FeatureKey.INTAKE_FORMS}>
+    <FeatureGate
+      feature={FeatureKey.INTAKE_FORMS}
+      fallback={
+        <FeatureDisabledState
+          title={t("intakeForms.title")}
+          description={t("intakeForms.featureDisabled")}
+        />
+      }
+    >
     <ListPageShell>
       <Breadcrumbs />
       <PageHeader

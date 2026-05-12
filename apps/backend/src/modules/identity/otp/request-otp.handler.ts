@@ -17,6 +17,7 @@ import { NotificationChannelRegistry } from '../../comms/notification-channel/no
 import { CAPTCHA_VERIFIER, type CaptchaVerifier } from '../../comms/contact-messages/captcha.verifier';
 import { RedisService } from '../../../infrastructure/cache/redis.service';
 import { RequestOtpDto } from './request-otp.dto';
+import { maskIdentifier } from '../../../common/helpers/mask-pii.helper';
 
 const OTP_EXPIRY_MINUTES = 5;
 const OTP_MIN = 100_000;
@@ -126,7 +127,7 @@ export class RequestOtpHandler {
         // 503 so the mobile client shows a real error instead of a silent
         // "OTP sent" toast.
         this.logger.error(
-          `Failed to send OTP via ${dto.channel} to ${dto.identifier}`,
+          `Failed to send OTP via ${dto.channel} to ${maskIdentifier(dto.identifier)}`,
           err,
         );
         try {

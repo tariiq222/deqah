@@ -30,7 +30,7 @@ export class SwitchOrganizationHandler {
           organizationId: cmd.targetOrganizationId,
         },
       },
-      select: { id: true, organizationId: true, isActive: true, role: true },
+      select: { id: true, organizationId: true, isActive: true, role: true, organization: { select: { status: true } } },
     });
 
     if (!membership) {
@@ -42,6 +42,9 @@ export class SwitchOrganizationHandler {
       throw new ForbiddenException(
         'Membership in the target organization is not active',
       );
+    }
+    if (membership.organization.status !== 'ACTIVE') {
+      throw new ForbiddenException('Organization is not active');
     }
 
     const user = await this.prisma.user.findUnique({

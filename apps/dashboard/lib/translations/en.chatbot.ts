@@ -36,6 +36,7 @@ export const enChatbot: Record<string, string> = {
   "chatbot.analytics.avgDuration": "Avg Duration",
   "chatbot.analytics.handoffRate": "Handoff Rate",
   "chatbot.analytics.topQuestions": "Top Questions",
+  "chatbot.featureDisabled": "This feature is not available on your current plan. Please upgrade to access the AI chatbot.",
 
   // ─── Table ───
   "table.noResults": "No results",

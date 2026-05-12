@@ -74,4 +74,8 @@ export class MinioService implements IStorageService, OnModuleInit {
   async bucketExists(bucket: string): Promise<boolean> {
     return this.client.bucketExists(bucket);
   }
+
+  async ping(): Promise<void> {
+    await this.client.listBuckets();
+  }
 }

@@ -57,7 +57,7 @@ jobs:
       EMAIL_PROVIDER_ENCRYPTION_KEY: VrYh2xckvjMbc6mp7JBfJY385J5Rrmu1T9tB8hm2zTQ=
       MOYASAR_TENANT_ENCRYPTION_KEY: FWH3+/2jyaECCswGyaTtLTgooSd3eQcJ0fJEi9+T9zk=
       ZOHO_PROVIDER_ENCRYPTION_KEY: muUaXaGMQzWh1C+1DhuDdo2XIz6PCck+ql859E7S57o=
-      TENANT_ENFORCEMENT: permissive
+      TENANT_ENFORCEMENT: strict
       DEFAULT_ORGANIZATION_ID: "00000000-0000-0000-0000-000000000001"
       BILLING_CRON_ENABLED: "false"
       SUPER_ADMIN_PASSWORD: TestAdmin@2026CiPassword!!
@@ -104,6 +104,10 @@ jobs:
       - name: Run migrations
         working-directory: apps/backend
         run: npx prisma migrate deploy
+
+      - name: Check schema drift
+        working-directory: apps/backend
+        run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema --shadow-database-url postgresql://test:test@localhost:5432/deqah_test --exit-code
 
       - name: Unit tests
         working-directory: apps/backend

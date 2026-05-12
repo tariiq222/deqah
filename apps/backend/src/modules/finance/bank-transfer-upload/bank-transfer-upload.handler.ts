@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PaymentMethod, PaymentStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database';
 import { TenantContextService } from '../../../common/tenant/tenant-context.service';
@@ -48,10 +48,6 @@ export class BankTransferUploadHandler {
     });
     if (!invoice) {
       throw new NotFoundException(`Invoice ${cmd.invoiceId} not found`);
-    }
-
-    if (invoice.clientId !== cmd.clientId) {
-      throw new ForbiddenException('Invoice does not belong to this client');
     }
 
     const invoiceTotal = Number(invoice.total);

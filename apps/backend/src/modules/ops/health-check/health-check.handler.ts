@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../../../infrastructure/database';
 import { RedisService } from '../../../infrastructure/cache/redis.service';
 import { BullMqService } from '../../../infrastructure/queue/bull-mq.service';
+import { MinioService } from '../../../infrastructure/storage/minio.service';
 
 export interface HealthCheckResult {
   status: 'ok' | 'error';
@@ -23,6 +24,7 @@ export class HealthCheckHandler {
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
     private readonly bullMq: BullMqService,
+    private readonly minio: MinioService,
   ) {}
 
   async execute(): Promise<HealthCheckResult> {
@@ -30,6 +32,7 @@ export class HealthCheckHandler {
       () => this.prismaIndicator.pingCheck('database', this.prisma),
       () => this.checkRedis(),
       () => this.checkBullMq(),
+      () => this.checkMinio(),
     ]) as Promise<HealthCheckResult>;
   }
 
@@ -50,6 +53,15 @@ export class HealthCheckHandler {
       return { bullmq: { status: 'up', ...counts } };
     } catch (err) {
       return { bullmq: { status: 'down', message: err instanceof Error ? err.message : 'queue error' } };
+    }
+  }
+
+  private async checkMinio(): Promise<HealthIndicatorResult> {
+    try {
+      await this.minio.ping();
+      return { minio: { status: 'up' } };
+    } catch (err) {
+      return { minio: { status: 'down', message: err instanceof Error ? err.message : 'listBuckets failed' } };
     }
   }
 }

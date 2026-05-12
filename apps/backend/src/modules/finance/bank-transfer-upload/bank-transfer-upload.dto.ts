@@ -10,9 +10,6 @@ export class BankTransferUploadDto {
   @ApiProperty({ description: 'Invoice being paid', example: '00000000-0000-0000-0000-000000000000' })
   @IsUUID() invoiceId!: string;
 
-  @ApiProperty({ description: 'Client making the transfer', example: '00000000-0000-0000-0000-000000000000' })
-  @IsUUID() clientId!: string;
-
   @ApiProperty({ description: 'Transfer amount', example: 100.00 })
   @IsNumber() @Min(0) @Type(() => Number) amount!: number;
 }

@@ -26,7 +26,7 @@ export class LoggingInterceptor implements NestInterceptor {
           const ms = Date.now() - start;
           this.logger.log(
             `${method} ${path} ${res.statusCode} ${ms}ms` +
-              (context ? ` reqId=${context.requestId}` : ''),
+              (context ? ` reqId=${context.requestId}${context.organizationId ? ` orgId=${context.organizationId}` : ''}` : ''),
           );
         },
         error: () => {

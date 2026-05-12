@@ -76,6 +76,7 @@ export const enChatbotExtended: Record<string, string> = {
   "intakeForms.activateSuccess": "Form activated",
   "intakeForms.deactivateSuccess": "Form deactivated",
   "intakeForms.updateError": "Failed to update",
+  "intakeForms.featureDisabled": "This feature is not available on your current plan. Please upgrade to access intake forms.",
 
   // ─── Reports — Employee Combobox ───
   "reports.selectEmployee": "Select a employee",

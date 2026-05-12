@@ -221,8 +221,13 @@ export class RefundPaymentHandler {
   ): Promise<void> {
     const refundReq = await this.prisma.refundRequest.findUniqueOrThrow({
       where: { id: cmd.refundRequestId },
-      select: { id: true, paymentId: true, amount: true, invoiceId: true, organizationId: true },
+      select: { id: true, paymentId: true, amount: true, invoiceId: true, organizationId: true, status: true },
     });
+
+    if (refundReq.status === RefundStatus.COMPLETED) {
+      this.logger.warn({ refundRequestId: cmd.refundRequestId }, 'refund_already_completed_skipping');
+      return;
+    }
 
     const payment = await this.prisma.payment.findUniqueOrThrow({
       where: { id: refundReq.paymentId },
@@ -236,10 +241,14 @@ const moyasarRefund = await this.moyasar.createRefund(refundReq.organizationId, 
     });
 
     await this.rlsTx.withTransaction(async (tx) => {
-      await tx.refundRequest.update({
-        where: { id: cmd.refundRequestId },
+      const { count } = await tx.refundRequest.updateMany({
+        where: { id: cmd.refundRequestId, status: RefundStatus.PROCESSING },
         data: { status: RefundStatus.COMPLETED, gatewayRef: moyasarRefund.id },
       });
+      if (count === 0) {
+        this.logger.warn({ refundRequestId: cmd.refundRequestId }, 'refund_already_finalized_concurrent_skip');
+        return;
+      }
       await tx.payment.update({
         where: { id: refundReq.paymentId },
         data: {

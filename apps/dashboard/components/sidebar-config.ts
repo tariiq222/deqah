@@ -56,7 +56,8 @@ export const peopleNav: NavItem[] = [
 
 export const financeNav: NavItem[] = [
   { titleKey: "nav.payments", href: "/payments", icon: MoneyBag02Icon },
-  { titleKey: "nav.invoices", href: "/invoices", icon: Invoice02Icon },
+  // TAR-70: stubbed — restore when useInvoices hook is implemented
+  // { titleKey: "nav.invoices", href: "/invoices", icon: Invoice02Icon },
   { titleKey: "nav.coupons", href: "/coupons", icon: Coupon01Icon, featureFlag: FeatureKey.COUPONS },
   { titleKey: "nav.reports", href: "/reports", icon: AnalyticsUpIcon, featureFlag: FeatureKey.ADVANCED_REPORTS },
 ]
