@@ -97,24 +97,41 @@ export class TokenService {
     const ttl = this.config.get<string>('JWT_REFRESH_TTL') ?? '30d';
     const expiresAt = new Date(Date.now() + this.parseTtlMs(ttl));
 
-    const createRefreshToken = async (): Promise<void> => {
-      await this.prisma.refreshToken.create({
-        data: {
-          userId: user.id,
-          organizationId: tenantClaims.organizationId,
-          tokenHash,
-          tokenSelector,
-          expiresAt,
-        },
+    // UUID_RE mirrors the validation in RlsHelper.applyInTransaction —
+    // defense-in-depth before passing orgId into set_config (Prisma's tagged
+    // template already parameterizes the value; this is an extra guard).
+    const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+    /**
+     * Run the INSERT inside a Prisma transaction and call
+     * set_config('app.current_org_id', orgId, true) on the tx connection
+     * BEFORE the INSERT. RLS lives in Postgres and reads this GUC — it cannot
+     * see JS-side CLS state. Login runs before any request-level
+     * TenantGucInterceptor, so we must set the GUC explicitly here.
+     */
+    const writeRefreshToken = async (): Promise<void> => {
+      await this.prisma.$transaction(async (tx) => {
+        if (!UUID_RE.test(tenantClaims.organizationId)) {
+          throw new Error('TokenService: invalid orgId shape');
+        }
+        await tx.$queryRaw`SELECT set_config('app.current_org_id', ${tenantClaims.organizationId}, true)`;
+        await tx.refreshToken.create({
+          data: {
+            userId: user.id,
+            organizationId: tenantClaims.organizationId,
+            tokenHash,
+            tokenSelector,
+            expiresAt,
+          },
+        });
       });
     };
 
     if (this.cls && this.tenantCtx) {
-      // Run inside a fresh CLS context so the Prisma tenant-scoping extension
-      // can emit SET LOCAL app.current_org_id = ... before the INSERT, satisfying
-      // the RLS WITH CHECK policy on RefreshToken. Login happens outside any
-      // authenticated request context, so there is no outer CLS tenant — we
-      // must establish one explicitly here.
+      // Also populate CLS so the audit interceptor and Prisma extension's
+      // where-injection have tenant context for any sub-queries within this
+      // async chain. The GUC set inside the transaction is what actually
+      // satisfies the RLS WITH CHECK policy on RefreshToken.
       const ctx: TenantContext = {
         organizationId: tenantClaims.organizationId,
         membershipId: tenantClaims.membershipId ?? '',
@@ -124,11 +141,11 @@ export class TokenService {
       };
       await this.cls.run(async () => {
         this.tenantCtx!.set(ctx);
-        await createRefreshToken();
+        await writeRefreshToken();
       });
     } else {
       // Fallback path: CLS not injected (unit-test context). Run directly.
-      await createRefreshToken();
+      await writeRefreshToken();
     }
 
     return { accessToken, refreshToken: rawRefresh };

@@ -1,13 +1,13 @@
 import { TokenService } from './token.service';
 
 const mockUser = {
-  id: 'user-1', email: 'admin@clinic.sa',
+  id: '00000000-0000-0000-0000-000000000001', email: 'admin@clinic.sa',
   role: 'ADMIN', customRoleId: null, customRole: null, tokenVersion: 0,
 };
 
 const tenantClaims = {
-  organizationId: 'org-1',
-  membershipId: 'mem-1',
+  organizationId: '00000000-0000-0000-0000-000000000002',
+  membershipId: '00000000-0000-0000-0000-000000000003',
 };
 
 const buildJwt = () => ({
@@ -29,13 +29,26 @@ const buildConfig = (overrides: Record<string, string> = {}) => ({
   }),
 });
 
-const buildPrisma = () => ({
-  refreshToken: {
-    create: jest.fn().mockResolvedValue({ id: 'rt-1' }),
-    findFirst: jest.fn().mockResolvedValue({ id: 'rt-1', tokenHash: '$bcrypt', expiresAt: new Date(Date.now() + 86400_000), revoked: false }),
-    update: jest.fn().mockResolvedValue({ id: 'rt-1', revoked: true }),
-  },
-});
+const buildPrisma = () => {
+  const refreshTokenCreate = jest.fn().mockResolvedValue({ id: 'rt-1' });
+  return {
+    refreshToken: {
+      create: refreshTokenCreate,
+      findFirst: jest.fn().mockResolvedValue({ id: 'rt-1', tokenHash: '$bcrypt', expiresAt: new Date(Date.now() + 86400_000), revoked: false }),
+      update: jest.fn().mockResolvedValue({ id: 'rt-1', revoked: true }),
+    },
+    // Simulate $transaction: execute the callback with a tx that has $queryRaw
+    // (no-op) and delegates refreshToken.create to the outer mock so existing
+    // assertions on prisma.refreshToken.create continue to work.
+    $transaction: jest.fn().mockImplementation(async (fn: (tx: unknown) => Promise<void>) => {
+      const tx = {
+        $queryRaw: jest.fn().mockResolvedValue([]),
+        refreshToken: { create: refreshTokenCreate },
+      };
+      return fn(tx);
+    }),
+  };
+};
 
 describe('TokenService.issueTokenPair', () => {
   it('returns accessToken and refreshToken', async () => {
@@ -54,7 +67,7 @@ describe('TokenService.issueTokenPair', () => {
     await service.issueTokenPair(mockUser, tenantClaims);
 
     expect(jwt.sign).toHaveBeenCalledWith(
-      expect.objectContaining({ sub: 'user-1', email: 'admin@clinic.sa' }),
+      expect.objectContaining({ sub: '00000000-0000-0000-0000-000000000001', email: 'admin@clinic.sa' }),
       expect.objectContaining({ secret: 'access-secret' }),
     );
   });
@@ -67,8 +80,8 @@ describe('TokenService.issueTokenPair', () => {
     expect(prisma.refreshToken.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          userId: 'user-1',
-          organizationId: 'org-1',
+          userId: '00000000-0000-0000-0000-000000000001',
+          organizationId: '00000000-0000-0000-0000-000000000002',
         }),
       }),
     );
@@ -78,15 +91,15 @@ describe('TokenService.issueTokenPair', () => {
     const jwt = buildJwt();
     const service = new TokenService(jwt as never, buildConfig() as never, buildPrisma() as never);
     await service.issueTokenPair(mockUser, {
-      organizationId: 'org-1',
-      membershipId: 'mem-1',
+      organizationId: '00000000-0000-0000-0000-000000000002',
+      membershipId: '00000000-0000-0000-0000-000000000003',
       isSuperAdmin: true,
     });
 
     expect(jwt.sign).toHaveBeenCalledWith(
       expect.objectContaining({
-        organizationId: 'org-1',
-        membershipId: 'mem-1',
+        organizationId: '00000000-0000-0000-0000-000000000002',
+        membershipId: '00000000-0000-0000-0000-000000000003',
         isSuperAdmin: true,
       }),
       expect.anything(),
@@ -96,7 +109,7 @@ describe('TokenService.issueTokenPair', () => {
   it('defaults isSuperAdmin to false when tenantClaims omits it', async () => {
     const jwt = buildJwt();
     const service = new TokenService(jwt as never, buildConfig() as never, buildPrisma() as never);
-    await service.issueTokenPair(mockUser, { organizationId: 'org-1' });
+    await service.issueTokenPair(mockUser, { organizationId: '00000000-0000-0000-0000-000000000002' });
 
     expect(jwt.sign).toHaveBeenCalledWith(
       expect.objectContaining({ isSuperAdmin: false }),
@@ -108,8 +121,8 @@ describe('TokenService.issueTokenPair', () => {
     const jwt = buildJwt();
     const service = new TokenService(jwt as never, buildConfig() as never, buildPrisma() as never);
     await service.issueTokenPair(
-      { id: 'u1', email: 'a@b.com', role: 'ADMIN', customRoleId: null, customRole: null, tokenVersion: 0 },
-      { organizationId: 'org1', membershipId: 'm1', membershipRole: 'ADMIN' },
+      { id: '00000000-0000-0000-0000-000000000001', email: 'a@b.com', role: 'ADMIN', customRoleId: null, customRole: null, tokenVersion: 0 },
+      { organizationId: '00000000-0000-0000-0000-000000000002', membershipId: '00000000-0000-0000-0000-000000000003', membershipRole: 'ADMIN' },
     );
     const payload = jwt.sign.mock.calls[0][0] as { membershipRole?: string };
     expect(payload.membershipRole).toBe('ADMIN');
@@ -118,7 +131,7 @@ describe('TokenService.issueTokenPair', () => {
   it('membershipRole is undefined in JWT when not provided in tenantClaims', async () => {
     const jwt = buildJwt();
     const service = new TokenService(jwt as never, buildConfig() as never, buildPrisma() as never);
-    await service.issueTokenPair(mockUser, { organizationId: 'org-1' });
+    await service.issueTokenPair(mockUser, { organizationId: '00000000-0000-0000-0000-000000000002' });
     const payload = jwt.sign.mock.calls[0][0] as { membershipRole?: string };
     expect(payload.membershipRole).toBeUndefined();
   });
