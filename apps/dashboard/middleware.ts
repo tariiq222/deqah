@@ -46,6 +46,9 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   const rootDomain =
     process.env.NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN ?? 'deqah.net';
 
+  const apiBase =
+    process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5100/api/v1';
+
   // Build the mutated headers we will forward on every response.
   const forwardHeaders = new Headers(req.headers);
   if (!forwardHeaders.has('x-forwarded-host')) {
@@ -55,6 +58,47 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   // (Cloudflare → Traefik clobbers x-forwarded-host; x-deqah-tenant-host is
   // a custom header that passes through untouched).
   forwardHeaders.set(TENANT_HOST_HEADER, hostname);
+
+  // --------------------------------------------------------------------------
+  // Proxy /api/proxy/* directly to the backend so that custom headers survive.
+  // next.config.mjs rewrites do NOT forward headers mutated in middleware to
+  // external destinations (Next.js internal behaviour), so we proxy here.
+  // --------------------------------------------------------------------------
+  if (req.nextUrl.pathname.startsWith('/api/proxy/')) {
+    const path = req.nextUrl.pathname.replace('/api/proxy', '');
+    const search = req.nextUrl.search;
+    const destination = `${apiBase}${path}${search}`;
+
+    const proxyHeaders = new Headers(forwardHeaders);
+    // Let fetch manage hop-by-hop headers; preserve the rest.
+    proxyHeaders.delete('content-length');
+    proxyHeaders.delete('host');
+
+    const init: RequestInit = {
+      method: req.method,
+      headers: proxyHeaders,
+      body: req.body,
+      // @ts-expect-error — duplex required for streaming body proxy in Node 18+
+      duplex: 'half',
+    };
+
+    try {
+      const proxyRes = await fetch(destination, init);
+      return new Response(proxyRes.body, {
+        status: proxyRes.status,
+        statusText: proxyRes.statusText,
+        headers: proxyRes.headers,
+      }) as unknown as NextResponse;
+    } catch (err) {
+      console.error(
+        `[middleware] proxy fetch failed for ${destination}: ${String(err)}`,
+      );
+      return new Response(
+        JSON.stringify({ error: 'proxy_error', message: 'Backend unreachable' }),
+        { status: 502, headers: { 'content-type': 'application/json' } },
+      ) as unknown as NextResponse;
+    }
+  }
 
   // 1. Exact root domain match — pass through (e.g. deqah.net, staging.deqah.net).
   if (hostname === rootDomain) {
@@ -85,9 +129,6 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   }
 
   // 5. Valid slug — verify existence against the backend.
-  const apiBase =
-    process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5100/api/v1';
-
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2500);

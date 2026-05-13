@@ -79,7 +79,10 @@ export class TenantResolverMiddleware implements NestMiddleware {
       path.endsWith('/auth/refresh') ||
       path.endsWith('/auth/logout') ||
       path.endsWith('/auth/otp/request-dashboard') ||
-      path.endsWith('/auth/otp/verify-dashboard')
+      path.endsWith('/auth/otp/verify-dashboard') ||
+      path.endsWith('/auth/request-password-reset') ||
+      path.endsWith('/auth/reset-password') ||
+      path.endsWith('/auth/invitations/accept')
     );
   }
 
