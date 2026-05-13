@@ -45,11 +45,11 @@ export function useLoginFlow() {
   )
 
   const submitPassword = useCallback(
-    async (password: string, captcha: string) => {
+    async (password: string) => {
       setLoading(true)
       setError(null)
       try {
-        const res = await apiLogin(identifier, password, captcha)
+        const res = await apiLogin(identifier, password)
         loginWithTokens(res)
       } catch (e) {
         setError(e)

@@ -179,6 +179,16 @@ export class PlatformMailerService implements OnModuleInit {
     await this.dispatch('feature-grace-expired', to, this.bilingualSubject(t.subjectAr, t.subjectEn), t.html);
   }
 
+  async sendStaffPasswordReset(params: {
+    to: string;
+    userName: string;
+    resetUrl: string;
+  }): Promise<void> {
+    const { staffPasswordResetTemplate } = await import('./templates/staff-password-reset.template');
+    const t = staffPasswordResetTemplate({ userName: params.userName, resetUrl: params.resetUrl });
+    await this.dispatch('staff-password-reset', params.to, this.bilingualSubject(t.subjectAr, t.subjectEn), t.html);
+  }
+
   /**
    * Send a raw email with full control over to/subject/html.
    * Used by the platform email test-send endpoint.

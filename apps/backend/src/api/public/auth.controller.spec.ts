@@ -1,4 +1,4 @@
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { AuthController } from './auth.controller';
 import { TokenService } from '../../modules/identity/shared/token.service';
@@ -23,7 +23,6 @@ function buildReq(cookies: Record<string, string> = {}, host = '') {
 function buildController() {
   const login = fn(TOKEN_PAIR);
   const logout = fn({ success: true });
-  const captcha = { verify: jest.fn().mockResolvedValue(true) };
   const refreshTokenModel = {
     findMany: jest.fn(),
     update: jest.fn(),
@@ -78,14 +77,14 @@ function buildController() {
     login as never, logout as never, prisma, tokens,
     getCurrentUser as never, changePassword as never,
     listMemberships as never, switchOrganization as never, config,
-    captcha as never, requestPasswordReset as never, performPasswordReset as never,
+    requestPasswordReset as never, performPasswordReset as never,
     updateMembershipProfile as never,
     uploadMembershipAvatar as never,
     inviteUser as never, acceptInvitation as never, tenant,
     requestDashboardOtp as never, verifyDashboardOtp as never,
     cls, settings,
   );
-  return { controller, login, logout, prisma, tokens, listMemberships, switchOrganization, captcha, requestPasswordReset, performPasswordReset, requestDashboardOtp, verifyDashboardOtp };
+  return { controller, login, logout, prisma, tokens, listMemberships, switchOrganization, requestPasswordReset, performPasswordReset, requestDashboardOtp, verifyDashboardOtp };
 }
 
 describe('AuthController', () => {
@@ -120,27 +119,6 @@ describe('AuthController', () => {
       const res = buildRes();
       await controller.loginEndpoint({ email: 'a@b.com', password: 'pass123', hCaptchaToken: 'tok' } as never, '127.0.0.1', buildReq(), res);
       expect(res.cookie).toHaveBeenCalledWith('ck_refresh', 'refresh', expect.objectContaining({ httpOnly: true, sameSite: 'lax', path: '/' }));
-    });
-
-    it('rejects with BadRequestException when captcha verifier returns false', async () => {
-      const { controller, captcha, login } = buildController();
-      (captcha.verify as jest.Mock).mockResolvedValue(false);
-
-      const promise = controller.loginEndpoint({ email: 'a@b.com', password: 'pw', hCaptchaToken: 'bad' } as never, '127.0.0.1', buildReq(), buildRes());
-
-      await expect(promise).rejects.toThrow(BadRequestException);
-      expect(login.execute).not.toHaveBeenCalled();
-    });
-
-    it('calls captcha.verify with the request token before delegating to login handler', async () => {
-      const { controller, captcha, login } = buildController();
-
-      await controller.loginEndpoint({ email: 'a@b.com', password: 'pw', hCaptchaToken: 'tok-123' } as never, '127.0.0.1', buildReq(), buildRes());
-
-      expect(captcha.verify).toHaveBeenCalledWith('tok-123');
-      const captchaOrder = (captcha.verify as jest.Mock).mock.invocationCallOrder[0];
-      const loginOrder = (login.execute as jest.Mock).mock.invocationCallOrder[0];
-      expect(captchaOrder).toBeLessThan(loginOrder);
     });
 
     it('returns user.firstName/lastName split from name + organizationId from membership', async () => {

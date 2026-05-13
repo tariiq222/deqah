@@ -19,9 +19,8 @@ const IMPERSONATION_KEY = "deqah_impersonation"
 export async function login(
   identifier: string,
   password: string,
-  hCaptchaToken: string,
 ): Promise<AuthResponse> {
-  const data = await authApi.login({ email: identifier, password, hCaptchaToken })
+  const data = await authApi.login({ email: identifier, password, hCaptchaToken: '' })
   persistAuth(data)
   return data
 }

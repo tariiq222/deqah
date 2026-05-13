@@ -65,12 +65,6 @@ export default defineConfig({
     port: 5103,
     timeout: 120_000,
     reuseExistingServer: !process.env.CI,
-    env: {
-      // Tell the dashboard there is no real hCaptcha sitekey in test mode.
-      // The CaptchaField component detects NEXT_PUBLIC_HCAPTCHA_SITE_KEY
-      // being absent (or the test key) and auto-issues "dev-bypass" so the
-      // submit button is never disabled.
-      NEXT_PUBLIC_HCAPTCHA_SITE_KEY: '',
-    },
+    env: {},
   },
 });

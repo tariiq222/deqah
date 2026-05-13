@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Inject, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { Public } from '../../common/guards/jwt.guard';
@@ -7,7 +7,7 @@ import { RequestOtpHandler } from '../../modules/identity/otp/request-otp.handle
 import { VerifyOtpHandler } from '../../modules/identity/otp/verify-otp.handler';
 import { RequestOtpDto } from '../../modules/identity/otp/request-otp.dto';
 import { VerifyOtpDto } from '../../modules/identity/otp/verify-otp.dto';
-import { CAPTCHA_VERIFIER, CaptchaVerifier } from '../../modules/comms/contact-messages/captcha.verifier';
+
 
 @ApiTags('Public / OTP')
 @ApiPublicResponses()
@@ -16,7 +16,6 @@ export class PublicOtpController {
   constructor(
     private readonly requestHandler: RequestOtpHandler,
     private readonly verifyHandler: VerifyOtpHandler,
-    @Inject(CAPTCHA_VERIFIER) private readonly captcha: CaptchaVerifier,
   ) {}
 
   @Public()
@@ -35,9 +34,6 @@ export class PublicOtpController {
   @ApiOperation({ summary: 'Verify OTP and obtain session tokens' })
   @ApiOkResponse({ schema: { type: 'object', description: 'Auth tokens on successful OTP verification' } })
   async verify(@Body() dto: VerifyOtpDto) {
-    if (!(await this.captcha.verify(dto.hCaptchaToken))) {
-      throw new BadRequestException('Invalid captcha token');
-    }
     return this.verifyHandler.execute(dto);
   }
 }

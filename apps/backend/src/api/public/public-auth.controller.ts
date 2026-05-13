@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Req, Ip, UseGuards, Inject, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Req, Ip, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiOkResponse, ApiCreatedResponse, ApiNoContentResponse } from '@nestjs/swagger';
 import { Public } from '../../common/guards/jwt.guard';
@@ -15,7 +15,7 @@ import { RefreshTokenDto, LogoutDto } from '../../modules/identity/client-auth/c
 import { ResetPasswordHandler } from '../../modules/identity/client-auth/reset-password/reset-password.handler';
 import { ResetPasswordDto } from '../../modules/identity/client-auth/reset-password/reset-password.dto';
 import { Request } from 'express';
-import { CAPTCHA_VERIFIER, CaptchaVerifier } from '../../modules/comms/contact-messages/captcha.verifier';
+
 
 @ApiTags('Public / Auth')
 @ApiPublicResponses()
@@ -27,7 +27,6 @@ export class PublicAuthController {
     private readonly refresh: ClientRefreshHandler,
     private readonly logout: ClientLogoutHandler,
     private readonly resetPassword: ResetPasswordHandler,
-    @Inject(CAPTCHA_VERIFIER) private readonly captcha: CaptchaVerifier,
   ) {}
 
   @Public()
@@ -37,9 +36,6 @@ export class PublicAuthController {
   @ApiOperation({ summary: 'Register a new client account' })
   @ApiCreatedResponse({ schema: { type: 'object', description: 'Created client account with tokens' } })
   async registerEndpoint(@Body() dto: RegisterDto, @Req() req: Request) {
-    if (!(await this.captcha.verify(dto.hCaptchaToken))) {
-      throw new BadRequestException('Invalid captcha token');
-    }
     return this.register.execute(dto, req);
   }
 
@@ -50,9 +46,6 @@ export class PublicAuthController {
   @ApiOperation({ summary: 'Log in with phone and password' })
   @ApiOkResponse({ schema: { type: 'object', description: 'Auth tokens' } })
   async loginEndpoint(@Body() dto: ClientLoginDto, @Ip() ip: string) {
-    if (!(await this.captcha.verify(dto.hCaptchaToken))) {
-      throw new BadRequestException('Invalid captcha token');
-    }
     return this.login.execute(dto, ip);
   }
 
@@ -87,9 +80,6 @@ export class PublicAuthController {
   @ApiOperation({ summary: 'Reset password with OTP token' })
   @ApiNoContentResponse()
   async resetPasswordEndpoint(@Body() dto: ResetPasswordDto): Promise<void> {
-    if (!(await this.captcha.verify(dto.hCaptchaToken))) {
-      throw new BadRequestException('Invalid captcha token');
-    }
     await this.resetPassword.execute(dto);
   }
 }

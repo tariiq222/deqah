@@ -76,10 +76,8 @@ RUN ARCH=$(uname -m | sed 's/aarch64/arm64/;s/x86_64/x64/') \
 # These ARGs are passed via --build-arg from the GitHub Actions workflow.
 # WARNING: defaults are localhost/test placeholders — always pass real values in CI.
 ARG NEXT_PUBLIC_API_URL=http://localhost:5100/api/v1
-ARG NEXT_PUBLIC_HCAPTCHA_SITE_KEY=8c765c14-831e-4a76-a1c0-0e3eac06c7f6
 ARG NEXT_PUBLIC_MOYASAR_PLATFORM_PUBLISHABLE_KEY=pk_test_replace_me
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_HCAPTCHA_SITE_KEY=$NEXT_PUBLIC_HCAPTCHA_SITE_KEY
 ENV NEXT_PUBLIC_MOYASAR_PLATFORM_PUBLISHABLE_KEY=$NEXT_PUBLIC_MOYASAR_PLATFORM_PUBLISHABLE_KEY
 
 RUN if echo "$NEXT_PUBLIC_API_URL" | grep -q "localhost"; then \

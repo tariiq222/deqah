@@ -5573,11 +5573,7 @@ export interface components {
              * @example client@example.com
              */
             email: string;
-            /**
-             * @description Captcha token (ignored — kept for client compatibility until Cloudflare Turnstile lands)
-             * @example <captcha token>
-             */
-            hCaptchaToken?: string;
+            // hCaptcha removed locally — backend still emits
             /**
              * @description Account password
              * @example SecurePass123
@@ -5932,11 +5928,7 @@ export interface components {
              * @example أرغب بمعرفة...
              */
             body: string;
-            /**
-             * @description hCaptcha token (required in prod)
-             * @example 10000000-aaaa-bbbb-cccc-000000000001
-             */
-            captchaToken?: string;
+            // hCaptcha removed locally — backend still emits
             /**
              * @description Email (required if no phone)
              * @example user@example.com
@@ -7168,8 +7160,7 @@ export interface components {
              * @example user@example.com
              */
             email: string;
-            /** @description Captcha verification token (ignored — kept for client compatibility until Cloudflare Turnstile lands) */
-            hCaptchaToken?: string;
+            // hCaptcha removed locally — backend still emits
             /**
              * Format: password
              * @description Account password (min 8 characters)
@@ -7851,11 +7842,7 @@ export interface components {
          */
         RefundType: "FULL" | "PARTIAL" | "NONE";
         RegisterDto: {
-            /**
-             * @description Captcha token (ignored — kept for client compatibility until Cloudflare Turnstile lands)
-             * @example <captcha token>
-             */
-            hCaptchaToken?: string;
+            // hCaptcha removed locally — backend still emits
             /**
              * @description Full name (required if creating new account)
              * @example أحمد محمد
@@ -7961,11 +7948,7 @@ export interface components {
              * @enum {string}
              */
             channel: "EMAIL" | "SMS";
-            /**
-             * @description Captcha token (ignored — kept for client compatibility until Cloudflare Turnstile lands)
-             * @example 10000000-aaaa-bbbb-cccc-000000000001
-             */
-            hCaptchaToken?: string;
+            // hCaptcha removed locally — backend still emits
             /**
              * @description Email address or phone number (E.164 format)
              * @example user@example.com
@@ -7986,7 +7969,7 @@ export interface components {
              * @example admin@clinic.com
              */
             email: string;
-            hCaptchaToken?: string;
+            // hCaptcha removed locally — backend still emits
         };
         RequestRefundDto: Record<string, never>;
         RescheduleBookingDto: {
@@ -8009,11 +7992,7 @@ export interface components {
             apiKey: string;
         };
         ResetPasswordDto: {
-            /**
-             * @description Captcha token (ignored — kept for client compatibility until Cloudflare Turnstile lands)
-             * @example <captcha token>
-             */
-            hCaptchaToken?: string;
+            // hCaptcha removed locally — backend still emits
             /**
              * @description New password (min 8 chars, at least 1 uppercase letter, at least 1 digit)
              * @example NewSecurePass1
@@ -9476,11 +9455,7 @@ export interface components {
              * @example 123456
              */
             code: string;
-            /**
-             * @description Captcha token (ignored — kept for client compatibility until Cloudflare Turnstile lands)
-             * @example <captcha token>
-             */
-            hCaptchaToken?: string;
+            // hCaptcha removed locally — backend still emits
             /**
              * @description Email address or phone number
              * @example user@example.com

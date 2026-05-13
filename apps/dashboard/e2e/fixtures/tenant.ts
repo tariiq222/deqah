@@ -98,7 +98,7 @@ export async function getTestTenant(): Promise<TestTenant> {
     res = await fetch(`${API_BASE}/api/v1/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: adminEmail, password: adminPassword, hCaptchaToken: 'e2e-bypass' }),
+      body: JSON.stringify({ email: adminEmail, password: adminPassword }),
     });
   } catch (err) {
     throw new Error(

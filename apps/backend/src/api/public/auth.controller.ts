@@ -52,8 +52,7 @@ import { IsString, MinLength, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ApiPublicResponses, ApiErrorDto } from '../../common/swagger';
 import { flattenPermissions } from '../../modules/identity/casl/flatten-permissions';
-import { Inject, BadRequestException } from '@nestjs/common';
-import { CAPTCHA_VERIFIER, CaptchaVerifier } from '../../modules/comms/contact-messages/captcha.verifier';
+import { BadRequestException } from '@nestjs/common';
 import { PlatformSettingsService } from '../../modules/platform/settings/platform-settings.service';
 
 class ChangePasswordDto {
@@ -82,7 +81,6 @@ export class AuthController {
     private readonly listMemberships: ListMembershipsHandler,
     private readonly switchOrganization: SwitchOrganizationHandler,
     private readonly config: ConfigService,
-    @Inject(CAPTCHA_VERIFIER) private readonly captcha: CaptchaVerifier,
     private readonly requestPasswordReset: RequestPasswordResetHandler,
     private readonly performPasswordReset: PerformPasswordResetHandler,
     private readonly updateMembershipProfile: UpdateMembershipProfileHandler,
@@ -136,10 +134,6 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    if (!(await this.captcha.verify(body.hCaptchaToken))) {
-      throw new BadRequestException('Invalid captcha token');
-    }
-
     const tokens = await this.login.execute({ email: body.email, password: body.password, ip });
 
     // Host-based namespace enforcement (TAR-99)

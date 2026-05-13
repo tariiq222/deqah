@@ -1,9 +1,7 @@
 "use client"
 
-import { useRef, useState } from "react"
-import type HCaptcha from "@hcaptcha/react-hcaptcha"
+import { useState } from "react"
 import { Button, Input, Label } from "@deqah/ui"
-import { CaptchaField } from "@/components/features/shared/captcha-field"
 import { useLocale } from "@/components/locale-provider"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { EyeIcon, ScanEyeIcon } from "@hugeicons/core-free-icons"
@@ -13,7 +11,7 @@ interface Props {
   identifier: string
   loading: boolean
   error: unknown
-  onSubmit: (password: string, captcha: string) => void
+  onSubmit: (password: string) => void
   onBack: () => void
   onClearError: () => void
 }
@@ -29,13 +27,10 @@ export function PasswordStep({
   const { t } = useLocale()
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [captcha, setCaptcha] = useState<string | null>(null)
-  const captchaRef = useRef<HCaptcha>(null)
 
   const handle = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!captcha) return
-    onSubmit(password, captcha)
+    onSubmit(password)
   }
 
   return (
@@ -68,9 +63,8 @@ export function PasswordStep({
           </button>
         </div>
       </div>
-      <CaptchaField ref={captchaRef} onVerify={setCaptcha} />
       <LoginErrorAlert error={error} />
-      <Button type="submit" disabled={loading || !password || !captcha} className="w-full">
+      <Button type="submit" disabled={loading || !password} className="w-full">
         {loading ? t("login.signingIn") : t("login.signIn")}
       </Button>
       <Button type="button" variant="ghost" className="w-full" onClick={onBack} disabled={loading}>

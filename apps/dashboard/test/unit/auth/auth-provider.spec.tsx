@@ -75,7 +75,7 @@ function TestConsumer() {
       <div data-testid="can-bookings-read">{canDo('bookings', 'read') ? 'yes' : 'no'}</div>
       <div data-testid="can-invoices-delete">{canDo('invoices', 'delete') ? 'yes' : 'no'}</div>
       <div data-testid="can-clients-anything">{canDo('clients', 'anything') ? 'yes' : 'no'}</div>
-      <button onClick={() => login('test@test.com', 'Pass123!', 'tok')}>Login</button>
+      <button onClick={() => login('test@test.com', 'Pass123!')}>Login</button>
       <button onClick={() => logout()}>Logout</button>
     </div>
   )
@@ -189,7 +189,7 @@ describe('AuthProvider', () => {
         await userEvent.click(screen.getByText('Login'))
       })
 
-      expect(mockLogin).toHaveBeenCalledWith('test@test.com', 'Pass123!', 'tok')
+      expect(mockLogin).toHaveBeenCalledWith('test@test.com', 'Pass123!')
     })
   })
 

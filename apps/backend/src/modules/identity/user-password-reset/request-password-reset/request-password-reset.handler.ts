@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomBytes, createHash } from 'crypto';
 import { PrismaService } from '../../../../infrastructure/database';
-import { SendEmailHandler } from '../../../comms/send-email/send-email.handler';
+import { PlatformMailerService } from '../../../../infrastructure/mail/platform-mailer.service';
 import { RequestPasswordResetDto } from './request-password-reset.dto';
 import { maskEmail } from '../../../../common/helpers/mask-pii.helper';
 
@@ -14,14 +14,14 @@ export class RequestPasswordResetHandler {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly sendEmail: SendEmailHandler,
+    private readonly platformMailer: PlatformMailerService,
     private readonly config: ConfigService,
   ) {}
 
   async execute(dto: RequestPasswordResetDto): Promise<void> {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
-      select: { id: true, email: true, name: true, isActive: true },
+      select: { id: true, email: true, name: true, isActive: true, isSuperAdmin: true },
     });
 
     if (!user || !user.isActive) {
@@ -47,20 +47,18 @@ export class RequestPasswordResetHandler {
       },
     });
 
+    // Super-admins reset via the admin app; all other staff via dashboard.
+    // TODO: add ADMIN_URL env var so super-admin reset links point to the admin app host.
     const baseUrl =
       this.config.get<string>('PASSWORD_RESET_BASE_URL') ??
       this.config.get<string>('DASHBOARD_URL') ??
       'http://localhost:5103';
     const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`;
 
-    await this.sendEmail.execute({
+    await this.platformMailer.sendStaffPasswordReset({
       to: user.email,
-      templateSlug: 'user_password_reset',
-      vars: {
-        userName: user.name,
-        resetUrl,
-        subject: 'Reset your Deqah password',
-      },
+      userName: user.name,
+      resetUrl,
     });
 
     this.logger.log(`Password reset email sent to ${maskEmail(user.email)}`);
