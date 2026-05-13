@@ -143,7 +143,11 @@ export class AuthController {
     const tokens = await this.login.execute({ email: body.email, password: body.password, ip });
 
     // Host-based namespace enforcement (TAR-99)
-    const requestHost = String(req.headers.host ?? '').toLowerCase();
+    // Use forwarded headers because the request is proxied through Next.js
+    // rewrite — req.headers.host reflects the backend, not the original host.
+    const requestHost = String(
+      (req.headers['x-deqah-tenant-host'] ?? req.headers['x-forwarded-host'] ?? req.headers.host ?? '')
+    ).toLowerCase();
     const adminHosts = (this.config.get<string>('ADMIN_HOSTS', 'admin.deqah.app'))
       .split(',').map((h) => h.trim().toLowerCase());
     const isAdminHost = adminHosts.includes(requestHost);

@@ -13,7 +13,11 @@ describe('PublicTenantsController', () => {
         {} as never,
       );
 
-      const result = await controller.existsEndpoint('sawa.deqah.net', 'fallback.deqah.net');
+      const result = await controller.existsEndpoint(
+        'sawa.deqah.net',
+        'fallback.deqah.net',
+        undefined,
+      );
 
       expect(checkTenantExists.execute).toHaveBeenCalledWith('sawa.deqah.net');
       expect(result).toEqual({ exists: true, organizationId: 'org-1' });
@@ -30,10 +34,31 @@ describe('PublicTenantsController', () => {
         {} as never,
       );
 
-      const result = await controller.existsEndpoint(undefined, 'sawa.deqah.net');
+      const result = await controller.existsEndpoint(undefined, 'sawa.deqah.net', undefined);
 
       expect(checkTenantExists.execute).toHaveBeenCalledWith('sawa.deqah.net');
       expect(result).toEqual({ exists: false });
+    });
+
+    it('prefers x-deqah-tenant-host over proxy-owned forwarded host', async () => {
+      const checkTenantExists = {
+        execute: jest.fn().mockResolvedValue({ exists: true, organizationId: 'org-1' }),
+      };
+      const controller = new PublicTenantsController(
+        {} as never,
+        checkTenantExists as never,
+        {} as never,
+        {} as never,
+      );
+
+      const result = await controller.existsEndpoint(
+        'api.deqah.net',
+        'api.deqah.net',
+        'sawa.deqah.net',
+      );
+
+      expect(checkTenantExists.execute).toHaveBeenCalledWith('sawa.deqah.net');
+      expect(result).toEqual({ exists: true, organizationId: 'org-1' });
     });
   });
 });

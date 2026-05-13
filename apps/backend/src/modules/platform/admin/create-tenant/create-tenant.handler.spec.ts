@@ -25,6 +25,7 @@ describe('CreateTenantHandler', () => {
 
   const mailer = { sendTenantWelcome: jest.fn().mockResolvedValue(undefined) };
   const config = { get: jest.fn().mockReturnValue('https://app.webvue.pro/dashboard') };
+  const subdomainResolver = { invalidate: jest.fn().mockResolvedValue(undefined) };
 
   const ownerProvisioning = {
     provision: jest.fn(),
@@ -36,6 +37,7 @@ describe('CreateTenantHandler', () => {
     ownerProvisioning,
     mailer as never,
     config as never,
+    subdomainResolver as never,
   );
 
   const cmd = {
@@ -186,6 +188,12 @@ describe('CreateTenantHandler', () => {
         }),
       }),
     });
+  });
+
+  it('invalidates subdomain cache after creating the organization', async () => {
+    await handler.execute(cmd);
+
+    expect(subdomainResolver.invalidate).toHaveBeenCalledWith(cmd.slug);
   });
 
   it('sends welcome email for newly created owner via email path', async () => {

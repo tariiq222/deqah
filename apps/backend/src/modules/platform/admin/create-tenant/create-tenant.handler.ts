@@ -8,6 +8,7 @@ import {
 } from '@prisma/client';
 import { PrismaService, RlsTransactionService } from '../../../../infrastructure/database';
 import { PlatformMailerService } from '../../../../infrastructure/mail';
+import { SubdomainResolverService } from '../../../../common/tenant/subdomain-resolver.service';
 import { OwnerProvisioningService } from '../../../identity/owner-provisioning/owner-provisioning.service';
 
 export interface CreateTenantCommand {
@@ -40,6 +41,7 @@ export class CreateTenantHandler {
     private readonly ownerProvisioning: OwnerProvisioningService,
     private readonly mailer: PlatformMailerService,
     private readonly config: ConfigService,
+    private readonly subdomainResolver: SubdomainResolverService,
   ) {}
 
   async execute(cmd: CreateTenantCommand) {
@@ -215,6 +217,8 @@ export class CreateTenantHandler {
 
     // Fire-and-forget welcome email for newly created owners
     const { organization, provisionResult } = txResult;
+    await this.subdomainResolver.invalidate(organization.slug);
+
     if (provisionResult.isNewUser && cmd.ownerEmail) {
       const dashboardUrl = this.config.get<string>(
         'PLATFORM_DASHBOARD_URL',

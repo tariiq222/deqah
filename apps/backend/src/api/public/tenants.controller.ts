@@ -30,8 +30,9 @@ export class PublicTenantsController {
   async existsEndpoint(
     @Headers('x-forwarded-host') xfh: string | undefined,
     @Headers('host') host: string | undefined,
+    @Headers('x-deqah-tenant-host') tenantHost: string | undefined,
   ): Promise<CheckTenantExistsResult> {
-    return this.checkTenantExists.execute(xfh ?? host);
+    return this.checkTenantExists.execute(tenantHost ?? xfh ?? host);
   }
 
   @Post('register')
