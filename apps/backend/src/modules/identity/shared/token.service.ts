@@ -6,6 +6,7 @@ import * as bcrypt from 'bcryptjs';
 import { ClsService } from 'nestjs-cls';
 import { PrismaService } from '../../../infrastructure/database';
 import { TenantContext, TenantContextService } from '../../../common/tenant';
+import { RlsTransactionService } from '../../../common/database/rls-transaction';
 
 export interface TokenPair {
   accessToken: string;
@@ -57,6 +58,7 @@ export class TokenService {
     private readonly prisma: PrismaService,
     @Optional() private readonly cls?: ClsService,
     @Optional() private readonly tenantCtx?: TenantContextService,
+    @Optional() private readonly rlsTx?: RlsTransactionService,
   ) {}
 
   async issueTokenPair(
@@ -103,13 +105,31 @@ export class TokenService {
     const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
     /**
-     * Run the INSERT inside a Prisma transaction and call
-     * set_config('app.current_org_id', orgId, true) on the tx connection
-     * BEFORE the INSERT. RLS lives in Postgres and reads this GUC — it cannot
+     * Run the INSERT inside a transaction with set_config('app.current_org_id', orgId, true)
+     * set BEFORE the INSERT. RLS lives in Postgres and reads this GUC — it cannot
      * see JS-side CLS state. Login runs before any request-level
      * TenantGucInterceptor, so we must set the GUC explicitly here.
      */
     const writeRefreshToken = async (): Promise<void> => {
+      if (this.rlsTx) {
+        await this.rlsTx.withTransaction(
+          async (tx) => {
+            await tx.refreshToken.create({
+              data: {
+                userId: user.id,
+                organizationId: tenantClaims.organizationId,
+                tokenHash,
+                tokenSelector,
+                expiresAt,
+              },
+            });
+          },
+          { organizationId: tenantClaims.organizationId },
+        );
+        return;
+      }
+      // Fallback for unit tests that build TokenService without DI.
+      // eslint-disable-next-line no-restricted-syntax
       await this.prisma.$transaction(async (tx) => {
         if (!UUID_RE.test(tenantClaims.organizationId)) {
           throw new Error('TokenService: invalid orgId shape');
