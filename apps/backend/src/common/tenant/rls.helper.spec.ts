@@ -34,12 +34,15 @@ describe('RlsHelper', () => {
   it('runWithoutTenant wraps callback in a transaction with bypass_rls set', async () => {
     const ctx = { getOrganizationId: () => undefined } as unknown as TenantContextService;
     const txClient = { $queryRaw: jest.fn().mockResolvedValue(undefined) } as unknown as Prisma.TransactionClient;
-    const prisma = {
+    const bypassClient = {
       $transaction: jest.fn().mockImplementation(async (fn: (tx: Prisma.TransactionClient) => Promise<unknown>) => fn(txClient)),
+    };
+    const prisma = {
+      __bypassClient: bypassClient,
     } as unknown as PrismaService;
     const helper = new RlsHelper(prisma, ctx);
     const result = await helper.runWithoutTenant(async () => 'data');
-    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(bypassClient.$transaction).toHaveBeenCalledTimes(1);
     expect(txClient.$queryRaw).toHaveBeenCalledTimes(1);
     expect(result).toBe('data');
   });

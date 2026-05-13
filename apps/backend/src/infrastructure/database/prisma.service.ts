@@ -201,6 +201,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
           prop === 'basePrisma' ||
           prop === 'extended' ||
           prop === '$allTenants' ||
+          prop === '__bypassClient' ||
           prop === '$connect' ||
           prop === '$disconnect'
         ) {
@@ -254,6 +255,17 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     if (this.cls?.get<boolean | undefined>(SUPER_ADMIN_CONTEXT_CLS_KEY) !== true) {
       throw new ForbiddenException('super_admin_context_required');
     }
+    return this.basePrisma;
+  }
+
+  /**
+   * Internal escape hatch for `RlsHelper.runWithoutTenant`. Returns the
+   * UNEXTENDED base PrismaClient — no tenant scoping, no RLS bypass on
+   * its own. Callers must wrap in a transaction that sets
+   * app.bypass_rls=on before issuing queries. Do not use directly;
+   * always go through RlsHelper.
+   */
+  get __bypassClient(): PrismaClient {
     return this.basePrisma;
   }
 }
