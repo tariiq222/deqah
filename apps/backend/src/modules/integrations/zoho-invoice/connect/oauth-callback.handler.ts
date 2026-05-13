@@ -132,7 +132,9 @@ export class OAuthCallbackHandler {
     const base =
       this.cfg.get<string>('DASHBOARD_PUBLIC_URL') ??
       this.cfg.get<string>('PLATFORM_DASHBOARD_URL') ??
-      'http://localhost:5103';
+      (process.env['NODE_ENV'] === 'production'
+        ? (() => { throw new Error('DASHBOARD_PUBLIC_URL must be set in production for Zoho OAuth redirect'); })()
+        : 'http://localhost:5103');
     return `${base.replace(/\/$/, '')}/dashboard/integrations/zoho?status=${status}`;
   }
 }

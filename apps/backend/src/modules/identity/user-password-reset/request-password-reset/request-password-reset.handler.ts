@@ -51,8 +51,12 @@ export class RequestPasswordResetHandler {
     // TODO: add ADMIN_URL env var so super-admin reset links point to the admin app host.
     const baseUrl =
       this.config.get<string>('PASSWORD_RESET_BASE_URL') ??
+      this.config.get<string>('DASHBOARD_PUBLIC_URL') ??
+      this.config.get<string>('PLATFORM_DASHBOARD_URL') ??
       this.config.get<string>('DASHBOARD_URL') ??
-      'http://localhost:5103';
+      (process.env['NODE_ENV'] === 'production'
+        ? (() => { throw new Error('DASHBOARD_PUBLIC_URL must be set in production for password-reset emails'); })()
+        : 'http://localhost:5103');
     const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`;
 
     await this.platformMailer.sendStaffPasswordReset({

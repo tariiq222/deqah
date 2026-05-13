@@ -67,7 +67,9 @@ export class RequestEmailVerificationHandler {
     const baseUrl =
       this.config.get<string>('PUBLIC_WEBSITE_URL') ??
       this.config.get<string>('WEBSITE_URL') ??
-      'http://localhost:5105';
+      (process.env['NODE_ENV'] === 'production'
+        ? (() => { throw new Error('PUBLIC_WEBSITE_URL must be set in production for email-verification links'); })()
+        : 'http://localhost:5105');
     const verifyUrl = `${baseUrl}/verify-email?token=${rawToken}`;
 
     await this.sendEmail.execute({

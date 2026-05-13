@@ -1,8 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { ClsService } from 'nestjs-cls';
 import { PrismaService } from '../../../infrastructure/database';
 import { RedisService } from '../../../infrastructure/cache/redis.service';
-import { DEFAULT_ORGANIZATION_ID, SUPER_ADMIN_CONTEXT_CLS_KEY } from '../../../common/tenant';
+import { DEFAULT_ORGANIZATION_ID, RlsHelper } from '../../../common/tenant';
 import { PasswordService } from '../shared/password.service';
 import { TokenService, TokenPair } from '../shared/token.service';
 import type { LoginCommand } from './login.command';
@@ -35,7 +34,7 @@ export class LoginHandler {
     private readonly prisma: PrismaService,
     private readonly password: PasswordService,
     private readonly tokens: TokenService,
-    private readonly cls: ClsService,
+    private readonly rlsHelper: RlsHelper,
     private readonly redis: RedisService,
   ) {}
 
@@ -115,9 +114,8 @@ export class LoginHandler {
       });
     }
 
-    const activeMemberships = await this.cls.run(async () => {
-      this.cls.set(SUPER_ADMIN_CONTEXT_CLS_KEY, true);
-      return this.prisma.$allTenants.membership.findMany({
+    const activeMemberships = await this.rlsHelper.runWithoutTenant((tx) =>
+      tx.membership.findMany({
         where: { userId: user.id, isActive: true },
         orderBy: [{ role: 'asc' }, { createdAt: 'asc' }],
         select: {
@@ -132,8 +130,8 @@ export class LoginHandler {
             },
           },
         },
-      });
-    });
+      }),
+    );
 
     if (!user.isSuperAdmin && activeMemberships.length === 0) {
       throw new UnauthorizedException('No active membership found for this account');
