@@ -55,13 +55,27 @@ export class ListOrganizationsHandler {
               plan: { select: { slug: true, nameEn: true } },
             },
           },
+          memberships: {
+            where: { role: 'OWNER', isActive: true },
+            take: 1,
+            select: {
+              user: { select: { name: true, email: true } },
+            },
+          },
         },
       }),
       this.prisma.$allTenants.organization.count({ where }),
     ]);
 
+    const mappedItems = items.map(({ memberships = [], ...org }) => ({
+      ...org,
+      owner: memberships[0]?.user
+        ? { name: memberships[0].user.name, email: memberships[0].user.email }
+        : null,
+    }));
+
     return {
-      items,
+      items: mappedItems,
       meta: {
         page: q.page,
         perPage: q.perPage,

@@ -92,7 +92,7 @@ export default function OrganizationDetailPage({
     (d: { status: string }) => d.status === 'FAILED',
   ) ?? false;
 
-  const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL ?? 'https://app.deqah.app';
+  const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL ?? 'https://app.deqah.net';
   const subdomainUrl = `${dashboardUrl.replace('app.', `${data.slug}.`)}`;
 
   function copyId() {

@@ -1,0 +1,153 @@
+# Hotfix Auto-Merge
+#
+# PRs labeled `hotfix` targeting `main` are squash-merged once CI passes.
+# Guards: label=hotfix · base=main · not draft · state=OPEN
+#
+# Tries GitHub native --auto first; falls back to a 30×20s polling loop.
+# force_admin_merge=true (workflow_dispatch only) adds --admin — never default.
+
+name: Hotfix auto-merge
+
+on:
+  pull_request:
+    types: [labeled, synchronize, opened, reopened]
+  check_suite:          # re-evaluates when any CI suite completes
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to nudge'
+        required: true
+        type: string
+      force_admin_merge:
+        description: 'Add --admin flag to bypass branch protection (use with caution)'
+        required: false
+        default: 'false'
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+  checks: read
+
+concurrency:
+  group: hotfix-auto-merge-pr-${{ github.event.pull_request.number || inputs.pr_number }}
+  cancel-in-progress: false   # never abort a merge in flight
+
+jobs:
+  auto-merge:
+    name: Auto-merge hotfix PR
+    runs-on: ubuntu-latest
+    # check_suite events have no pull_request context — re-verified at runtime below
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'check_suite'       ||
+      (github.event.pull_request.state == 'open' &&
+       github.event.pull_request.draft == false  &&
+       github.event.pull_request.base.ref == 'main' &&
+       contains(github.event.pull_request.labels.*.name, 'hotfix'))
+
+    steps:
+      - name: Resolve PR number
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if   [ "${{ github.event_name }}" = "workflow_dispatch" ]; then PR="${{ inputs.pr_number }}"
+          elif [ -n "${{ github.event.pull_request.number }}" ];      then PR="${{ github.event.pull_request.number }}"
+          else
+            PR=$(gh pr list --repo "${{ github.repository }}" \
+              --base main --label hotfix --state open --json number --jq '.[0].number // empty')
+            [ -z "$PR" ] && { echo "No open hotfix PR found."; exit 0; }
+          fi
+          echo "pr_number=$PR" >> "$GITHUB_OUTPUT"
+
+      - name: Validate guards
+        id: validate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ steps.resolve.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          [ -z "$PR" ] && { echo "skipped=true" >> "$GITHUB_OUTPUT"; exit 0; }
+          INFO=$(gh pr view "$PR" --repo "${{ github.repository }}" --json state,isDraft,baseRefName,labels,title,url)
+          jq -r '"pr_url=\(.url)\npr_title=\(.title)"' <<< "$INFO" >> "$GITHUB_OUTPUT"
+          PASS=$(jq -r '(.state=="OPEN") and (.isDraft==false) and (.baseRefName=="main") and ([.labels[].name]|contains(["hotfix"]))' <<< "$INFO")
+          if [ "$PASS" != "true" ]; then
+            echo "Guard failed — $(jq -r '"state=\(.state) draft=\(.isDraft) base=\(.baseRefName)"' <<< "$INFO")"
+            echo "skipped=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "skipped=false" >> "$GITHUB_OUTPUT"
+
+      - name: Try native auto-merge (squash)
+        id: auto_merge
+        if: steps.validate.outputs.skipped != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ steps.resolve.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          # --auto queues merge to fire once required checks pass.
+          # Exits non-zero when repo "Allow auto-merge" is disabled → polling fallback.
+          if gh pr merge "$PR" --repo "${{ github.repository }}" --auto --squash --delete-branch 2>&1; then
+            echo "queued=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "queued=false" >> "$GITHUB_OUTPUT"
+            echo "Native auto-merge unavailable — polling fallback will run"
+          fi
+
+      - name: Polling fallback — wait for CI then merge
+        id: poll_merge
+        if: steps.validate.outputs.skipped != 'true' && steps.auto_merge.outputs.queued != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ steps.resolve.outputs.pr_number }}
+          FORCE_ADMIN: ${{ inputs.force_admin_merge || 'false' }}
+        run: |
+          set -euo pipefail
+          REPO="${{ github.repository }}"
+          for i in $(seq 1 30); do
+            DATA=$(gh pr view "$PR" --repo "$REPO" --json mergeable,mergeStateStatus,statusCheckRollup)
+            MERGEABLE=$(jq -r '.mergeable'       <<< "$DATA")
+            MSTATE=$(jq -r '.mergeStateStatus'   <<< "$DATA")
+            FAILING=$(jq -r '[.statusCheckRollup[]? | select(.conclusion!=null and .conclusion!="SUCCESS" and .conclusion!="SKIPPED")] | length' <<< "$DATA")
+            PENDING=$(jq -r '[.statusCheckRollup[]? | select(.conclusion==null or .conclusion=="")] | length' <<< "$DATA")
+            echo "[$i/30] mergeable=$MERGEABLE state=$MSTATE failing=$FAILING pending=$PENDING"
+
+            if [ "$FAILING" -gt 0 ]; then
+              NAMES=$(jq -r '[.statusCheckRollup[]? | select(.conclusion!=null and .conclusion!="SUCCESS" and .conclusion!="SKIPPED") | .name] | join(", ")' <<< "$DATA")
+              gh pr comment "$PR" --repo "$REPO" --body "❌ hotfix auto-merge: CI failing on **${NAMES}**. Fix and push to retry."
+              echo "::error::CI failing: $NAMES"; exit 1
+            fi
+            if [ "$MERGEABLE" = "CONFLICTING" ]; then
+              gh pr comment "$PR" --repo "$REPO" --body "⚠️ hotfix auto-merge: merge conflicts — resolve and push."
+              echo "::error::PR has conflicts"; exit 1
+            fi
+            if [ "$MERGEABLE" = "MERGEABLE" ] && [ "$MSTATE" = "CLEAN" ] && [ "$PENDING" -eq 0 ]; then
+              ADMIN_FLAG=""; [ "$FORCE_ADMIN" = "true" ] && ADMIN_FLAG="--admin"
+              if ! gh pr merge "$PR" --repo "$REPO" --squash --delete-branch $ADMIN_FLAG 2>&1; then
+                gh pr comment "$PR" --repo "$REPO" \
+                  --body "❌ hotfix auto-merge: merge command failed. Re-run with \`force_admin_merge=true\` if branch protection is blocking."
+                echo "::error::gh pr merge failed"; exit 1
+              fi
+              echo "merged=true" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+            sleep 20
+          done
+          gh pr comment "$PR" --repo "$REPO" \
+            --body "⏱️ hotfix auto-merge: CI still running after 10 min. Re-run this workflow to retry."
+          echo "::error::Timed out"; exit 1
+
+      - name: Summary
+        if: always()
+        run: |
+          PR="${{ steps.resolve.outputs.pr_number }}"
+          URL="${{ steps.validate.outputs.pr_url }}"
+          TITLE="${{ steps.validate.outputs.pr_title }}"
+          if   [ "${{ steps.validate.outputs.skipped }}"  = "true" ]; then S="Skipped — guards not met."
+          elif [ "${{ steps.auto_merge.outputs.queued }}" = "true" ]; then S="Auto-merge queued (native GitHub)."
+          elif [ "${{ steps.poll_merge.outputs.merged }}" = "true" ]; then S="Merged via polling fallback (squash)."
+          else S="Not merged — see logs for details."; fi
+          { echo "### Hotfix Auto-Merge — PR #${PR}"; echo ""; echo "**${S}**"; echo ""; echo "PR: [${TITLE}](${URL})"; } >> "$GITHUB_STEP_SUMMARY"

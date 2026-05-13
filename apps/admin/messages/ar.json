@@ -85,6 +85,7 @@
   "breadcrumbs": {
     "home": "الرئيسية",
     "organizations": "المنظمات",
+    "createOrg": "إنشاء تاننت",
     "detail": "التفاصيل",
     "plans": "الخطط",
     "new": "جديد",
@@ -271,6 +272,7 @@
     "table": {
       "slug": "المعرّف",
       "name": "الاسم",
+      "owner": "المالك",
       "plan": "الخطة",
       "status": "الحالة",
       "created": "تاريخ الإنشاء",

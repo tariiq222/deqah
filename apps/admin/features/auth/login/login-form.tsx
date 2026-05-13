@@ -26,6 +26,8 @@ export function LoginForm() {
   );
 }
 
+const CAPTCHA_BYPASS = process.env.NODE_ENV !== "production";
+
 function Inner() {
   const router = useRouter();
   const params = useSearchParams();
@@ -34,7 +36,9 @@ function Inner() {
   const tForgot = useTranslations("forgotPassword");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [hcaptchaToken, setHcaptchaToken] = useState<string | null>(null);
+  const [hcaptchaToken, setHcaptchaToken] = useState<string | null>(
+    CAPTCHA_BYPASS ? "dev-bypass" : null,
+  );
   const [submitting, setSubmitting] = useState(false);
   const captchaRef = useRef<HCaptcha>(null);
 
@@ -103,13 +107,19 @@ function Inner() {
             <Link href="/forgot-password" className="text-sm text-primary hover:underline ms-auto">
               {tForgot("linkLabel")}
             </Link>
-            <div className="flex justify-center py-2">
-              <CaptchaField
-                ref={captchaRef}
-                onVerify={(token) => setHcaptchaToken(token)}
-                onExpire={() => setHcaptchaToken(null)}
-              />
-            </div>
+            {CAPTCHA_BYPASS ? (
+              <p className="text-xs text-muted-foreground text-center py-2">
+                Dev mode — captcha skipped
+              </p>
+            ) : (
+              <div className="flex justify-center py-2">
+                <CaptchaField
+                  ref={captchaRef}
+                  onVerify={(token) => setHcaptchaToken(token)}
+                  onExpire={() => setHcaptchaToken(null)}
+                />
+              </div>
+            )}
             <Button type="submit" disabled={submitting || !hcaptchaToken} className="mt-2">
               {submitting ? t("submitting") : t("submit")}
             </Button>

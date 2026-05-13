@@ -18,6 +18,7 @@ export interface OrganizationRow {
     status: string;
     plan: { slug: string; nameEn: string };
   } | null;
+  owner: { name: string | null; email: string } | null;
 }
 
 export interface OrganizationDetail extends OrganizationRow {

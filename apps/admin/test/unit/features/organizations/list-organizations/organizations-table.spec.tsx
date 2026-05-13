@@ -26,6 +26,7 @@ const mockOrg: OrganizationRow = {
       nameEn: 'Basic',
     },
   },
+  owner: { name: 'أحمد علي', email: 'ahmed@example.com' },
 };
 
 describe('OrganizationsTable', () => {

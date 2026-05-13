@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { Button } from '@deqah/ui/primitives/button';
-import { CreateTenantDialog } from '@/features/organizations/create-tenant/create-tenant-dialog';
 import { useListOrganizations } from '@/features/organizations/list-organizations/use-list-organizations';
 import {
   type LifecycleStatusFilter,
@@ -25,7 +25,6 @@ export default function OrganizationsListPage() {
   const [status, setStatus] = useState<LifecycleStatusFilter>('all');
   const [verticalId, setVerticalId] = useState('');
   const [planId, setPlanId] = useState('');
-  const [createOpen, setCreateOpen] = useState(false);
 
   const { data, isLoading, error, refetch } = useListOrganizations({
     page,
@@ -52,8 +51,8 @@ export default function OrganizationsListPage() {
               {data.meta.total} {tc('total')}
             </span>
           ) : null}
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
-            {t('create.button')}
+          <Button asChild size="sm">
+            <Link href="/organizations/new">{t('create.button')}</Link>
           </Button>
         </div>
       </div>
@@ -136,7 +135,6 @@ export default function OrganizationsListPage() {
         </div>
       ) : null}
 
-      <CreateTenantDialog open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   );
 }

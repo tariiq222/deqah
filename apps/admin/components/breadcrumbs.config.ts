@@ -2,6 +2,11 @@
 export const BREADCRUMB_TRAILS: Record<string, Array<{ key: string; href?: string }>> = {
   '/': [{ key: 'home' }],
   '/organizations': [{ key: 'home', href: '/' }, { key: 'organizations' }],
+  '/organizations/new': [
+    { key: 'home', href: '/' },
+    { key: 'organizations', href: '/organizations' },
+    { key: 'createOrg' },
+  ],
   '/organizations/:id': [
     { key: 'home', href: '/' },
     { key: 'organizations', href: '/organizations' },

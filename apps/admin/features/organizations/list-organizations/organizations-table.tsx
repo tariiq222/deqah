@@ -56,6 +56,7 @@ export function OrganizationsTable({ items, isLoading }: Props) {
         <TableRow className="h-10">
           <TableHead className="text-[11px] uppercase tracking-[0.06em]">{t('slug')}</TableHead>
           <TableHead className="text-[11px] uppercase tracking-[0.06em]">{t('name')}</TableHead>
+          <TableHead className="text-[11px] uppercase tracking-[0.06em]">{t('owner')}</TableHead>
           <TableHead className="text-[11px] uppercase tracking-[0.06em]">{t('plan')}</TableHead>
           <TableHead className="text-[11px] uppercase tracking-[0.06em]">{t('status')}</TableHead>
           <TableHead className="text-[11px] uppercase tracking-[0.06em]">{t('created')}</TableHead>
@@ -68,7 +69,7 @@ export function OrganizationsTable({ items, isLoading }: Props) {
         {isLoading && !items
           ? Array.from({ length: 5 }).map((_, i) => (
               <TableRow key={`skeleton-row-${i}`} className="h-10">
-                <TableCell colSpan={6}>
+                <TableCell colSpan={7}>
                   <Skeleton className="h-5" />
                 </TableCell>
               </TableRow>
@@ -84,6 +85,18 @@ export function OrganizationsTable({ items, isLoading }: Props) {
                   {org.nameEn ? (
                     <div className="text-xs text-muted-foreground">{org.nameEn}</div>
                   ) : null}
+                </TableCell>
+                <TableCell>
+                  {org.owner ? (
+                    <div>
+                      {org.owner.name ? (
+                        <div className="text-sm">{org.owner.name}</div>
+                      ) : null}
+                      <div className="text-xs text-muted-foreground">{org.owner.email}</div>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   {org.subscription ? (
@@ -128,7 +141,7 @@ export function OrganizationsTable({ items, isLoading }: Props) {
             ))}
         {!isLoading && items?.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+            <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
               {t('empty')}
             </TableCell>
           </TableRow>
