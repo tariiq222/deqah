@@ -21,7 +21,7 @@ name: Build & Deploy
 
 on:
   push:
-    branches: [staging, main]
+    branches: [main]
     paths:
       - 'apps/**'
       - 'packages/**'

@@ -6,7 +6,7 @@ import {
   SubscriptionStatus,
   SuperAdminActionType,
 } from '@prisma/client';
-import { PrismaService } from '../../../../infrastructure/database';
+import { PrismaService, RlsTransactionService } from '../../../../infrastructure/database';
 import { PlatformMailerService } from '../../../../infrastructure/mail';
 import { OwnerProvisioningService } from '../../../identity/owner-provisioning/owner-provisioning.service';
 
@@ -36,6 +36,7 @@ export class CreateTenantHandler {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly rlsTx: RlsTransactionService,
     private readonly ownerProvisioning: OwnerProvisioningService,
     private readonly mailer: PlatformMailerService,
     private readonly config: ConfigService,
@@ -46,11 +47,11 @@ export class CreateTenantHandler {
       throw new BadRequestException('ownerUserId_or_ownerEmail_required');
     }
 
-    // $allTenants.$transaction: super-admin action — operates across tenants intentionally.
+    // withBypassTransaction: super-admin action — operates across tenants intentionally.
     // Creates a brand-new Organization + initial OWNER Membership + BrandingConfig +
     // OrganizationSettings + optional Subscription; no tenant context exists yet for the
-    // new org, so a bypass is mandatory.
-    const txResult = await this.prisma.$allTenants.$transaction(async (tx) => {
+    // new org, so bypass RLS via GUC (app.bypass_rls = 'on') is mandatory.
+    const txResult = await this.rlsTx.withBypassTransaction(async (tx) => {
       const existing = await tx.organization.findUnique({
         where: { slug: cmd.slug },
         select: { id: true },

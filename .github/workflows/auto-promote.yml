@@ -1,21 +1,21 @@
-# Auto-promote develop → staging
+# Auto-promote develop → main
 #
 # Triggered on every push to develop. After CI passes, fast-forwards
-# the staging branch to develop. build-images.yml then takes over and
-# deploys the staging environment.
+# the main branch to develop. build-images.yml then takes over and
+# deploys production.
 #
 # Pipeline:
-#   develop ──[this]──▶ staging ──[build-images:develop tag]──▶ Dokploy staging env
-#                                              │
-#                                  manual gate (promote-to-main.yml)
-#                                              ▼
-#                                    main ──[build-images:latest tag]──▶ Dokploy production
+#   develop ──[this]──▶ main ──[build-images:latest tag]──▶ Dokploy production
+#
+# NOTE: staging branch exists in the repo but is paused from automation
+# (2026-05-13). To re-enable a staged pipeline, restore the previous
+# version of this file and promote-to-main.yml from git history.
 #
 # Escape hatches:
 #   [skip auto-promote]  in commit message — skip
 #   [skip ci]            in commit message — skip
 
-name: Auto-promote develop → staging
+name: Auto-promote develop → main
 
 on:
   push:
@@ -26,12 +26,12 @@ permissions:
   actions: write
 
 concurrency:
-  group: auto-promote-staging
+  group: auto-promote-main
   cancel-in-progress: false
 
 jobs:
   promote:
-    name: Fast-forward staging from develop
+    name: Fast-forward main from develop
     runs-on: ubuntu-latest
     if: |
       !contains(github.event.head_commit.message, '[skip auto-promote]') &&
@@ -75,42 +75,36 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Fast-forward staging to develop
+      - name: Fast-forward main to develop
         run: |
           set -euo pipefail
-          git fetch origin staging:staging 2>/dev/null || git checkout -b staging
-          git checkout staging
+          git fetch origin main:main 2>/dev/null || git checkout -b main
+          git checkout main
           if ! git merge --ff-only origin/develop; then
-            echo "::error::staging has diverged from develop — manual fix required"
+            echo "::error::main has diverged from develop — manual fix required"
             exit 1
           fi
-          git push origin staging
-          echo "✅ staging is now at $(git rev-parse --short HEAD)"
+          git push origin main
+          echo "✅ main is now at $(git rev-parse --short HEAD)"
 
       - name: Trigger build-images workflow
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          echo "Triggering build-images.yml for staging..."
+          echo "Triggering build-images.yml for main..."
           gh workflow run build-images.yml \
             --repo ${{ github.repository }} \
-            --ref staging \
+            --ref main \
             -f apps=all
           echo "✅ build-images.yml triggered"
 
       - name: Summary
         run: |
           {
-            echo "### ✅ Auto-promote develop → staging"
+            echo "### ✅ Auto-promote develop → main"
             echo ""
-            echo "Staging is now at: \`$(git rev-parse --short HEAD)\`"
+            echo "main is now at: \`$(git rev-parse --short HEAD)\`"
             echo ""
-            echo "**Next:** \`build-images.yml\` was triggered to build \`:develop\` tags and Dokploy will deploy to staging."
-            echo ""
-            echo "**To promote staging → production (manual gate):**"
-            echo ""
-            echo '```bash'
-            echo "gh workflow run promote-to-main.yml -f confirm=promote"
-            echo '```'
+            echo "**Next:** \`build-images.yml\` was triggered to build \`:latest\` tags and Dokploy will deploy to production."
           } >> "$GITHUB_STEP_SUMMARY"

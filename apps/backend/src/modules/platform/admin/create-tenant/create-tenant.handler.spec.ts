@@ -17,10 +17,10 @@ describe('CreateTenantHandler', () => {
     superAdminActionLog: { create: jest.fn() },
   };
 
-  const prisma = {
-    $allTenants: {
-      $transaction: jest.fn(async (fn: (arg: typeof tx) => unknown) => fn(tx)),
-    },
+  const prisma = {};
+
+  const rlsTx = {
+    withBypassTransaction: jest.fn(async (fn: (arg: typeof tx) => unknown) => fn(tx)),
   };
 
   const mailer = { sendTenantWelcome: jest.fn().mockResolvedValue(undefined) };
@@ -32,6 +32,7 @@ describe('CreateTenantHandler', () => {
 
   const handler = new CreateTenantHandler(
     prisma as never,
+    rlsTx as never,
     ownerProvisioning,
     mailer as never,
     config as never,

@@ -20,11 +20,13 @@
 
 name: Promote staging → main (manual)
 
+# DISABLED 2026-05-13 — pipeline switched to direct develop → main.
+# To re-enable, restore the original `on:` block below from git history.
 on:
   workflow_dispatch:
     inputs:
       confirm:
-        description: 'Type "promote" to confirm pushing staging to main'
+        description: 'DISABLED — pipeline now goes develop → main directly. See auto-promote.yml.'
         required: true
         type: string
 
@@ -43,6 +45,11 @@ jobs:
     if: github.actor == 'tariiq222'
 
     steps:
+      - name: Workflow disabled
+        run: |
+          echo "::error::This workflow is disabled. Pipeline now goes develop → main directly via auto-promote.yml."
+          exit 1
+
       - name: Validate confirmation
         run: |
           if [ "${{ inputs.confirm }}" != "promote" ]; then
