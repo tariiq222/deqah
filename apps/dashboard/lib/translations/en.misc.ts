@@ -275,6 +275,13 @@ export const enMisc: Record<string, string> = {
   "resetPassword.passwordMismatch": "Passwords do not match",
   "resetPassword.weakPassword": "Password must be at least 8 characters",
 
+  // — Org selection step —
+  "login.chooseOrganization": "Choose organization",
+  "login.chooseOrganizationDescription": "Your account is linked to multiple organizations. Select the one you want to sign in to.",
+  "login.role.OWNER": "Owner",
+  "login.role.ADMIN": "Admin",
+  "login.role.STAFF": "Staff",
+
   // — OTP Login flow —
   "login.identifierLabel": "Email or mobile number",
   "login.continue": "Continue",

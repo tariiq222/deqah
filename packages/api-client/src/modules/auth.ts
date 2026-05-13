@@ -10,10 +10,28 @@ export interface LoginPayload {
   email: string
   password: string
   hCaptchaToken: string
+  /** Optional org hint. When provided, tokens are issued scoped to this org (or 401 if no membership). */
+  organizationId?: string
 }
 
-export async function login(payload: LoginPayload): Promise<AuthResponse> {
-  return apiRequest<AuthResponse>('/auth/login', {
+export interface OrgSelectionMembership {
+  organizationId: string
+  organizationNameAr: string
+  organizationNameEn: string | null
+  organizationSlug: string | null
+  role: string
+  logoUrl: string | null
+}
+
+export interface OrgSelectionResponse {
+  requires_org_selection: true
+  memberships: OrgSelectionMembership[]
+}
+
+export type LoginResponse = AuthResponse | OrgSelectionResponse
+
+export async function login(payload: LoginPayload): Promise<LoginResponse> {
+  return apiRequest<LoginResponse>('/auth/login', {
     method: 'POST',
     body: JSON.stringify(payload),
   })

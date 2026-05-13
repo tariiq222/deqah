@@ -17,7 +17,7 @@ import {
 } from "@deqah/ui/primitives/card";
 import { Input } from "@deqah/ui/primitives/input";
 import { Label } from "@deqah/ui/primitives/label";
-import { login } from "./login.api";
+import { login, isAuthResponse } from "./login.api";
 export function LoginForm() {
   return (
     <Suspense fallback={null}>
@@ -48,6 +48,12 @@ function Inner() {
     setSubmitting(true);
     try {
       const res = await login({ email, password, hCaptchaToken: hcaptchaToken });
+      if (!isAuthResponse(res)) {
+        toast.error(t("error.notAuthorized"));
+        captchaRef.current?.resetCaptcha();
+        setHcaptchaToken(null);
+        return;
+      }
       if (!res.user?.isSuperAdmin) {
         toast.error(t("error.notAuthorized"));
         captchaRef.current?.resetCaptcha();

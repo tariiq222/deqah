@@ -6,6 +6,7 @@ import { IdentifierStep } from "@/components/features/login/identifier-step"
 import { MethodStep } from "@/components/features/login/method-step"
 import { PasswordStep } from "@/components/features/login/password-step"
 import { OtpStep } from "@/components/features/login/otp-step"
+import { OrgSelectionStep } from "@/components/features/login/org-selection-step"
 import { useLocale } from "@/components/locale-provider"
 
 export function LoginForm() {
@@ -26,6 +27,7 @@ export function LoginForm() {
     method: t("login.chooseMethod"),
     password: t("login.welcome"),
     otp: t("login.otp.title"),
+    "org-selection": t("login.chooseOrganization"),
   }
 
   return (
@@ -76,6 +78,15 @@ export function LoginForm() {
               otpSentAt={flow.otpSentAt}
               onSubmit={flow.submitOtp}
               onResend={flow.resendOtp}
+              onBack={flow.back}
+            />
+          )}
+          {flow.step === "org-selection" && flow.orgChoices && (
+            <OrgSelectionStep
+              memberships={flow.orgChoices}
+              loading={flow.loading}
+              error={flow.error}
+              onSelect={flow.selectOrg}
               onBack={flow.back}
             />
           )}

@@ -121,6 +121,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (identifier: string, password: string) => {
     const res = await apiLogin(identifier, password)
+    if ('requires_org_selection' in res) {
+      // Multi-org flow: caller must handle org selection via the login page step.
+      // This direct login path does not support it; ignore (the login form uses loginWithTokens).
+      return
+    }
     setUser(res.user)
     setPermissions(res.user.permissions ?? [])
     scheduleRefresh(res.expiresIn)

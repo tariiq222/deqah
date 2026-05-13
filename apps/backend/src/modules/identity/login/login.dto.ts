@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class LoginDto {
@@ -15,4 +15,15 @@ export class LoginDto {
   @IsOptional()
   @IsString()
   hCaptchaToken?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Organization UUID. When provided and the user has an active membership ' +
+      'in that org, tokens are issued immediately. Omit to trigger org-selection ' +
+      'when the user belongs to multiple organizations.',
+    format: 'uuid',
+  })
+  @IsOptional()
+  @IsUUID()
+  organizationId?: string;
 }

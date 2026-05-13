@@ -80,7 +80,7 @@ describe("auth api", () => {
     expect(loginMock).toHaveBeenCalledWith({ email: "a@b.com", password: "pass", hCaptchaToken: "" })
     expect(setAccessTokenMock).toHaveBeenCalledWith("token123")
     expect(localStorage.getItem("deqah_user")).toContain("a@b.com")
-    expect(result.accessToken).toBe("token123")
+    expect('accessToken' in result && result.accessToken).toBe("token123")
   })
 
   it("fetchMe delegates to authApi.getMe and stores user", async () => {

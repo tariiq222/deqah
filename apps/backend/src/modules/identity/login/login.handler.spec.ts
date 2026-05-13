@@ -7,6 +7,9 @@ import { TokenService } from '../shared/token.service';
 import { PrismaService } from '../../../infrastructure/database';
 import { RedisService } from '../../../infrastructure/cache/redis.service';
 
+const ORG_A = '00000000-0000-0000-0000-000000000001';
+const ORG_B = '00000000-0000-0000-0000-000000000002';
+
 const mockUser = {
   id: 'user-1',
   email: 'admin@clinic.sa',
@@ -23,7 +26,16 @@ const mockUser = {
   updatedAt: new Date(),
   failedLoginAttempts: 0,
   lockedUntil: null,
+  isSuperAdmin: false,
+  lastActiveOrganizationId: null,
 };
+
+const makeMembership = (orgId: string, role = 'ADMIN') => ({
+  id: `mem-${orgId}`,
+  organizationId: orgId,
+  role,
+  organization: { nameAr: `عيادة ${orgId}`, nameEn: `Clinic ${orgId}`, slug: `clinic-${orgId}` },
+});
 
 describe('LoginHandler', () => {
   let handler: LoginHandler;
@@ -84,13 +96,11 @@ describe('LoginHandler', () => {
     prisma.user.findUnique.mockResolvedValue(mockUser as never);
     passwordService.verify.mockResolvedValue(true);
     tokenService.issueTokenPair.mockResolvedValue({ accessToken: 'acc', refreshToken: 'ref' });
-    prisma.$allTenants.membership.findMany.mockResolvedValue([{
-      id: 'mem-1', organizationId: '00000000-0000-0000-0000-000000000001', role: 'ADMIN',
-    }]);
+    prisma.$allTenants.membership.findMany.mockResolvedValue([makeMembership(ORG_A)]);
 
     const result = await handler.execute({ email: 'admin@clinic.sa', password: 'secret' });
-    expect(result.accessToken).toBe('acc');
-    expect(result.refreshToken).toBe('ref');
+    expect('accessToken' in result && result.accessToken).toBe('acc');
+    expect('refreshToken' in result && result.refreshToken).toBe('ref');
   });
 
   it('throws UnauthorizedException when user not found', async () => {
@@ -127,19 +137,15 @@ describe('LoginHandler', () => {
     it('passes the active membership to TokenService.issueTokenPair', async () => {
       prisma.user.findUnique.mockResolvedValue({ ...mockUser, lastActiveOrganizationId: null } as never);
       passwordService.verify.mockResolvedValue(true);
-      prisma.$allTenants.membership.findMany.mockResolvedValue([{
-        id: 'mem-1',
-        organizationId: '00000000-0000-0000-0000-000000000001',
-        role: 'ADMIN',
-      }]);
+      prisma.$allTenants.membership.findMany.mockResolvedValue([makeMembership(ORG_A)]);
 
       await handler.execute({ email: 'admin@clinic.sa', password: 'secret' });
 
       expect(tokenService.issueTokenPair).toHaveBeenCalledWith(
         expect.objectContaining({ id: 'user-1' }),
         expect.objectContaining({
-          organizationId: '00000000-0000-0000-0000-000000000001',
-          membershipId: 'mem-1',
+          organizationId: ORG_A,
+          membershipId: `mem-${ORG_A}`,
           membershipRole: 'ADMIN',
           isSuperAdmin: false,
         }),
@@ -167,6 +173,113 @@ describe('LoginHandler', () => {
         expect.any(Object),
         expect.objectContaining({ isSuperAdmin: true }),
       );
+    });
+  });
+
+  describe('multi-org login flow', () => {
+    it('branch 1: zero active memberships → Unauthorized', async () => {
+      prisma.user.findUnique.mockResolvedValue({ ...mockUser } as never);
+      passwordService.verify.mockResolvedValue(true);
+      prisma.$allTenants.membership.findMany.mockResolvedValue([]);
+
+      await expect(
+        handler.execute({ email: 'admin@clinic.sa', password: 'secret' }),
+      ).rejects.toThrow('No active membership found for this account');
+    });
+
+    it('branch 2: one active membership → success (no org hint needed)', async () => {
+      prisma.user.findUnique.mockResolvedValue({ ...mockUser } as never);
+      passwordService.verify.mockResolvedValue(true);
+      prisma.$allTenants.membership.findMany.mockResolvedValue([makeMembership(ORG_A)]);
+
+      const result = await handler.execute({ email: 'admin@clinic.sa', password: 'secret' });
+
+      expect(tokenService.issueTokenPair).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({ organizationId: ORG_A, isSuperAdmin: false }),
+      );
+      expect(result).toEqual({ accessToken: 'acc', refreshToken: 'ref' });
+    });
+
+    it('branch 3: multi-org, valid organizationId provided → tokens for that org', async () => {
+      prisma.user.findUnique.mockResolvedValue({ ...mockUser } as never);
+      passwordService.verify.mockResolvedValue(true);
+      prisma.$allTenants.membership.findMany.mockResolvedValue([
+        makeMembership(ORG_A),
+        makeMembership(ORG_B),
+      ]);
+
+      const result = await handler.execute({
+        email: 'admin@clinic.sa',
+        password: 'secret',
+        organizationId: ORG_B,
+      });
+
+      expect(tokenService.issueTokenPair).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({ organizationId: ORG_B }),
+      );
+      expect(result).toEqual({ accessToken: 'acc', refreshToken: 'ref' });
+    });
+
+    it('branch 4: multi-org, organizationId provided but user has no membership there → Unauthorized', async () => {
+      const ORG_UNKNOWN = '00000000-0000-0000-0000-000000000099';
+      prisma.user.findUnique.mockResolvedValue({ ...mockUser } as never);
+      passwordService.verify.mockResolvedValue(true);
+      prisma.$allTenants.membership.findMany.mockResolvedValue([
+        makeMembership(ORG_A),
+        makeMembership(ORG_B),
+      ]);
+
+      await expect(
+        handler.execute({
+          email: 'admin@clinic.sa',
+          password: 'secret',
+          organizationId: ORG_UNKNOWN,
+        }),
+      ).rejects.toThrow('No active membership found for the requested organization');
+    });
+
+    it('branch 5: multi-org, no organizationId, lastActiveOrganizationId matches → tokens for sticky org', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        ...mockUser,
+        lastActiveOrganizationId: ORG_B,
+      } as never);
+      passwordService.verify.mockResolvedValue(true);
+      prisma.$allTenants.membership.findMany.mockResolvedValue([
+        makeMembership(ORG_A),
+        makeMembership(ORG_B),
+      ]);
+
+      const result = await handler.execute({ email: 'admin@clinic.sa', password: 'secret' });
+
+      expect(tokenService.issueTokenPair).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({ organizationId: ORG_B }),
+      );
+      expect(result).toEqual({ accessToken: 'acc', refreshToken: 'ref' });
+    });
+
+    it('branch 6: multi-org, no organizationId, no lastActiveOrganizationId → requires_org_selection', async () => {
+      prisma.user.findUnique.mockResolvedValue({ ...mockUser, lastActiveOrganizationId: null } as never);
+      passwordService.verify.mockResolvedValue(true);
+      prisma.$allTenants.membership.findMany.mockResolvedValue([
+        makeMembership(ORG_A),
+        makeMembership(ORG_B),
+      ]);
+
+      const result = await handler.execute({ email: 'admin@clinic.sa', password: 'secret' });
+
+      expect(tokenService.issueTokenPair).not.toHaveBeenCalled();
+      expect(result).toMatchObject({
+        requires_org_selection: true,
+        memberships: expect.arrayContaining([
+          expect.objectContaining({ organizationId: ORG_A }),
+          expect.objectContaining({ organizationId: ORG_B }),
+        ]),
+      });
+      // Confirm no tokens are issued
+      expect('accessToken' in result).toBe(false);
     });
   });
 
@@ -237,9 +350,7 @@ describe('LoginHandler', () => {
         lockedUntil: pastDate,
       } as never);
       passwordService.verify.mockResolvedValue(true);
-      prisma.$allTenants.membership.findMany.mockResolvedValue([{
-        id: 'mem-1', organizationId: '00000000-0000-0000-0000-000000000001', role: 'ADMIN',
-      }]);
+      prisma.$allTenants.membership.findMany.mockResolvedValue([makeMembership(ORG_A)]);
 
       await handler.execute({ email: 'admin@clinic.sa', password: 'correct' });
 

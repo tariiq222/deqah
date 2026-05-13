@@ -3651,6 +3651,11 @@
             "description": "Captcha verification token (ignored — kept for client compatibility until Cloudflare Turnstile lands)",
             "type": "string"
           },
+          "organizationId": {
+            "description": "Organization UUID. When provided and the user has an active membership in that org, tokens are issued immediately. Omit to trigger org-selection when the user belongs to multiple organizations.",
+            "format": "uuid",
+            "type": "string"
+          },
           "password": {
             "description": "Account password (min 8 characters)",
             "example": "P@ssw0rd123",
@@ -12235,79 +12240,134 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "properties": {
-                    "accessToken": {
-                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                      "type": "string"
-                    },
-                    "expiresIn": {
-                      "example": 900,
-                      "type": "number"
-                    },
-                    "requiresOtp": {
-                      "description": "True when 2FA is required — use OTP flow to complete login",
-                      "type": "boolean"
-                    },
-                    "user": {
+                  "oneOf": [
+                    {
+                      "description": "Successful login",
                       "properties": {
-                        "avatarUrl": {
-                          "nullable": true,
+                        "accessToken": {
+                          "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                           "type": "string"
                         },
-                        "email": {
-                          "format": "email",
-                          "type": "string"
+                        "expiresIn": {
+                          "example": 900,
+                          "type": "number"
                         },
-                        "firstName": {
-                          "type": "string"
-                        },
-                        "gender": {
-                          "nullable": true,
-                          "type": "string"
-                        },
-                        "id": {
-                          "format": "uuid",
-                          "type": "string"
-                        },
-                        "isActive": {
-                          "type": "boolean"
-                        },
-                        "isSuperAdmin": {
-                          "type": "boolean"
-                        },
-                        "lastName": {
-                          "type": "string"
-                        },
-                        "name": {
-                          "type": "string"
-                        },
-                        "organizationId": {
-                          "format": "uuid",
-                          "nullable": true,
-                          "type": "string"
-                        },
-                        "permissions": {
+                        "user": {
+                          "properties": {
+                            "avatarUrl": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "email": {
+                              "format": "email",
+                              "type": "string"
+                            },
+                            "firstName": {
+                              "type": "string"
+                            },
+                            "gender": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "id": {
+                              "format": "uuid",
+                              "type": "string"
+                            },
+                            "isActive": {
+                              "type": "boolean"
+                            },
+                            "isSuperAdmin": {
+                              "type": "boolean"
+                            },
+                            "lastName": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "organizationId": {
+                              "format": "uuid",
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "permissions": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "phone": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "role": {
+                              "type": "string"
+                            }
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    {
+                      "description": "Org selection required — re-submit with organizationId",
+                      "properties": {
+                        "memberships": {
                           "items": {
-                            "type": "string"
+                            "properties": {
+                              "logoUrl": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "organizationId": {
+                                "format": "uuid",
+                                "type": "string"
+                              },
+                              "organizationNameAr": {
+                                "type": "string"
+                              },
+                              "organizationNameEn": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "organizationSlug": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "role": {
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
                           },
                           "type": "array"
                         },
-                        "phone": {
-                          "nullable": true,
-                          "type": "string"
-                        },
-                        "role": {
-                          "type": "string"
+                        "requires_org_selection": {
+                          "enum": [
+                            true
+                          ],
+                          "type": "boolean"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    {
+                      "description": "2FA required (super-admin)",
+                      "properties": {
+                        "requiresOtp": {
+                          "enum": [
+                            true
+                          ],
+                          "type": "boolean"
                         }
                       },
                       "type": "object"
                     }
-                  },
-                  "type": "object"
+                  ]
                 }
               }
             },
-            "description": "Access token with user profile (refresh token delivered as httpOnly cookie ck_refresh), or a 2FA challenge when super-admin login requires OTP"
+            "description": "One of: (1) access token + user profile — successful login; (2) { requiresOtp: true } — 2FA step required (super-admin only); (3) { requires_org_selection: true, memberships: [...] } — user has multiple active orgs and no hint was supplied."
           },
           "400": {
             "content": {
@@ -12327,7 +12387,7 @@
                 }
               }
             },
-            "description": "Invalid credentials"
+            "description": "Invalid credentials or unrecognized organization"
           },
           "429": {
             "content": {

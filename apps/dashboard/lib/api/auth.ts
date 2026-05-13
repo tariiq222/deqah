@@ -7,11 +7,11 @@
  */
 
 import { authApi } from "@deqah/api-client"
-import type { AuthResponse, UserPayload } from "@deqah/api-client"
+import type { AuthResponse, UserPayload, OrgSelectionResponse, OrgSelectionMembership } from "@deqah/api-client"
 import { setAccessToken, getAccessToken } from "@/lib/api"
 
 export type AuthUser = UserPayload
-export type { AuthResponse }
+export type { AuthResponse, OrgSelectionResponse, OrgSelectionMembership }
 
 const USER_KEY = "deqah_user"
 const IMPERSONATION_KEY = "deqah_impersonation"
@@ -19,8 +19,13 @@ const IMPERSONATION_KEY = "deqah_impersonation"
 export async function login(
   identifier: string,
   password: string,
-): Promise<AuthResponse> {
-  const data = await authApi.login({ email: identifier, password, hCaptchaToken: '' })
+  organizationId?: string,
+): Promise<AuthResponse | OrgSelectionResponse> {
+  const data = await authApi.login({ email: identifier, password, hCaptchaToken: '', organizationId })
+  if ('requires_org_selection' in data) {
+    // Do not persist — no tokens issued yet.
+    return data
+  }
   persistAuth(data)
   return data
 }

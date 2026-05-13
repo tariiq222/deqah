@@ -37,6 +37,6 @@ describe('login.api', () => {
 
     const result = await login({ email: 'x@y.com', password: 'pass', hCaptchaToken: '' });
 
-    expect(result.accessToken).toBe('tok');
+    expect('accessToken' in result && result.accessToken).toBe('tok');
   });
 });

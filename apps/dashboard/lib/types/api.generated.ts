@@ -7171,6 +7171,11 @@ export interface components {
             /** @description Captcha verification token (ignored — kept for client compatibility until Cloudflare Turnstile lands) */
             hCaptchaToken?: string;
             /**
+             * Format: uuid
+             * @description Organization UUID. When provided and the user has an active membership in that org, tokens are issued immediately. Omit to trigger org-selection when the user belongs to multiple organizations.
+             */
+            organizationId?: string;
+            /**
              * Format: password
              * @description Account password (min 8 characters)
              * @example P@ssw0rd123
@@ -12724,7 +12729,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Access token with user profile (refresh token delivered as httpOnly cookie ck_refresh), or a 2FA challenge when super-admin login requires OTP */
+            /** @description One of: (1) access token + user profile — successful login; (2) { requiresOtp: true } — 2FA step required (super-admin only); (3) { requires_org_selection: true, memberships: [...] } — user has multiple active orgs and no hint was supplied. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -12735,8 +12740,6 @@ export interface operations {
                         accessToken?: string;
                         /** @example 900 */
                         expiresIn?: number;
-                        /** @description True when 2FA is required — use OTP flow to complete login */
-                        requiresOtp?: boolean;
                         user?: {
                             avatarUrl?: string | null;
                             /** Format: email */
@@ -12755,6 +12758,21 @@ export interface operations {
                             phone?: string | null;
                             role?: string;
                         };
+                    } | {
+                        memberships?: {
+                            logoUrl?: string | null;
+                            /** Format: uuid */
+                            organizationId?: string;
+                            organizationNameAr?: string;
+                            organizationNameEn?: string | null;
+                            organizationSlug?: string | null;
+                            role?: string;
+                        }[];
+                        /** @enum {boolean} */
+                        requires_org_selection?: true;
+                    } | {
+                        /** @enum {boolean} */
+                        requiresOtp?: true;
                     };
                 };
             };
@@ -12767,7 +12785,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorDto"];
                 };
             };
-            /** @description Invalid credentials */
+            /** @description Invalid credentials or unrecognized organization */
             401: {
                 headers: {
                     [name: string]: unknown;

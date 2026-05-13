@@ -13,6 +13,7 @@ import {
   ApiCreatedResponse, ApiParam,
 } from '@nestjs/swagger';
 import { LoginHandler } from '../../modules/identity/login/login.handler';
+import type { OrgSelectionRequired } from '../../modules/identity/login/login.handler';
 import { LogoutHandler } from '../../modules/identity/logout/logout.handler';
 import { LoginDto } from '../../modules/identity/login/login.dto';
 import { RefreshTokenDto } from '../../modules/identity/refresh-token/refresh-token.dto';
@@ -98,35 +99,70 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Log in with email and password' })
   @ApiOkResponse({
-    description: 'Access token with user profile (refresh token delivered as httpOnly cookie ck_refresh), or a 2FA challenge when super-admin login requires OTP',
+    description:
+      'One of: (1) access token + user profile — successful login; ' +
+      '(2) { requiresOtp: true } — 2FA step required (super-admin only); ' +
+      '(3) { requires_org_selection: true, memberships: [...] } — user has multiple active orgs and no hint was supplied.',
     schema: {
-      type: 'object',
-      properties: {
-        requiresOtp: { type: 'boolean', description: 'True when 2FA is required — use OTP flow to complete login' },
-        accessToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
-        expiresIn: { type: 'number', example: 900 },
-        user: {
+      oneOf: [
+        {
           type: 'object',
+          description: 'Successful login',
           properties: {
-            id: { type: 'string', format: 'uuid' },
-            email: { type: 'string', format: 'email' },
-            name: { type: 'string' },
-            phone: { type: 'string', nullable: true },
-            gender: { type: 'string', nullable: true },
-            avatarUrl: { type: 'string', nullable: true },
-            isActive: { type: 'boolean' },
-            role: { type: 'string' },
-            isSuperAdmin: { type: 'boolean' },
-            firstName: { type: 'string' },
-            lastName: { type: 'string' },
-            organizationId: { type: 'string', format: 'uuid', nullable: true },
-            permissions: { type: 'array', items: { type: 'string' } },
+            accessToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+            expiresIn: { type: 'number', example: 900 },
+            user: {
+              type: 'object',
+              properties: {
+                id: { type: 'string', format: 'uuid' },
+                email: { type: 'string', format: 'email' },
+                name: { type: 'string' },
+                phone: { type: 'string', nullable: true },
+                gender: { type: 'string', nullable: true },
+                avatarUrl: { type: 'string', nullable: true },
+                isActive: { type: 'boolean' },
+                role: { type: 'string' },
+                isSuperAdmin: { type: 'boolean' },
+                firstName: { type: 'string' },
+                lastName: { type: 'string' },
+                organizationId: { type: 'string', format: 'uuid', nullable: true },
+                permissions: { type: 'array', items: { type: 'string' } },
+              },
+            },
           },
         },
-      },
+        {
+          type: 'object',
+          description: 'Org selection required — re-submit with organizationId',
+          properties: {
+            requires_org_selection: { type: 'boolean', enum: [true] },
+            memberships: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  organizationId: { type: 'string', format: 'uuid' },
+                  organizationNameAr: { type: 'string' },
+                  organizationNameEn: { type: 'string', nullable: true },
+                  organizationSlug: { type: 'string', nullable: true },
+                  role: { type: 'string' },
+                  logoUrl: { type: 'string', nullable: true },
+                },
+              },
+            },
+          },
+        },
+        {
+          type: 'object',
+          description: '2FA required (super-admin)',
+          properties: {
+            requiresOtp: { type: 'boolean', enum: [true] },
+          },
+        },
+      ],
     },
   })
-  @ApiResponse({ status: 401, description: 'Invalid credentials', type: ApiErrorDto })
+  @ApiResponse({ status: 401, description: 'Invalid credentials or unrecognized organization', type: ApiErrorDto })
   @ApiResponse({ status: 429, description: 'Too many attempts, try again later', type: ApiErrorDto })
   async loginEndpoint(
     @Body() body: LoginDto,
@@ -134,7 +170,18 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const tokens = await this.login.execute({ email: body.email, password: body.password, ip });
+    const tokens = await this.login.execute({
+      email: body.email,
+      password: body.password,
+      organizationId: body.organizationId,
+      ip,
+    });
+
+    // Multi-org: user has multiple memberships and no org hint was provided.
+    // Return the chooser payload immediately — no tokens, no cookie.
+    if ('requires_org_selection' in tokens) {
+      return tokens as OrgSelectionRequired;
+    }
 
     // Host-based namespace enforcement (TAR-99)
     // Use forwarded headers because the request is proxied through Next.js

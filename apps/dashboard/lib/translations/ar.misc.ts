@@ -275,6 +275,13 @@ export const arMisc: Record<string, string> = {
   "resetPassword.passwordMismatch": "كلمتا المرور غير متطابقتين",
   "resetPassword.weakPassword": "كلمة المرور يجب أن تكون 8 أحرف على الأقل",
 
+  // — Org selection step —
+  "login.chooseOrganization": "اختر المنظمة",
+  "login.chooseOrganizationDescription": "حسابك مرتبط بأكثر من منظمة. اختر المنظمة التي تريد الدخول إليها.",
+  "login.role.OWNER": "مالك",
+  "login.role.ADMIN": "مدير",
+  "login.role.STAFF": "موظف",
+
   // — OTP Login flow —
   "login.identifierLabel": "البريد الإلكتروني أو رقم الجوال",
   "login.continue": "متابعة",
