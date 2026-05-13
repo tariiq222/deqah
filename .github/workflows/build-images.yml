@@ -267,7 +267,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────
   summary:
     name: Summary
-    needs: [detect, build, migrate, deploy]
+    needs: [detect, build, deploy]
     if: always()
     runs-on: ubuntu-latest
     steps:
