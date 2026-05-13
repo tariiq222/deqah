@@ -46,7 +46,7 @@ export class RlsHelper {
    * cross-tenant reach. Every call must be greppable.
    */
   async runWithoutTenant<T>(fn: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.__bypassClient.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT set_config('app.bypass_rls', 'on', true)`;
       return fn(tx);
     });
