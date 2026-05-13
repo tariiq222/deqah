@@ -43,6 +43,9 @@ describe('Transaction Safety Patterns', () => {
 
     mockPrisma = {
       $transaction: jest.fn(),
+      __bypassClient: {
+        $transaction: jest.fn(),
+      },
     } as unknown as jest.Mocked<PrismaService>;
   });
 
@@ -101,7 +104,7 @@ describe('Transaction Safety Patterns', () => {
         return Promise.resolve(undefined);
       });
 
-      (mockPrisma.$transaction as jest.Mock).mockImplementation(async (fn: (tx: Prisma.TransactionClient) => Promise<unknown>) => {
+      (mockPrisma.__bypassClient.$transaction as jest.Mock).mockImplementation(async (fn: (tx: Prisma.TransactionClient) => Promise<unknown>) => {
         return fn(mockTx);
       });
 
@@ -113,7 +116,7 @@ describe('Transaction Safety Patterns', () => {
     });
 
     it('allows super-admin operations to read across tenants', async () => {
-      (mockPrisma.$transaction as jest.Mock).mockImplementation(async (fn: (tx: Prisma.TransactionClient) => Promise<unknown>) => {
+      (mockPrisma.__bypassClient.$transaction as jest.Mock).mockImplementation(async (fn: (tx: Prisma.TransactionClient) => Promise<unknown>) => {
         return fn(mockTx);
       });
       mockTx.booking.findMany = jest.fn().mockResolvedValue([]);
