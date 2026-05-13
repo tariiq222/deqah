@@ -205,67 +205,14 @@ jobs:
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/deqah-${{ matrix.app }}:buildcache-${{ needs.detect.outputs.env_name }},mode=max
 
   # ─────────────────────────────────────────────────────────────────────────
-  # 3. Run prisma migrate deploy — local verify then SSH to server
-  #    Runs only when the backend image was rebuilt.
-  # ─────────────────────────────────────────────────────────────────────────
-  migrate:
-    name: Migrate DB → ${{ needs.detect.outputs.env_name }}
-    needs: [detect, build]
-    if: needs.build.result == 'success' && contains(fromJSON(needs.detect.outputs.apps), 'backend')
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    environment: ${{ needs.detect.outputs.env_name }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-
-      - name: Install backend deps (for prisma CLI)
-        run: pnpm --filter @deqah/backend install --frozen-lockfile
-
-      - name: Verify migrations locally (dry-run schema check)
-        working-directory: apps/backend
-        run: npx prisma migrate diff --from-schema-datasource prisma/schema --to-schema-datamodel prisma/schema --script 2>&1 | head -40 || true
-
-      - name: Run prisma migrate deploy on server via SSH
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          ENV_NAME: ${{ needs.detect.outputs.env_name }}
-        run: |
-          set -euo pipefail
-          echo "$SSH_PRIVATE_KEY" > /tmp/deploy_key
-          chmod 600 /tmp/deploy_key
-
-          # Determine container name by environment
-          if [ "$ENV_NAME" = "production" ]; then
-            CONTAINER="deqah-backend"
-          else
-            CONTAINER="deqah-backend-staging"
-          fi
-
-          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key "$SSH_USER@$SSH_HOST" \
-            "docker exec $CONTAINER npx prisma migrate deploy --schema=prisma/schema && echo '✅ Migrations applied'"
-
-          rm -f /tmp/deploy_key
-
-  # ─────────────────────────────────────────────────────────────────────────
-  # 4. Trigger Dokploy deploy for each freshly built app
+  # 3. Trigger Dokploy deploy for each freshly built app
+  #    NOTE: prisma migrations are applied MANUALLY on the server, not in CI.
+  #    Run: ssh deqah "docker exec deqah-backend-<id> npx prisma migrate deploy --schema=prisma/schema"
   # ─────────────────────────────────────────────────────────────────────────
   deploy:
     name: Deploy ${{ matrix.app }} → ${{ needs.detect.outputs.env_name }}
-    needs: [detect, build, migrate]
-    if: needs.detect.outputs.apps != '[]' && (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
+    needs: [detect, build]
+    if: needs.detect.outputs.apps != '[]' && needs.build.result == 'success'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
