@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
 import * as bcrypt from 'bcryptjs';
+import { ClsService } from 'nestjs-cls';
 import { PrismaService } from '../../../infrastructure/database';
+import { TenantContext, TenantContextService } from '../../../common/tenant';
 
 export interface TokenPair {
   accessToken: string;
@@ -53,6 +55,8 @@ export class TokenService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
+    @Optional() private readonly cls?: ClsService,
+    @Optional() private readonly tenantCtx?: TenantContextService,
   ) {}
 
   async issueTokenPair(
@@ -93,15 +97,39 @@ export class TokenService {
     const ttl = this.config.get<string>('JWT_REFRESH_TTL') ?? '30d';
     const expiresAt = new Date(Date.now() + this.parseTtlMs(ttl));
 
-    await this.prisma.refreshToken.create({
-      data: {
-        userId: user.id,
+    const createRefreshToken = async (): Promise<void> => {
+      await this.prisma.refreshToken.create({
+        data: {
+          userId: user.id,
+          organizationId: tenantClaims.organizationId,
+          tokenHash,
+          tokenSelector,
+          expiresAt,
+        },
+      });
+    };
+
+    if (this.cls && this.tenantCtx) {
+      // Run inside a fresh CLS context so the Prisma tenant-scoping extension
+      // can emit SET LOCAL app.current_org_id = ... before the INSERT, satisfying
+      // the RLS WITH CHECK policy on RefreshToken. Login happens outside any
+      // authenticated request context, so there is no outer CLS tenant — we
+      // must establish one explicitly here.
+      const ctx: TenantContext = {
         organizationId: tenantClaims.organizationId,
-        tokenHash,
-        tokenSelector,
-        expiresAt,
-      },
-    });
+        membershipId: tenantClaims.membershipId ?? '',
+        id: user.id,
+        role: user.role,
+        isSuperAdmin: tenantClaims.isSuperAdmin ?? false,
+      };
+      await this.cls.run(async () => {
+        this.tenantCtx!.set(ctx);
+        await createRefreshToken();
+      });
+    } else {
+      // Fallback path: CLS not injected (unit-test context). Run directly.
+      await createRefreshToken();
+    }
 
     return { accessToken, refreshToken: rawRefresh };
   }
