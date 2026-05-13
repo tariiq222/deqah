@@ -77,7 +77,7 @@ describe("auth api", () => {
 
     const result = await login("a@b.com", "pass")
 
-    expect(loginMock).toHaveBeenCalledWith({ email: "a@b.com", password: "pass" })
+    expect(loginMock).toHaveBeenCalledWith({ email: "a@b.com", password: "pass", hCaptchaToken: "" })
     expect(setAccessTokenMock).toHaveBeenCalledWith("token123")
     expect(localStorage.getItem("deqah_user")).toContain("a@b.com")
     expect(result.accessToken).toBe("token123")
